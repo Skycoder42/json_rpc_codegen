@@ -1,0 +1,3 @@
+dependency_overrides:
+  json_rpc_codegen:
+    path: ../json_rpc_codegen

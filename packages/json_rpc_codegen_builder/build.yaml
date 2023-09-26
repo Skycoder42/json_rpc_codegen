@@ -1,0 +1,21 @@
+builders:
+  json_rpc_codegen_builder:
+    import: "package:json_rpc_codegen_builder/json_rpc_codegen_builder.dart"
+    builder_factories: ["jsonRpcCodegenBuilder"]
+    build_extensions: { ".dart": ["settings.g.part"] }
+    auto_apply: dependents
+    build_to: cache
+    applies_builders: ["source_gen|combining_builder"]
+
+targets:
+  $default:
+    builders:
+      json_rpc_codegen_builder:
+        enabled: true
+        generate_for:
+          exclude:
+            - lib
+            - test
+          include:
+            - test/apis/**
+            - example/**
