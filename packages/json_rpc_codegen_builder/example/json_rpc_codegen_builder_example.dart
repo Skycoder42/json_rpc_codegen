@@ -26,6 +26,8 @@ abstract interface class SampleApi {
   Future<User> createUser();
 
   Future<List<List<User>>> userMatric();
+
+  Future<Map<String, User>> userGroups();
 }
 
 void main() {}

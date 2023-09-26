@@ -197,6 +197,32 @@ final class ClientGenerator extends ProxySpec {
       return type.isDartCoreList
           ? iterable.property('toList').call(const [])
           : iterable;
+    } else if (type.isDartCoreMap) {
+      final interfaceType = type as InterfaceType;
+      final keyType = interfaceType.typeArguments[0];
+      final valueType = interfaceType.typeArguments[1];
+
+      return value.asA(refer('Map')).property('map').call([
+        Method(
+          (b) => b
+            ..requiredParameters.addAll([
+              Parameter(
+                (b) => b
+                  ..name = 'k'
+                  ..type = refer('dynamic'),
+              ),
+              Parameter(
+                (b) => b
+                  ..name = 'v'
+                  ..type = refer('dynamic'),
+              ),
+            ])
+            ..body = refer('MapEntry').newInstance([
+              _buildReturn(refer('k'), keyType),
+              _buildReturn(refer('v'), valueType),
+            ]).code,
+        ).closure,
+      ]);
     } else if (type.isDartCorePrimitive) {
       return value.asA(_buildType(type));
     } else {
@@ -243,11 +269,10 @@ final class ClientGenerator extends ProxySpec {
 
 extension DartTypeX on DartType {
   bool get isDartCorePrimitive =>
-      isDartCoreBool ||
-      isDartCoreDouble ||
-      isDartCoreInt ||
-      isDartCoreMap ||
       isDartCoreNull ||
+      isDartCoreBool ||
       isDartCoreNum ||
+      isDartCoreInt ||
+      isDartCoreDouble ||
       isDartCoreString;
 }
