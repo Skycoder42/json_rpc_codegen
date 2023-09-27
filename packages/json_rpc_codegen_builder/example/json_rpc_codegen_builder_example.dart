@@ -1,5 +1,7 @@
 // ignore_for_file: unreachable_from_main
 
+import 'dart:convert';
+
 import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 
 part 'json_rpc_codegen_builder_example.g.dart';
@@ -31,7 +33,7 @@ abstract interface class SampleApi {
 
   Future<String> echo(String message);
 
-  Future<User> createUser();
+  Future<User> createUser(Map<String, List<Permission>> permissions);
 
   Future<List<List<User>>> userMatrix();
 

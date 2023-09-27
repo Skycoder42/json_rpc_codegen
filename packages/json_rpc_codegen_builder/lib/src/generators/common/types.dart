@@ -90,6 +90,16 @@ abstract base class Types {
     (b) => b..symbol = 'Client',
   );
 
+  /// @nodoc
+  static final jsonRpc2Server = TypeReference(
+    (b) => b..symbol = 'Server',
+  );
+
+  /// @nodoc
+  static final jsonRpc2Parameters = TypeReference(
+    (b) => b..symbol = 'Parameters',
+  );
+
   static TypeReference _named(String name) => TypeReference(
         (b) => b..symbol = name,
       );

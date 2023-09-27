@@ -6,6 +6,7 @@ import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
 import 'generators/client/client_generator.dart';
+import 'generators/server/server_generator.dart';
 
 /// @nodoc
 @internal
@@ -38,7 +39,9 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc> {
     return _buildLibrary(element).accept(emitter, StringBuffer()).toString();
   }
 
-  Library _buildLibrary(ClassElement element) => Library(
-        (b) => b..body.add(ClientGenerator(element)),
+  Library _buildLibrary(ClassElement clazz) => Library(
+        (b) => b
+          ..body.add(ClientGenerator(clazz))
+          ..body.add(ServerGenerator(clazz)),
       );
 }

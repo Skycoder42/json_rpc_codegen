@@ -146,7 +146,8 @@ final class ClientGenerator extends ProxySpec {
       if (hasPositional)
         literalList(
           [
-            for (final p in method.parameters) refer(p.name),
+            for (final p in method.parameters)
+              SerializationBuilder.toJson(p.type, refer(p.name)),
           ],
           Types.dynamic,
         ),
@@ -154,7 +155,8 @@ final class ClientGenerator extends ProxySpec {
         literalMap(
           {
             for (final p in method.parameters)
-              literalString(p.name): refer(p.name),
+              literalString(p.name):
+                  SerializationBuilder.toJson(p.type, refer(p.name)),
           },
           Types.string,
           Types.dynamic,
