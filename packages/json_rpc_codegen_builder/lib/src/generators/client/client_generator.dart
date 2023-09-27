@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
 import '../common/annotations.dart';
+import '../common/serialization_builder.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
 
@@ -148,70 +149,10 @@ final class ClientGenerator extends ProxySpec {
       declareFinal(resultVarRef.symbol!, type: Types.dynamic)
           .assign(invocation.awaited)
           .statement,
-      _buildReturn(resultVarRef, futureType).returned.statement,
+      SerializationBuilder.fromJson(futureType, resultVarRef)
+          .returned
+          .statement,
     ]);
-  }
-
-  Expression _buildReturn(
-    Expression value,
-    DartType type,
-  ) {
-    if (type.isDartCoreIterable || type.isDartCoreList) {
-      final interfaceType = type as InterfaceType;
-      final listType = interfaceType.typeArguments.single;
-      const elementParamRef = Reference('e');
-      final iterable = value.asA(Types.list()).property('map').call([
-        Method(
-          (b) => b
-            ..requiredParameters.add(
-              Parameter(
-                (b) => b
-                  ..name = elementParamRef.symbol!
-                  ..type = Types.dynamic,
-              ),
-            )
-            ..body = _buildReturn(elementParamRef, listType).code,
-        ).closure,
-      ]);
-
-      return type.isDartCoreList
-          ? iterable.property('toList').call(const [])
-          : iterable;
-    } else if (type.isDartCoreMap) {
-      final interfaceType = type as InterfaceType;
-      final keyType = interfaceType.typeArguments[0];
-      final valueType = interfaceType.typeArguments[1];
-
-      const keyParamRef = Reference('k');
-      const valueParamRef = Reference('v');
-      return value.asA(Types.map()).property('map').call([
-        Method(
-          (b) => b
-            ..requiredParameters.addAll([
-              Parameter(
-                (b) => b
-                  ..name = keyParamRef.symbol!
-                  ..type = Types.dynamic,
-              ),
-              Parameter(
-                (b) => b
-                  ..name = valueParamRef.symbol!
-                  ..type = Types.dynamic,
-              ),
-            ])
-            ..body = Types.mapEntry.newInstance([
-              _buildReturn(keyParamRef, keyType),
-              _buildReturn(valueParamRef, valueType),
-            ]).code,
-        ).closure,
-      ]);
-    } else if (type.isDartCorePrimitive) {
-      return value.asA(Types.fromDartType(type));
-    } else {
-      return Types.fromDartType(type).newInstanceNamed('fromJson', [
-        value.asA(Types.map(Types.string, Types.dynamic)),
-      ]);
-    }
   }
 
   Expression _buildMethodInvocation(Expression target, MethodElement method) {
@@ -247,14 +188,4 @@ final class ClientGenerator extends ProxySpec {
         ),
     ]);
   }
-}
-
-extension DartTypeX on DartType {
-  bool get isDartCorePrimitive =>
-      isDartCoreNull ||
-      isDartCoreBool ||
-      isDartCoreNum ||
-      isDartCoreInt ||
-      isDartCoreDouble ||
-      isDartCoreString;
 }

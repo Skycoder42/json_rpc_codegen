@@ -26,7 +26,7 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc> {
         !element.isAbstract ||
         !element.isInterface) {
       throw InvalidGenerationSourceError(
-        'The $JsonRpc annotation can only be used on abstract interface classes',
+        'The $JsonRpc annotation can only be used on abstract interfaces',
         element: element,
       );
     }

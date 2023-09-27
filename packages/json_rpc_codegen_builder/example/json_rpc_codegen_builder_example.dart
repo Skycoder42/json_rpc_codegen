@@ -1,6 +1,14 @@
+// ignore_for_file: unreachable_from_main
+
 import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 
 part 'json_rpc_codegen_builder_example.g.dart';
+
+enum Permission {
+  read,
+  write,
+  administrate,
+}
 
 class User {
   final String firstName;
@@ -25,9 +33,9 @@ abstract interface class SampleApi {
 
   Future<User> createUser();
 
-  Future<List<List<User>>> userMatric();
+  Future<List<List<User>>> userMatrix();
 
-  Future<Map<String, User>> userGroups();
+  Future<Map<String, List<Permission>>> permissions();
 }
 
 void main() {}
