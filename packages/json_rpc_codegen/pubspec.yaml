@@ -9,9 +9,16 @@ environment:
 
 dependencies:
   json_rpc_2: ^3.0.2
-  meta: ^1.10.0
+  meta: ^1.9.1
+  stream_channel: ^2.1.1
 
 dev_dependencies:
   custom_lint: ^0.5.3
   dart_pre_commit: ^5.2.1
   dart_test_tools: ^5.4.0
+
+dart_pre_commit:
+  pull-up-dependencies:
+    allowed:
+      - meta
+      - stream_channel
