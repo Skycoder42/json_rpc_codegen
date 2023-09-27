@@ -14,8 +14,7 @@ abstract base class Types {
         (b) {
           b
             ..symbol = dartType.element!.name
-            ..isNullable = dartType.nullabilitySuffix != NullabilitySuffix.none
-            ..url = dartType.element?.library?.location?.components.firstOrNull;
+            ..isNullable = dartType.nullabilitySuffix != NullabilitySuffix.none;
 
           if (dartType is InterfaceType) {
             b.types.addAll(dartType.typeArguments.map(fromDartType));
@@ -54,25 +53,41 @@ abstract base class Types {
       );
 
   /// @nodoc
+  static TypeReference future([TypeReference? type]) => TypeReference(
+        (b) => b
+          ..symbol = 'Future'
+          ..types.addAll([
+            if (type != null) type,
+          ]),
+      );
+
+  /// @nodoc
+  static TypeReference streamChannel([TypeReference? type]) => TypeReference(
+        (b) => b
+          ..symbol = 'StreamChannel'
+          ..types.addAll([
+            if (type != null) type,
+          ]),
+      );
+
+  /// @nodoc
   static final dynamic = _named('dynamic');
 
   /// @nodoc
   static final $void = _named('void');
 
   /// @nodoc
-  static final string = _named('String');
+  static final bool = _named('bool');
 
   /// @nodoc
-  static final function0 = _named('dynamic Function()');
+  static final string = _named('String');
 
   /// @nodoc
   static final mapEntry = _named('MapEntry');
 
   /// @nodoc
   static final jsonRpc2Client = TypeReference(
-    (b) => b
-      ..symbol = 'Client'
-      ..url = 'package:json_rpc_2/json_rpc_2.dart',
+    (b) => b..symbol = 'Client',
   );
 
   static TypeReference _named(String name) => TypeReference(

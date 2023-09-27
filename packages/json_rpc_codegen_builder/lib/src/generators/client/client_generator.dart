@@ -8,12 +8,16 @@ import '../common/annotations.dart';
 import '../common/serialization_builder.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
+import 'wrapper_builder.dart';
 
 /// @nodoc
 @internal
 final class ClientGenerator extends ProxySpec {
-  static const _clientName = '_jsonRpcClient';
+  static const _clientName = 'jsonRpcClient';
   static const _clientRef = Reference(_clientName);
+
+  // ignore: avoid_field_initializers_in_const_classes
+  final _wrapperBuilder = const WrapperBuilder(_clientRef);
 
   final ClassElement _class;
 
@@ -34,21 +38,9 @@ final class ClientGenerator extends ProxySpec {
                 ..type = Types.jsonRpc2Client,
             ),
           )
-          ..constructors.add(
-            Constructor(
-              (b) => b
-                ..constant = true
-                ..requiredParameters.add(
-                  Parameter(
-                    (b) => b
-                      ..name = _clientName
-                      ..toThis = true,
-                  ),
-                ),
-            ),
-          )
+          ..constructors.addAll(_wrapperBuilder.buildConstructors())
           ..methods.addAll(_class.methods.map(_buildMethod))
-          ..methods.add(_buildBatchMethod()),
+          ..methods.addAll(_wrapperBuilder.buildWrapperMethods()),
       );
 
   Method _buildMethod(MethodElement method) {
@@ -110,25 +102,6 @@ final class ClientGenerator extends ProxySpec {
               ? Code(parameter.defaultValueCode!)
               : null,
       );
-
-  Method _buildBatchMethod() {
-    const callbackRef = Reference('callback');
-    return Method(
-      (b) => b
-        ..name = 'withBatch'
-        ..returns = Types.$void
-        ..requiredParameters.add(
-          Parameter(
-            (b) => b
-              ..name = callbackRef.symbol!
-              ..type = Types.function0,
-          ),
-        )
-        ..body = _clientRef.property('withBatch').call([
-          callbackRef,
-        ]).code,
-    );
-  }
 
   Code _buildNotificationBody(MethodElement method) => _buildMethodInvocation(
         _clientRef.property('sendNotification'),
