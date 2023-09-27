@@ -5,7 +5,7 @@ import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
-import 'generators/client_generator.dart';
+import 'generators/client/client_generator.dart';
 
 /// @nodoc
 @internal

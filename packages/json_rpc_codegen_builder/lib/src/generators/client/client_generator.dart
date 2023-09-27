@@ -1,11 +1,12 @@
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
-import 'proxy_spec.dart';
+import '../common/annotations.dart';
+import '../common/types.dart';
+import '../proxy_spec.dart';
 
 /// @nodoc
 @internal
@@ -29,11 +30,7 @@ final class ClientGenerator extends ProxySpec {
               (b) => b
                 ..name = _clientName
                 ..modifier = FieldModifier.final$
-                ..type = TypeReference(
-                  (b) => b
-                    ..symbol = 'Client'
-                    ..url = 'package:json_rpc_2/json_rpc_2.dart',
-                ),
+                ..type = Types.jsonRpc2Client,
             ),
           )
           ..constructors.add(
@@ -73,13 +70,13 @@ final class ClientGenerator extends ProxySpec {
 
   Method _buildNotificationMethod(MethodElement method) => Method(
         (b) => _buildMethodBase(method, b)
-          ..returns = TypeReference((b) => b..symbol = 'void')
+          ..returns = Types.$void
           ..body = _buildNotificationBody(method),
       );
 
   Method _buildRequestMethod(MethodElement method) => Method(
         (b) => _buildMethodBase(method, b)
-          ..returns = _buildType(method.returnType)
+          ..returns = Types.fromDartType(method.returnType)
           ..modifier = MethodModifier.async
           ..body = _buildRequestBody(method),
       );
@@ -87,7 +84,8 @@ final class ClientGenerator extends ProxySpec {
   MethodBuilder _buildMethodBase(MethodElement method, MethodBuilder builder) =>
       builder
         ..name = method.name
-        ..types.addAll(method.typeParameters.map(_buildTypeParameter))
+        ..annotations.add(Annotations.override)
+        ..types.addAll(method.typeParameters.map(Types.fromTypeParameter))
         ..requiredParameters.addAll(
           method.parameters
               .where((e) => e.isRequiredPositional)
@@ -97,14 +95,13 @@ final class ClientGenerator extends ProxySpec {
           method.parameters
               .where((e) => !e.isRequiredPositional)
               .map((e) => _buildParameter(e, false)),
-        )
-        ..annotations.add(const Reference('override'));
+        );
 
   Parameter _buildParameter(ParameterElement parameter, bool positional) =>
       Parameter(
         (b) => b
           ..name = parameter.name
-          ..type = _buildType(parameter.type)
+          ..type = Types.fromDartType(parameter.type)
           ..named = parameter.isNamed
           ..required = parameter.isRequiredNamed
           ..covariant = parameter.isCovariant
@@ -113,43 +110,24 @@ final class ClientGenerator extends ProxySpec {
               : null,
       );
 
-  TypeReference _buildType(DartType dartType) => TypeReference(
-        (b) {
-          b
-            ..symbol = dartType.element!.name
-            ..isNullable = dartType.nullabilitySuffix != NullabilitySuffix.none
-            ..url = dartType.element?.library?.location?.components.firstOrNull;
-
-          if (dartType is InterfaceType) {
-            b.types.addAll(dartType.typeArguments.map(_buildType));
-          }
-        },
-      );
-
-  TypeReference _buildTypeParameter(TypeParameterElement typeParameter) =>
-      TypeReference(
-        (b) => b
-          ..symbol = typeParameter.name
-          ..bound = typeParameter.bound != null
-              ? _buildType(typeParameter.bound!)
-              : null,
-      );
-
-  Method _buildBatchMethod() => Method(
-        (b) => b
-          ..name = 'withBatch'
-          ..returns = TypeReference((b) => b..symbol = 'void')
-          ..requiredParameters.add(
-            Parameter(
-              (b) => b
-                ..name = 'callback'
-                ..type = TypeReference((b) => b..symbol = 'Function()'),
-            ),
-          )
-          ..body = _clientRef.property('withBatch').call([
-            refer('callback'),
-          ]).code,
-      );
+  Method _buildBatchMethod() {
+    const callbackRef = Reference('callback');
+    return Method(
+      (b) => b
+        ..name = 'withBatch'
+        ..returns = Types.$void
+        ..requiredParameters.add(
+          Parameter(
+            (b) => b
+              ..name = callbackRef.symbol!
+              ..type = Types.function0,
+          ),
+        )
+        ..body = _clientRef.property('withBatch').call([
+          callbackRef,
+        ]).code,
+    );
+  }
 
   Code _buildNotificationBody(MethodElement method) => _buildMethodInvocation(
         _clientRef.property('sendNotification'),
@@ -165,11 +143,12 @@ final class ClientGenerator extends ProxySpec {
       method,
     );
 
+    const resultVarRef = Reference('result');
     return Block.of([
-      declareFinal('result', type: refer('dynamic'))
+      declareFinal(resultVarRef.symbol!, type: Types.dynamic)
           .assign(invocation.awaited)
           .statement,
-      _buildReturn(refer('result'), futureType).returned.statement,
+      _buildReturn(resultVarRef, futureType).returned.statement,
     ]);
   }
 
@@ -180,17 +159,18 @@ final class ClientGenerator extends ProxySpec {
     if (type.isDartCoreIterable || type.isDartCoreList) {
       final interfaceType = type as InterfaceType;
       final listType = interfaceType.typeArguments.single;
-      final iterable = value.asA(refer('List')).property('map').call([
+      const elementParamRef = Reference('e');
+      final iterable = value.asA(Types.list()).property('map').call([
         Method(
           (b) => b
             ..requiredParameters.add(
               Parameter(
                 (b) => b
-                  ..name = 'e'
-                  ..type = refer('dynamic'),
+                  ..name = elementParamRef.symbol!
+                  ..type = Types.dynamic,
               ),
             )
-            ..body = _buildReturn(refer('e'), listType).code,
+            ..body = _buildReturn(elementParamRef, listType).code,
         ).closure,
       ]);
 
@@ -202,32 +182,34 @@ final class ClientGenerator extends ProxySpec {
       final keyType = interfaceType.typeArguments[0];
       final valueType = interfaceType.typeArguments[1];
 
-      return value.asA(refer('Map')).property('map').call([
+      const keyParamRef = Reference('k');
+      const valueParamRef = Reference('v');
+      return value.asA(Types.map()).property('map').call([
         Method(
           (b) => b
             ..requiredParameters.addAll([
               Parameter(
                 (b) => b
-                  ..name = 'k'
-                  ..type = refer('dynamic'),
+                  ..name = keyParamRef.symbol!
+                  ..type = Types.dynamic,
               ),
               Parameter(
                 (b) => b
-                  ..name = 'v'
-                  ..type = refer('dynamic'),
+                  ..name = valueParamRef.symbol!
+                  ..type = Types.dynamic,
               ),
             ])
-            ..body = refer('MapEntry').newInstance([
-              _buildReturn(refer('k'), keyType),
-              _buildReturn(refer('v'), valueType),
+            ..body = Types.mapEntry.newInstance([
+              _buildReturn(keyParamRef, keyType),
+              _buildReturn(valueParamRef, valueType),
             ]).code,
         ).closure,
       ]);
     } else if (type.isDartCorePrimitive) {
-      return value.asA(_buildType(type));
+      return value.asA(Types.fromDartType(type));
     } else {
-      return _buildType(type).newInstanceNamed('fromJson', [
-        value.asA(refer('Map<String, dynamic>')),
+      return Types.fromDartType(type).newInstanceNamed('fromJson', [
+        value.asA(Types.map(Types.string, Types.dynamic)),
       ]);
     }
   }
@@ -252,7 +234,7 @@ final class ClientGenerator extends ProxySpec {
           [
             for (final p in method.parameters) refer(p.name),
           ],
-          TypeReference((b) => b..symbol = 'dynamic'),
+          Types.dynamic,
         ),
       if (hasNamed)
         literalMap(
@@ -260,8 +242,8 @@ final class ClientGenerator extends ProxySpec {
             for (final p in method.parameters)
               literalString(p.name): refer(p.name),
           },
-          TypeReference((b) => b..symbol = 'String'),
-          TypeReference((b) => b..symbol = 'dynamic'),
+          Types.string,
+          Types.dynamic,
         ),
     ]);
   }
