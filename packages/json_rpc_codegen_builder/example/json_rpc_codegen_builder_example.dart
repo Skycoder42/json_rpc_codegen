@@ -33,9 +33,9 @@ abstract interface class SampleApi {
 
   Future<String> echo(String message);
 
-  Future<User> createUser(Map<String, List<Permission>> permissions);
+  Future<User> createUser(Map<String, List<Permission>?> permissions);
 
-  Future<List<List<User>>> userMatrix();
+  Future<List<List<User>>> userMatrix([Permission? permission]);
 
   Future<Map<String, List<Permission>>> permissions();
 }

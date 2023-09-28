@@ -1,71 +1,73 @@
-import 'package:analyzer/dart/element/type.dart';
+import 'package:analyzer/dart/element/type.dart' hide FunctionType;
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 import 'package:source_helper/source_helper.dart';
 
+import 'code_builder_extensions.dart';
 import 'types.dart';
 
 /// @nodoc
 @internal
-enum JsonType {
-  /// @nodoc
-  jNull('value'),
-
-  /// @nodoc
-  jInt('asInt'),
-
-  /// @nodoc
-  jDouble('asDouble'),
-
-  /// @nodoc
-  jNum('asNum'),
-
-  /// @nodoc
-  jBool('asBool'),
-
-  /// @nodoc
-  jString('asString'),
-
-  /// @nodoc
-  jList('asList'),
-
-  /// @nodoc
-  jMap('asMap');
-
-  /// @nodoc
-  final String paramGet;
-
-  /// @nodoc
-  const JsonType(this.paramGet);
-
-  /// @nodoc
-  String get paramGetOr => '${paramGet}Or';
-}
-
-/// @nodoc
-@internal
 abstract base class SerializationBuilder {
+  static const _maybeMapName = r'_$maybeMap';
+  static const _maybeMapRef = Reference(_maybeMapName);
+
   SerializationBuilder._();
 
   /// @nodoc
-  static JsonType jsonTypeFor(DartType type) {
-    if (type.isDartCoreNull) {
-      return JsonType.jNull;
-    } else if (type.isDartCoreInt) {
-      return JsonType.jInt;
-    } else if (type.isDartCoreDouble) {
-      return JsonType.jDouble;
-    } else if (type.isDartCoreNum) {
-      return JsonType.jNum;
-    } else if (type.isDartCoreBool) {
-      return JsonType.jBool;
-    } else if (type.isDartCoreString || type.isEnum) {
-      return JsonType.jString;
-    } else if (type.isDartCoreList || type.isDartCoreIterable) {
-      return JsonType.jList;
-    } else {
-      return JsonType.jMap;
-    }
+  static Iterable<Spec> buildGlobalMethods() sync* {
+    yield Method(
+      (b) => b
+        ..name = _maybeMapName
+        ..returns = TypeReference(
+          (b) => b
+            ..symbol = 'TConverted'
+            ..isNullable = true,
+        )
+        ..types.add(
+          TypeReference(
+            (b) => b
+              ..symbol = 'TConverted'
+              ..bound = refer('Object'),
+          ),
+        )
+        ..types.add(
+          TypeReference(
+            (b) => b
+              ..symbol = 'TJson'
+              ..bound = refer('Object'),
+          ),
+        )
+        ..requiredParameters.add(
+          Parameter(
+            (b) => b
+              ..name = r'$value'
+              ..type = TypeReference(
+                (b) => b
+                  ..symbol = 'TJson'
+                  ..isNullable = true,
+              ),
+          ),
+        )
+        ..requiredParameters.add(
+          Parameter(
+            (b) => b
+              ..name = r'$convert'
+              ..type = FunctionType(
+                (b) => b
+                  ..returnType = refer('TConverted')
+                  ..requiredParameters.add(refer('TJson')),
+              ),
+          ),
+        )
+        ..body = refer(r'$value')
+            .equalTo(literalNull)
+            .conditional(
+              literalNull,
+              refer(r'$convert').call([refer(r'$value')]),
+            )
+            .code,
+    );
   }
 
   /// @nodoc
@@ -79,15 +81,20 @@ abstract base class SerializationBuilder {
     } else if (type.isDartCoreMap) {
       return _fromMap(type, value, noCast: noCast);
     } else if (type.isEnum) {
-      return Types.fromDartType(type)
-          .property('values')
-          .property('byName')
-          .call([_maybeCast(value, Types.string, noCast)]);
+      // TODO add everywhere
+      return _ifNotNull(
+        type,
+        value,
+        (ref) => Types.fromDartType(type, isNull: false)
+            .property('values')
+            .property('byName')
+            .call([_maybeCast(ref, Types.string, noCast)]),
+      );
     } else if (_isPrimitiveType(type)) {
       return _maybeCast(value, Types.fromDartType(type), noCast);
     } else {
       return Types.fromDartType(type).newInstanceNamed('fromJson', [
-        value.asA(Types.map(Types.string, Types.dynamic)),
+        value, // TODO.asA(Types.map(Types.string, Types.dynamic)),
       ]);
     }
   }
@@ -99,7 +106,7 @@ abstract base class SerializationBuilder {
     } else if (type.isDartCoreMap) {
       return _toMap(type, value);
     } else if (type.isEnum) {
-      return value.property('name');
+      return value.autoProperty('name', type.isNullableType);
     } else {
       return value;
     }
@@ -112,7 +119,7 @@ abstract base class SerializationBuilder {
   }) {
     final interfaceType = type as InterfaceType;
     final listType = interfaceType.typeArguments.single;
-    const elementParamRef = Reference('e');
+    const elementParamRef = Reference(r'$e');
 
     final iterable = _maybeCast(
       value,
@@ -141,14 +148,14 @@ abstract base class SerializationBuilder {
     final interfaceType = type as InterfaceType;
     final listType = interfaceType.typeArguments.single;
 
-    const elementParamRef = Reference('e');
+    const elementParamRef = Reference(r'$e');
     final convertExpression = toJson(listType, elementParamRef);
     if (identical(convertExpression, elementParamRef)) {
       return value;
     }
 
     return value
-        .property('map')
+        .autoProperty('map', type.isNullableType)
         .call([
           Method(
             (b) => b
@@ -171,8 +178,8 @@ abstract base class SerializationBuilder {
     final keyType = interfaceType.typeArguments[0];
     final valueType = interfaceType.typeArguments[1];
 
-    const keyParamRef = Reference('k');
-    const valueParamRef = Reference('v');
+    const keyParamRef = Reference(r'$k');
+    const valueParamRef = Reference(r'$v');
 
     return _maybeCast(value, Types.map(), noCast).property('map').call([
       Method(
@@ -202,8 +209,8 @@ abstract base class SerializationBuilder {
     final keyType = interfaceType.typeArguments[0];
     final valueType = interfaceType.typeArguments[1];
 
-    const keyParamRef = Reference('k');
-    const valueParamRef = Reference('v');
+    const keyParamRef = Reference(r'$k');
+    const valueParamRef = Reference(r'$v');
 
     final convertKeyExpression = toJson(keyType, keyParamRef);
     final convertValueExpression = toJson(valueType, valueParamRef);
@@ -212,7 +219,7 @@ abstract base class SerializationBuilder {
       return value;
     }
 
-    return value.property('map').call([
+    return value.autoProperty('map', type.isNullableType).call([
       Method(
         (b) => b
           ..requiredParameters.addAll([
@@ -241,4 +248,29 @@ abstract base class SerializationBuilder {
     bool noCast,
   ) =>
       noCast ? ref : ref.asA(type);
+
+  static Expression _ifNotNull(
+    DartType type,
+    Expression value,
+    Expression Function(Expression ref) buildExpression,
+  ) {
+    if (!type.isNullableType) {
+      return buildExpression(value);
+    }
+
+    const callbackParamRef = Reference(r'$v');
+    return _maybeMapRef.call([
+      value,
+      // TODO extract code
+      Method(
+        (b) => b
+          ..requiredParameters.add(
+            Parameter(
+              (b) => b..name = callbackParamRef.symbol!,
+            ),
+          )
+          ..body = buildExpression(callbackParamRef).code,
+      ).closure,
+    ]);
+  }
 }

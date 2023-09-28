@@ -101,7 +101,7 @@ class WrapperBuilder {
         (b) => b
           ..name = 'isClosed'
           ..type = MethodType.getter
-          ..returns = Types.bool
+          ..returns = Types.$bool
           ..body = _clientRef.property('isClosed').code,
       );
 

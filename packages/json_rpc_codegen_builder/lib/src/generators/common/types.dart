@@ -10,11 +10,16 @@ abstract base class Types {
   Types._();
 
   /// @nodoc
-  static TypeReference fromDartType(DartType dartType) => TypeReference(
+  static TypeReference fromDartType(
+    DartType dartType, {
+    bool? isNull,
+  }) =>
+      TypeReference(
         (b) {
           b
             ..symbol = dartType.element!.name
-            ..isNullable = dartType.nullabilitySuffix != NullabilitySuffix.none;
+            ..isNullable =
+                isNull ?? dartType.nullabilitySuffix != NullabilitySuffix.none;
 
           if (dartType is InterfaceType) {
             b.types.addAll(dartType.typeArguments.map(fromDartType));
@@ -77,7 +82,7 @@ abstract base class Types {
   static final $void = _named('void');
 
   /// @nodoc
-  static final bool = _named('bool');
+  static final $bool = _named('bool');
 
   /// @nodoc
   static final string = _named('String');

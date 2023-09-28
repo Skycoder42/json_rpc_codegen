@@ -1,13 +1,12 @@
 import 'package:analyzer/dart/element/element.dart';
-import 'package:code_builder/code_builder.dart';
+import 'package:code_builder/code_builder.dart' hide ParameterBuilder;
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:source_helper/source_helper.dart';
 
-import '../common/serialization_builder.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
+import 'parameter_builder.dart';
 
 /// @nodoc
 @internal
@@ -16,6 +15,9 @@ final class ServerGenerator extends ProxySpec {
   static const _serverRef = Reference(_serverName);
   static const _paramsParamName = 'p';
   static const _paramsParamRef = Reference(_paramsParamName);
+
+  // ignore: avoid_field_initializers_in_const_classes
+  final _parameterBuilder = const ParameterBuilder(_paramsParamRef);
 
   final ClassElement _class;
 
@@ -75,51 +77,17 @@ final class ServerGenerator extends ProxySpec {
           ])
           ..body = Block.of([
             if (hasPositional)
-              ...method.parameters.mapIndexed(_buildPositionalParamMapping),
-            if (hasNamed) ...method.parameters.map(_buildNamedParamMapping),
+              ...method.parameters
+                  .mapIndexed(_parameterBuilder.buildPositional),
+            if (hasNamed)
+              ...method.parameters.map(_parameterBuilder.buildNamed),
           ]),
       ).closure,
     ]).statement;
   }
-
-  Code _buildPositionalParamMapping(int position, ParameterElement param) =>
-      _buildParamMapping(
-        _paramsParamRef.index(literalNum(position)),
-        param,
-      );
-
-  Code _buildNamedParamMapping(ParameterElement param) => _buildParamMapping(
-        _paramsParamRef.index(literalString(param.name)),
-        param,
-      );
-
-  Code _buildParamMapping(Expression paramRef, ParameterElement param) {
-    final jsonType = SerializationBuilder.jsonTypeFor(param.type);
-
-    final Expression paramValue;
-    if (param.isOptional) {
-      paramValue = paramRef.property(jsonType.paramGetOr).call([
-        if (param.hasDefaultValue)
-          CodeExpression(Code(param.defaultValueCode!))
-        else
-          literalNull,
-      ]);
-    } else {
-      paramValue = paramRef.property(jsonType.paramGet);
-    }
-
-    return declareFinal(param.name)
-        .assign(
-          SerializationBuilder.fromJson(
-            param.type,
-            paramValue,
-            noCast: true,
-          ),
-        )
-        .statement;
-  }
 }
 
-// TODO disallow generics
 // TODO handle null values
+// TODO disallow generics
 // TODO map Uri/DateTime
+// TODO explicit toJson?
