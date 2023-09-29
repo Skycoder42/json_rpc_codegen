@@ -30,6 +30,9 @@ abstract base class Types {
             );
 
   /// @nodoc
+  static TypeReference fromClass(ClassElement clazz) => _named(clazz.name);
+
+  /// @nodoc
   static TypeReference fromTypeParameter(TypeParameterElement typeParameter) =>
       TypeReference(
         (b) => b
@@ -96,6 +99,9 @@ abstract base class Types {
   static final $bool = _named('bool');
 
   /// @nodoc
+  static final object = _named('Object');
+
+  /// @nodoc
   static final string = _named('String');
 
   /// @nodoc
@@ -114,6 +120,11 @@ abstract base class Types {
   /// @nodoc
   static final jsonRpc2Parameters = TypeReference(
     (b) => b..symbol = 'Parameters',
+  );
+
+  /// @nodoc
+  static final jsonRpc2ErrorCallback = TypeReference(
+    (b) => b..symbol = 'ErrorCallback',
   );
 
   static TypeReference _named(String name) => TypeReference(

@@ -3,13 +3,17 @@ import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 import 'package:source_helper/source_helper.dart';
 
+import '../common/closure_builder_mixin.dart';
 import '../common/code_builder_extensions.dart';
 import '../common/serialization_mixin.dart';
 import '../proxy_spec.dart';
 
 /// @nodoc
 @internal
-base mixin ParameterBuilderMixin on ProxySpec, SerializationMixin {
+base mixin ParameterBuilderMixin
+    on ProxySpec, SerializationMixin, ClosureBuilderMixin {
+  Reference paramRefFor(ParameterElement param) => refer('\$\$${param.name}');
+
   /// @nodoc
   Code buildPositional(
     Reference paramsRef,
@@ -32,7 +36,7 @@ base mixin ParameterBuilderMixin on ProxySpec, SerializationMixin {
       );
 
   Code _buildParameter(Expression paramRef, ParameterElement param) =>
-      declareFinal('\$${param.name}')
+      declareFinal('\$\$${param.name}')
           .assign(_buildConversion(paramRef, param))
           .statement;
 
@@ -83,17 +87,7 @@ base mixin ParameterBuilderMixin on ProxySpec, SerializationMixin {
     String getter,
   ) {
     if (param.type.isNullableType) {
-      const maybeParamRef = Reference(r'$v');
-      final closure = Method(
-        (b) => b
-          ..requiredParameters.add(
-            Parameter(
-              (b) => b..name = maybeParamRef.symbol!,
-            ),
-          )
-          ..body = maybeParamRef.property(getter).code,
-      ).closure;
-
+      final closure = closure1(r'$v', (p1) => p1.property(getter).code);
       if (param.isOptional) {
         return paramRef.property('maybeNullOr').call([
           closure,

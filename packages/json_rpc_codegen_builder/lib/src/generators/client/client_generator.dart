@@ -2,9 +2,9 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
-import 'package:source_gen/source_gen.dart';
 
-import '../common/annotations.dart';
+import '../common/base_wrapper_builder_mixin.dart';
+import '../common/closure_builder_mixin.dart';
 import '../common/method_mapper_mixin.dart';
 import '../common/serialization_mixin.dart';
 import '../common/types.dart';
@@ -14,24 +14,26 @@ import 'wrapper_builder_mixin.dart';
 /// @nodoc
 @internal
 final class ClientGenerator extends ProxySpec
-    with MethodMapperMixin, SerializationMixin, WrapperBuilderMixin {
+    with
+        MethodMapperMixin,
+        ClosureBuilderMixin,
+        SerializationMixin,
+        BaseWrapperBuilderMixin,
+        WrapperBuilderMixin {
   static const _clientName = 'jsonRpcClient';
+  static const _clientRef = Reference(_clientName);
 
   final ClassElement _class;
 
   /// @nodoc
   const ClientGenerator(this._class);
 
-  @override
-  @visibleForOverriding
-  Reference get clientRef => const Reference(_clientName);
-
   /// @nodoc
   @override
   Class build() => Class(
         (b) => b
           ..name = '${_class.name}Client'
-          ..implements.add(TypeReference((b) => b..symbol = _class.name))
+          ..implements.add(Types.fromClass(_class))
           ..fields.add(
             Field(
               (b) => b
@@ -40,9 +42,9 @@ final class ClientGenerator extends ProxySpec
                 ..type = Types.jsonRpc2Client,
             ),
           )
-          ..constructors.addAll(buildConstructors())
-          ..methods.addAll(_class.methods.map(_buildMethod))
-          ..methods.addAll(buildWrapperMethods()),
+          ..constructors.addAll(buildConstructors(_clientRef))
+          ..methods.addAll(buildWrapperMethods(_clientRef))
+          ..methods.addAll(_class.methods.map(_buildMethod)),
       );
 
   Method _buildMethod(MethodElement method) {
@@ -58,7 +60,6 @@ final class ClientGenerator extends ProxySpec
         method,
         (b) => b
           ..returns = Types.$void
-          ..annotations.add(Annotations.override)
           ..body = _buildNotificationBody(method),
       );
 
@@ -68,18 +69,17 @@ final class ClientGenerator extends ProxySpec
         (b) => b
           ..returns = Types.future(Types.fromDartType(returnType))
           ..modifier = MethodModifier.async
-          ..annotations.add(Annotations.override)
           ..body = _buildRequestBody(method, returnType),
       );
 
   Code _buildNotificationBody(MethodElement method) => _buildMethodInvocation(
-        clientRef.property('sendNotification'),
+        _clientRef.property('sendNotification'),
         method,
       ).code;
 
   Code _buildRequestBody(MethodElement method, DartType returnType) {
     final invocation = _buildMethodInvocation(
-      clientRef.property('sendRequest'),
+      _clientRef.property('sendRequest'),
       method,
     );
 
@@ -93,28 +93,17 @@ final class ClientGenerator extends ProxySpec
   }
 
   Expression _buildMethodInvocation(Expression target, MethodElement method) {
-    final hasPositional = method.parameters.any((e) => e.isPositional);
-    final hasNamed = method.parameters.any((e) => e.isNamed);
-    if (hasPositional && hasNamed) {
-      throw InvalidGenerationSourceError(
-        'An RPC method can have only either named or positional parameters, '
-        'not both',
-        element: method,
-        // ignore: missing_whitespace_between_adjacent_strings
-        todo: 'Make all parameters positional or named',
-      );
-    }
-
+    final parameterMode = validateParameters(method);
     return target.call([
       literalString(method.name),
-      if (hasPositional)
+      if (parameterMode.hasPositional)
         literalList(
           [
             for (final p in method.parameters) toJson(p.type, refer(p.name)),
           ],
           Types.dynamic,
         ),
-      if (hasNamed)
+      if (parameterMode.hasNamed)
         literalMap(
           {
             for (final p in method.parameters)

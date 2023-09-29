@@ -5,7 +5,29 @@ import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
 import '../proxy_spec.dart';
+import 'annotations.dart';
 import 'types.dart';
+
+/// @nodoc
+@internal
+enum ParameterMode {
+  /// @nodoc
+  none(false, false),
+
+  /// @nodoc
+  positional(true, false),
+
+  /// @nodoc
+  named(false, true);
+
+  /// @nodoc
+  final bool hasPositional;
+
+  /// @nodoc
+  final bool hasNamed;
+
+  const ParameterMode(this.hasPositional, this.hasNamed);
+}
 
 /// @nodoc
 @internal
@@ -28,6 +50,28 @@ base mixin MethodMapperMixin on ProxySpec {
 
   /// @nodoc
   @protected
+  ParameterMode validateParameters(MethodElement method) {
+    final hasPositional = method.parameters.any((e) => e.isPositional);
+    final hasNamed = method.parameters.any((e) => e.isNamed);
+
+    if (hasPositional && hasNamed) {
+      throw InvalidGenerationSourceError(
+        'An RPC method can have only either named or positional parameters, '
+        'not both',
+        element: method,
+        todo: 'Make all parameters positional or named',
+      );
+    } else if (hasPositional) {
+      return ParameterMode.positional;
+    } else if (hasNamed) {
+      return ParameterMode.named;
+    } else {
+      return ParameterMode.none;
+    }
+  }
+
+  /// @nodoc
+  @protected
   Method mapMethod(
     MethodElement method,
     MethodBuilder Function(MethodBuilder b) build,
@@ -44,6 +88,7 @@ base mixin MethodMapperMixin on ProxySpec {
         b
           ..name = method.name
           ..returns = Types.fromDartType(method.returnType)
+          ..annotations.add(Annotations.override)
           ..requiredParameters.addAll(
             method.parameters
                 .where((e) => e.isRequiredPositional)

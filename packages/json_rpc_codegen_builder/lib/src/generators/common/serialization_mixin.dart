@@ -4,12 +4,13 @@ import 'package:meta/meta.dart';
 import 'package:source_helper/source_helper.dart';
 
 import '../proxy_spec.dart';
+import 'closure_builder_mixin.dart';
 import 'code_builder_extensions.dart';
 import 'types.dart';
 
 /// @nodoc
 @internal
-base mixin SerializationMixin on ProxySpec {
+base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
   static const _maybeMapName = r'_$maybeMap';
   static const _maybeMapRef = Reference(_maybeMapName);
 
@@ -71,28 +72,17 @@ base mixin SerializationMixin on ProxySpec {
   }) {
     final interfaceType = type as InterfaceType;
     final listType = interfaceType.typeArguments.single;
-    const elementParamRef = Reference(r'$e');
 
     final iterable = _maybeCast(
       value,
-      TypeReference(
-        (b) => b
-          ..replace(Types.list())
-          ..isNullable = type.isNullableType,
-      ),
+      Types.list().asNullable(type.isNullableType),
       noCast,
     ).autoProperty('map', type.isNullableType).call([
-      Method(
-        (b) => b
-          ..requiredParameters.add(
-            Parameter(
-              (b) => b
-                ..name = elementParamRef.symbol!
-                ..type = Types.dynamic,
-            ),
-          )
-          ..body = fromJson(listType, elementParamRef).code,
-      ).closure,
+      closure1(
+        r'$e',
+        type1: Types.dynamic,
+        (p1) => fromJson(listType, p1).code,
+      ),
     ]);
 
     return type.isDartCoreList
@@ -113,13 +103,7 @@ base mixin SerializationMixin on ProxySpec {
     return value
         .autoProperty('map', type.isNullableType)
         .call([
-          Method(
-            (b) => b
-              ..requiredParameters.add(
-                Parameter((b) => b..name = elementParamRef.symbol!),
-              )
-              ..body = convertExpression.code,
-          ).closure,
+          closure1(elementParamRef.symbol!, (p1) => convertExpression.code),
         ])
         .property('toList')
         .call(const [], const {'growable': literalFalse});
@@ -134,37 +118,21 @@ base mixin SerializationMixin on ProxySpec {
     final keyType = interfaceType.typeArguments[0];
     final valueType = interfaceType.typeArguments[1];
 
-    const keyParamRef = Reference(r'$k');
-    const valueParamRef = Reference(r'$v');
-
     return _maybeCast(
       value,
-      TypeReference(
-        (b) => b
-          ..replace(Types.map())
-          ..isNullable = type.isNullableType,
-      ),
+      Types.map().asNullable(type.isNullableType),
       noCast,
     ).autoProperty('map', type.isNullableType).call([
-      Method(
-        (b) => b
-          ..requiredParameters.addAll([
-            Parameter(
-              (b) => b
-                ..name = keyParamRef.symbol!
-                ..type = Types.dynamic,
-            ),
-            Parameter(
-              (b) => b
-                ..name = valueParamRef.symbol!
-                ..type = Types.dynamic,
-            ),
-          ])
-          ..body = Types.mapEntry.newInstance([
-            fromJson(keyType, keyParamRef),
-            fromJson(valueType, valueParamRef),
-          ]).code,
-      ).closure,
+      closure2(
+        r'$k',
+        r'$v',
+        type1: Types.dynamic,
+        type2: Types.dynamic,
+        (p1, p2) => Types.mapEntry.newInstance([
+          fromJson(keyType, p1),
+          fromJson(valueType, p2),
+        ]).code,
+      ),
     ]);
   }
 
@@ -184,17 +152,14 @@ base mixin SerializationMixin on ProxySpec {
     }
 
     return value.autoProperty('map', type.isNullableType).call([
-      Method(
-        (b) => b
-          ..requiredParameters.addAll([
-            Parameter((b) => b..name = keyParamRef.symbol!),
-            Parameter((b) => b..name = valueParamRef.symbol!),
-          ])
-          ..body = Types.mapEntry.newInstance([
-            convertKeyExpression,
-            convertValueExpression,
-          ]).code,
-      ).closure,
+      closure2(
+        keyParamRef.symbol!,
+        valueParamRef.symbol!,
+        (p1, p2) => Types.mapEntry.newInstance([
+          convertKeyExpression,
+          convertValueExpression,
+        ]).code,
+      ),
     ]);
   }
 
@@ -222,72 +187,48 @@ base mixin SerializationMixin on ProxySpec {
       return buildExpression(value);
     }
 
-    const callbackParamRef = Reference(r'$v');
     return _maybeMapRef.call([
       value,
-      // TODO extract code
-      Method(
-        (b) => b
-          ..requiredParameters.add(
-            Parameter(
-              (b) => b..name = callbackParamRef.symbol!,
-            ),
-          )
-          ..body = buildExpression(callbackParamRef).code,
-      ).closure,
+      closure1(r'$v', (p1) => buildExpression(p1).code),
     ]);
   }
 
-  static Method _buildMaybeMap() => Method(
-        (b) => b
-          ..name = _maybeMapName
-          ..returns = TypeReference(
+  static Method _buildMaybeMap() {
+    final tConverted = TypeReference((b) => b..symbol = 'TConverted');
+    final tJson = TypeReference((b) => b..symbol = 'TJson');
+    const valueParamRef = Reference(r'$value');
+    const convertParamRef = Reference(r'$convert');
+    return Method(
+      (b) => b
+        ..name = _maybeMapName
+        ..returns = tConverted.asNullable(true)
+        ..types.add(tConverted.boundTo(Types.object))
+        ..types.add(tJson.boundTo(Types.object))
+        ..requiredParameters.add(
+          Parameter(
             (b) => b
-              ..symbol = 'TConverted'
-              ..isNullable = true,
-          )
-          ..types.add(
-            TypeReference(
-              (b) => b
-                ..symbol = 'TConverted'
-                ..bound = refer('Object'),
-            ),
-          )
-          ..types.add(
-            TypeReference(
-              (b) => b
-                ..symbol = 'TJson'
-                ..bound = refer('Object'),
-            ),
-          )
-          ..requiredParameters.add(
-            Parameter(
-              (b) => b
-                ..name = r'$value'
-                ..type = TypeReference(
-                  (b) => b
-                    ..symbol = 'TJson'
-                    ..isNullable = true,
-                ),
-            ),
-          )
-          ..requiredParameters.add(
-            Parameter(
-              (b) => b
-                ..name = r'$convert'
-                ..type = FunctionType(
-                  (b) => b
-                    ..returnType = refer('TConverted')
-                    ..requiredParameters.add(refer('TJson')),
-                ),
-            ),
-          )
-          ..body = refer(r'$value')
-              .equalTo(literalNull)
-              .conditional(
-                literalNull,
-                refer(r'$convert').call([refer(r'$value')]),
-              )
-              .code,
-      );
+              ..name = valueParamRef.symbol!
+              ..type = tJson.asNullable(true),
+          ),
+        )
+        ..requiredParameters.add(
+          Parameter(
+            (b) => b
+              ..name = convertParamRef.symbol!
+              ..type = FunctionType(
+                (b) => b
+                  ..returnType = tConverted
+                  ..requiredParameters.add(tJson),
+              ),
+          ),
+        )
+        ..body = valueParamRef
+            .equalTo(literalNull)
+            .conditional(
+              literalNull,
+              convertParamRef.call([valueParamRef]),
+            )
+            .code,
+    );
+  }
 }
