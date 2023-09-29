@@ -6,7 +6,7 @@ import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
 import 'generators/client/client_generator.dart';
-import 'generators/common/serialization_builder.dart';
+import 'generators/common/serialization_mixin.dart';
 import 'generators/server/server_generator.dart';
 
 /// @nodoc
@@ -44,6 +44,6 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc> {
         (b) => b
           ..body.add(ClientGenerator(clazz))
           ..body.add(ServerGenerator(clazz))
-          ..body.addAll(SerializationBuilder.buildGlobalMethods()),
+          ..body.addAll(SerializationMixin.buildGlobalMethods()),
       );
 }

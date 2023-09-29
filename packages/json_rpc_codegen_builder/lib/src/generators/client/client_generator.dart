@@ -6,24 +6,25 @@ import 'package:source_gen/source_gen.dart';
 
 import '../common/annotations.dart';
 import '../common/method_mapper_mixin.dart';
-import '../common/serialization_builder.dart';
+import '../common/serialization_mixin.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
-import 'wrapper_builder.dart';
+import 'wrapper_builder_mixin.dart';
 
 /// @nodoc
 @internal
-final class ClientGenerator extends ProxySpec with MethodMapperMixin {
+final class ClientGenerator extends ProxySpec
+    with MethodMapperMixin, SerializationMixin, WrapperBuilderMixin {
   static const _clientName = 'jsonRpcClient';
-  static const _clientRef = Reference(_clientName);
-
-  // ignore: avoid_field_initializers_in_const_classes
-  final _wrapperBuilder = const WrapperBuilder(_clientRef);
 
   final ClassElement _class;
 
   /// @nodoc
   const ClientGenerator(this._class);
+
+  @override
+  @visibleForOverriding
+  Reference get clientRef => const Reference(_clientName);
 
   /// @nodoc
   @override
@@ -39,9 +40,9 @@ final class ClientGenerator extends ProxySpec with MethodMapperMixin {
                 ..type = Types.jsonRpc2Client,
             ),
           )
-          ..constructors.addAll(_wrapperBuilder.buildConstructors())
+          ..constructors.addAll(buildConstructors())
           ..methods.addAll(_class.methods.map(_buildMethod))
-          ..methods.addAll(_wrapperBuilder.buildWrapperMethods()),
+          ..methods.addAll(buildWrapperMethods()),
       );
 
   Method _buildMethod(MethodElement method) {
@@ -72,13 +73,13 @@ final class ClientGenerator extends ProxySpec with MethodMapperMixin {
       );
 
   Code _buildNotificationBody(MethodElement method) => _buildMethodInvocation(
-        _clientRef.property('sendNotification'),
+        clientRef.property('sendNotification'),
         method,
       ).code;
 
   Code _buildRequestBody(MethodElement method, DartType returnType) {
     final invocation = _buildMethodInvocation(
-      _clientRef.property('sendRequest'),
+      clientRef.property('sendRequest'),
       method,
     );
 
@@ -87,9 +88,7 @@ final class ClientGenerator extends ProxySpec with MethodMapperMixin {
       declareFinal(resultVarRef.symbol!, type: Types.dynamic)
           .assign(invocation.awaited)
           .statement,
-      SerializationBuilder.fromJson(returnType, resultVarRef)
-          .returned
-          .statement,
+      fromJson(returnType, resultVarRef).returned.statement,
     ]);
   }
 
@@ -111,8 +110,7 @@ final class ClientGenerator extends ProxySpec with MethodMapperMixin {
       if (hasPositional)
         literalList(
           [
-            for (final p in method.parameters)
-              SerializationBuilder.toJson(p.type, refer(p.name)),
+            for (final p in method.parameters) toJson(p.type, refer(p.name)),
           ],
           Types.dynamic,
         ),
@@ -120,8 +118,7 @@ final class ClientGenerator extends ProxySpec with MethodMapperMixin {
         literalMap(
           {
             for (final p in method.parameters)
-              literalString(p.name):
-                  SerializationBuilder.toJson(p.type, refer(p.name)),
+              literalString(p.name): toJson(p.type, refer(p.name)),
           },
           Types.string,
           Types.dynamic,

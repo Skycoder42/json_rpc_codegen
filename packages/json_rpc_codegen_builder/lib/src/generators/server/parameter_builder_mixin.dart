@@ -4,25 +4,30 @@ import 'package:meta/meta.dart';
 import 'package:source_helper/source_helper.dart';
 
 import '../common/code_builder_extensions.dart';
-import '../common/serialization_builder.dart';
+import '../common/serialization_mixin.dart';
+import '../proxy_spec.dart';
 
 /// @nodoc
 @internal
-class ParameterBuilder {
-  final Reference _paramsParamRef;
-
+base mixin ParameterBuilderMixin on ProxySpec, SerializationMixin {
   /// @nodoc
-  const ParameterBuilder(this._paramsParamRef);
-
-  /// @nodoc
-  Code buildPositional(int position, ParameterElement param) => _buildParameter(
-        _paramsParamRef.index(literalNum(position)),
+  Code buildPositional(
+    Reference paramsRef,
+    int position,
+    ParameterElement param,
+  ) =>
+      _buildParameter(
+        paramsRef.index(literalNum(position)),
         param,
       );
 
   /// @nodoc
-  Code buildNamed(ParameterElement param) => _buildParameter(
-        _paramsParamRef.index(literalString(param.name)),
+  Code buildNamed(
+    Reference paramsRef,
+    ParameterElement param,
+  ) =>
+      _buildParameter(
+        paramsRef.index(literalString(param.name)),
         param,
       );
 
@@ -46,25 +51,25 @@ class ParameterBuilder {
     } else if (paramType.isDartCoreString) {
       return _access(paramRef, param, 'asString');
     } else if (paramType.isEnum) {
-      return SerializationBuilder.fromJson(
+      return fromJson(
         paramType,
         _access(paramRef, param, 'asString'),
         noCast: true,
       );
     } else if (paramType.isDartCoreList || paramType.isDartCoreIterable) {
-      return SerializationBuilder.fromJson(
+      return fromJson(
         paramType,
         _access(paramRef, param, 'asList'),
         noCast: true,
       );
     } else if (paramType.isDartCoreMap) {
-      return SerializationBuilder.fromJson(
+      return fromJson(
         paramType,
         _access(paramRef, param, 'asMap'),
         noCast: true,
       );
     } else {
-      return SerializationBuilder.fromJson(
+      return fromJson(
         paramType,
         _access(paramRef, param, 'value'),
         noCast: true,

@@ -3,16 +3,15 @@ import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 import 'package:source_helper/source_helper.dart';
 
+import '../proxy_spec.dart';
 import 'code_builder_extensions.dart';
 import 'types.dart';
 
 /// @nodoc
 @internal
-abstract base class SerializationBuilder {
+base mixin SerializationMixin on ProxySpec {
   static const _maybeMapName = r'_$maybeMap';
   static const _maybeMapRef = Reference(_maybeMapName);
-
-  SerializationBuilder._();
 
   /// @nodoc
   static Iterable<Spec> buildGlobalMethods() sync* {
@@ -20,7 +19,8 @@ abstract base class SerializationBuilder {
   }
 
   /// @nodoc
-  static Expression fromJson(
+  @protected
+  Expression fromJson(
     DartType type,
     Expression value, {
     bool noCast = false,
@@ -51,7 +51,8 @@ abstract base class SerializationBuilder {
   }
 
   /// @nodoc
-  static Expression toJson(DartType type, Expression value) {
+  @protected
+  Expression toJson(DartType type, Expression value) {
     if (type.isDartCoreIterable || type.isDartCoreList) {
       return _toList(type, value);
     } else if (type.isDartCoreMap) {
@@ -63,7 +64,7 @@ abstract base class SerializationBuilder {
     }
   }
 
-  static Expression _fromList(
+  Expression _fromList(
     DartType type,
     Expression value, {
     bool noCast = false,
@@ -99,7 +100,7 @@ abstract base class SerializationBuilder {
         : iterable;
   }
 
-  static Expression _toList(DartType type, Expression value) {
+  Expression _toList(DartType type, Expression value) {
     final interfaceType = type as InterfaceType;
     final listType = interfaceType.typeArguments.single;
 
@@ -124,7 +125,7 @@ abstract base class SerializationBuilder {
         .call(const [], const {'growable': literalFalse});
   }
 
-  static Expression _fromMap(
+  Expression _fromMap(
     DartType type,
     Expression value, {
     bool noCast = false,
@@ -167,7 +168,7 @@ abstract base class SerializationBuilder {
     ]);
   }
 
-  static Expression _toMap(DartType type, Expression value) {
+  Expression _toMap(DartType type, Expression value) {
     final interfaceType = type as InterfaceType;
     final keyType = interfaceType.typeArguments[0];
     final valueType = interfaceType.typeArguments[1];
@@ -197,7 +198,7 @@ abstract base class SerializationBuilder {
     ]);
   }
 
-  static bool _isPrimitiveType(DartType type) =>
+  bool _isPrimitiveType(DartType type) =>
       type.isDartCoreNull ||
       type.isDartCoreBool ||
       type.isDartCoreNum ||
@@ -205,14 +206,14 @@ abstract base class SerializationBuilder {
       type.isDartCoreDouble ||
       type.isDartCoreString;
 
-  static Expression _maybeCast(
+  Expression _maybeCast(
     Expression ref,
     TypeReference type,
     bool noCast,
   ) =>
       noCast ? ref : ref.asA(type);
 
-  static Expression _ifNotNull(
+  Expression _ifNotNull(
     DartType type,
     Expression value,
     Expression Function(Expression ref) buildExpression,

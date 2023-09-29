@@ -2,14 +2,14 @@ import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 
 import '../common/types.dart';
+import '../proxy_spec.dart';
 
 /// @nodoc
 @internal
-class WrapperBuilder {
-  final Reference _clientRef;
-
+base mixin WrapperBuilderMixin on ProxySpec {
   /// @nodoc
-  const WrapperBuilder(this._clientRef);
+  @visibleForOverriding
+  Reference get clientRef;
 
   ///@nodoc
   Iterable<Constructor> buildConstructors() sync* {
@@ -39,7 +39,7 @@ class WrapperBuilder {
           ),
         )
         ..initializers.add(
-          _clientRef
+          clientRef
               .assign(Types.jsonRpc2Client.newInstance([channelParamRef]))
               .code,
         ),
@@ -59,7 +59,7 @@ class WrapperBuilder {
           ),
         )
         ..initializers.add(
-          _clientRef
+          clientRef
               .assign(
                 Types.jsonRpc2Client.newInstanceNamed(
                   'withoutJson',
@@ -84,7 +84,7 @@ class WrapperBuilder {
           ),
         )
         ..initializers.add(
-          _clientRef.assign(clientParamRef).code,
+          clientRef.assign(clientParamRef).code,
         ),
     );
   }
@@ -94,7 +94,7 @@ class WrapperBuilder {
           ..name = 'done'
           ..type = MethodType.getter
           ..returns = Types.future(Types.$void)
-          ..body = _clientRef.property('done').code,
+          ..body = clientRef.property('done').code,
       );
 
   Method _isClosed() => Method(
@@ -102,21 +102,21 @@ class WrapperBuilder {
           ..name = 'isClosed'
           ..type = MethodType.getter
           ..returns = Types.$bool
-          ..body = _clientRef.property('isClosed').code,
+          ..body = clientRef.property('isClosed').code,
       );
 
   Method _listen() => Method(
         (b) => b
           ..name = 'listen'
           ..returns = Types.future(Types.$void)
-          ..body = _clientRef.property('listen').call(const []).code,
+          ..body = clientRef.property('listen').call(const []).code,
       );
 
   Method _close() => Method(
         (b) => b
           ..name = 'close'
           ..returns = Types.future(Types.$void)
-          ..body = _clientRef.property('close').call(const []).code,
+          ..body = clientRef.property('close').call(const []).code,
       );
 
   Method _withBatch() {
@@ -132,7 +132,7 @@ class WrapperBuilder {
               ..type = FunctionType(),
           ),
         )
-        ..body = _clientRef.property('withBatch').call([
+        ..body = clientRef.property('withBatch').call([
           callbackRef,
         ]).code,
     );

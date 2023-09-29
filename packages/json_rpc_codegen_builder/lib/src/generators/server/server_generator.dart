@@ -6,21 +6,19 @@ import 'package:source_gen/source_gen.dart';
 
 import '../common/annotations.dart';
 import '../common/method_mapper_mixin.dart';
-import '../common/serialization_builder.dart';
+import '../common/serialization_mixin.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
-import 'parameter_builder.dart';
+import 'parameter_builder_mixin.dart';
 
 /// @nodoc
 @internal
-final class ServerGenerator extends ProxySpec with MethodMapperMixin {
+final class ServerGenerator extends ProxySpec
+    with MethodMapperMixin, SerializationMixin, ParameterBuilderMixin {
   static const _serverName = 'jsonRpcServer';
   static const _serverRef = Reference(_serverName);
   static const _paramsParamName = 'p';
   static const _paramsParamRef = Reference(_paramsParamName);
-
-  // ignore: avoid_field_initializers_in_const_classes
-  final _parameterBuilder = const ParameterBuilder(_paramsParamRef);
 
   final ClassElement _class;
 
@@ -92,9 +90,9 @@ final class ServerGenerator extends ProxySpec with MethodMapperMixin {
           ..body = Block.of([
             if (hasPositional)
               ...method.parameters
-                  .mapIndexed(_parameterBuilder.buildPositional),
+                  .mapIndexed((i, e) => buildPositional(_paramsParamRef, i, e)),
             if (hasNamed)
-              ...method.parameters.map(_parameterBuilder.buildNamed),
+              ...method.parameters.map((e) => buildNamed(_paramsParamRef, e)),
             _buildInvocation(method),
           ]),
       ).closure,
@@ -113,7 +111,7 @@ final class ServerGenerator extends ProxySpec with MethodMapperMixin {
       },
     );
 
-    return SerializationBuilder.toJson(
+    return toJson(
       getReturnType(method),
       invocation.awaited.parenthesized,
     ).returned.statement;
