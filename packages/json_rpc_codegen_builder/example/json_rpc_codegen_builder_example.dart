@@ -36,6 +36,10 @@ abstract interface class SampleApi {
   FutureOr<List<List<User>?>> userMatrix([Permission? permission]);
 
   FutureOr<Map<String, List<Permission>>> permissions();
+
+  FutureOr<void> setHomepage(Uri url, [DateTime? timestamp]);
+
+  FutureOr<Uri> findForDates(Iterable<DateTime> times);
 }
 
 void main() {}

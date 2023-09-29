@@ -1,3 +1,4 @@
+import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart' hide FunctionType;
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
@@ -39,6 +40,19 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
             .property('byName')
             .call([_maybeCast(ref, Types.string, noCast)]),
       );
+    } else if (type
+        case InterfaceType(
+          element: ClassElement(
+            name: 'Uri' || 'DateTime',
+          )
+        )) {
+      return _ifNotNull(
+        type,
+        value,
+        (ref) => Types.fromDartType(type, isNull: false)
+            .property('parse')
+            .call([_maybeCast(value, Types.string, noCast)]),
+      );
     } else if (_isPrimitiveType(type)) {
       return _maybeCast(value, Types.fromDartType(type), noCast);
     } else {
@@ -60,6 +74,17 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
       return _toMap(type, value);
     } else if (type.isEnum) {
       return value.autoProperty('name', type.isNullableType);
+    } else if (type case InterfaceType(element: ClassElement(name: 'Uri'))) {
+      return value.autoProperty('toString', type.isNullableType).call(const []);
+    } else if (type
+        case InterfaceType(
+          element: ClassElement(
+            name: 'DateTime',
+          )
+        )) {
+      return value
+          .autoProperty('toIso8601String', type.isNullableType)
+          .call(const []);
     } else {
       return value;
     }
@@ -97,7 +122,11 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     const elementParamRef = Reference(r'$e');
     final convertExpression = toJson(listType, elementParamRef);
     if (identical(convertExpression, elementParamRef)) {
-      return value;
+      return type.isDartCoreIterable
+          ? value
+              .property('toList')
+              .call(const [], const {'growable': literalFalse})
+          : value;
     }
 
     return value

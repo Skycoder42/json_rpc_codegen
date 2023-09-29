@@ -1,4 +1,5 @@
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 import 'package:source_helper/source_helper.dart';
@@ -12,6 +13,7 @@ import '../proxy_spec.dart';
 @internal
 base mixin ParameterBuilderMixin
     on ProxySpec, SerializationMixin, ClosureBuilderMixin {
+  /// @nodoc
   Reference paramRefFor(ParameterElement param) => refer('\$\$${param.name}');
 
   /// @nodoc
@@ -72,6 +74,20 @@ base mixin ParameterBuilderMixin
         _access(paramRef, param, 'asMap'),
         noCast: true,
       );
+    } else if (paramType
+        case InterfaceType(
+          element: ClassElement(
+            name: 'Uri',
+          )
+        )) {
+      return _access(paramRef, param, 'asUri');
+    } else if (paramType
+        case InterfaceType(
+          element: ClassElement(
+            name: 'DateTime',
+          )
+        )) {
+      return _access(paramRef, param, 'asDateTime');
     } else {
       return fromJson(
         paramType,

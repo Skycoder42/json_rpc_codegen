@@ -14,14 +14,12 @@ base mixin WrapperBuilderMixin on ProxySpec, BaseWrapperBuilderMixin {
   static const _strictProtocolChecksName = 'strictProtocolChecks';
   static const _strictProtocolChecksRef = Reference(_strictProtocolChecksName);
 
-  ///@nodoc
   @override
   Iterable<Constructor> buildConstructors(Reference serverRef) sync* {
     yield* super.buildConstructors(serverRef);
     yield _fromServer(serverRef);
   }
 
-  /// @nodoc
   @override
   Iterable<Method> buildWrapperMethods(Reference serverRef) sync* {
     yield _onUnhandledError(serverRef);
@@ -29,12 +27,10 @@ base mixin WrapperBuilderMixin on ProxySpec, BaseWrapperBuilderMixin {
     yield* super.buildWrapperMethods(serverRef);
   }
 
-  ///@nodoc
   @override
   @visibleForOverriding
   TypeReference get baseType => Types.jsonRpc2Server;
 
-  ///@nodoc
   @override
   @visibleForOverriding
   Iterable<Parameter> get extraOptionalParams => [
@@ -53,7 +49,6 @@ base mixin WrapperBuilderMixin on ProxySpec, BaseWrapperBuilderMixin {
         ),
       ];
 
-  ///@nodoc
   @override
   @visibleForOverriding
   Map<String, Expression> get extraArgs => const {
@@ -73,22 +68,6 @@ base mixin WrapperBuilderMixin on ProxySpec, BaseWrapperBuilderMixin {
           ),
       );
 
-  Method _done(Reference serverRef) => Method(
-        (b) => b
-          ..name = 'done'
-          ..type = MethodType.getter
-          ..returns = Types.future(Types.$void)
-          ..body = serverRef.property('done').code,
-      );
-
-  Method _isClosed(Reference serverRef) => Method(
-        (b) => b
-          ..name = 'isClosed'
-          ..type = MethodType.getter
-          ..returns = Types.$bool
-          ..body = serverRef.property('isClosed').code,
-      );
-
   Method _onUnhandledError(Reference serverRef) => Method(
         (b) => b
           ..name = _onUnhandledErrorName
@@ -103,19 +82,5 @@ base mixin WrapperBuilderMixin on ProxySpec, BaseWrapperBuilderMixin {
           ..type = MethodType.getter
           ..returns = Types.$bool
           ..body = serverRef.property(_strictProtocolChecksName).code,
-      );
-
-  Method _listen(Reference serverRef) => Method(
-        (b) => b
-          ..name = 'listen'
-          ..returns = Types.future(Types.$void)
-          ..body = serverRef.property('listen').call(const []).code,
-      );
-
-  Method _close(Reference serverRef) => Method(
-        (b) => b
-          ..name = 'close'
-          ..returns = Types.future(Types.$void)
-          ..body = serverRef.property('close').call(const []).code,
       );
 }

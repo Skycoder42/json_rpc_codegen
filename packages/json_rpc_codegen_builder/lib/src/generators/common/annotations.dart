@@ -10,5 +10,9 @@ abstract base class Annotations {
   static const Reference protected = Reference('protected');
 
   /// @nodoc
+  static const Reference visibleForOverriding =
+      Reference('visibleForOverriding');
+
+  /// @nodoc
   static const Reference override = Reference('override');
 }

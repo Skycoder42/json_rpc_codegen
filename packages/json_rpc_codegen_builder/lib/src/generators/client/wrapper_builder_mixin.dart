@@ -8,21 +8,18 @@ import '../proxy_spec.dart';
 /// @nodoc
 @internal
 base mixin WrapperBuilderMixin on ProxySpec, BaseWrapperBuilderMixin {
-  ///@nodoc
   @override
   Iterable<Constructor> buildConstructors(Reference clientRef) sync* {
     yield* super.buildConstructors(clientRef);
     yield _fromClient(clientRef);
   }
 
-  /// @nodoc
   @override
   Iterable<Method> buildWrapperMethods(Reference clientRef) sync* {
     yield* super.buildWrapperMethods(clientRef);
     yield _withBatch(clientRef);
   }
 
-  ///@nodoc
   @override
   @visibleForOverriding
   TypeReference get baseType => Types.jsonRpc2Client;

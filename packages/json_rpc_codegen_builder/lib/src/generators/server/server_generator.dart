@@ -27,6 +27,8 @@ final class ServerGenerator extends ProxySpec
   static const _serverRef = Reference(_serverName);
   static const _registerMethodName = '_registerMethods';
   static const _registerMethoRef = Reference('_registerMethods');
+  static const _onUnknownMethodName = 'onUnknownMethod';
+  static const _onUnknownMethodRef = Reference('onUnknownMethod');
 
   final ClassElement _class;
 
@@ -65,6 +67,7 @@ final class ServerGenerator extends ProxySpec
               ),
             ),
           )
+          ..methods.add(_buildFallback())
           ..methods.add(_buildRegisterMethod()),
       );
 
@@ -72,9 +75,12 @@ final class ServerGenerator extends ProxySpec
         (b) => b
           ..name = _registerMethodName
           ..returns = Types.$void
-          ..body = Block.of(
-            _class.methods.map(_buildRegisterFor),
-          ),
+          ..body = Block.of([
+            ..._class.methods.map(_buildRegisterFor),
+            _serverRef
+                .property('registerFallback')
+                .call(const [_onUnknownMethodRef]).statement,
+          ]),
       );
 
   Code _buildRegisterFor(MethodElement method) {
@@ -89,7 +95,7 @@ final class ServerGenerator extends ProxySpec
         )
       else
         closure1(
-          r'$p',
+          r'$params',
           type1: Types.jsonRpc2Parameters,
           modifier: MethodModifier.async,
           (p1) => Block.of([
@@ -121,10 +127,30 @@ final class ServerGenerator extends ProxySpec
       invocation.awaited.parenthesized,
     );
   }
+
+  Method _buildFallback() {
+    const paramsParamRef = Reference('params');
+    return Method(
+      (b) => b
+        ..name = _onUnknownMethodName
+        ..returns = Types.futureOr(Types.dynamic)
+        ..annotations.add(Annotations.visibleForOverriding)
+        ..requiredParameters.add(
+          Parameter(
+            (b) => b
+              ..name = paramsParamRef.symbol!
+              ..type = Types.jsonRpc2Parameters,
+          ),
+        )
+        ..body = Types.jsonRpc2RpcException
+            .newInstanceNamed(
+              'methodNotFound',
+              [paramsParamRef.property('method')],
+            )
+            .thrown
+            .code,
+    );
+  }
 }
 
-// TODO add fallback method
-// TODO onUnhandledError?
-// TODO map Uri/DateTime
 // TODO explicit toJson?
-// TODO extract exceptions

@@ -123,6 +123,11 @@ abstract base class Types {
   );
 
   /// @nodoc
+  static final jsonRpc2RpcException = TypeReference(
+    (b) => b..symbol = 'RpcException',
+  );
+
+  /// @nodoc
   static final jsonRpc2ErrorCallback = TypeReference(
     (b) => b..symbol = 'ErrorCallback',
   );
