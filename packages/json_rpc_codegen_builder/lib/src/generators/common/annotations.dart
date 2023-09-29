@@ -7,5 +7,8 @@ abstract base class Annotations {
   Annotations._();
 
   /// @nodoc
+  static const Reference protected = Reference('protected');
+
+  /// @nodoc
   static const Reference override = Reference('override');
 }

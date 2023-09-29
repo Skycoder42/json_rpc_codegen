@@ -4,13 +4,16 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
+import '../common/annotations.dart';
+import '../common/method_mapper_mixin.dart';
+import '../common/serialization_builder.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
 import 'parameter_builder.dart';
 
 /// @nodoc
 @internal
-final class ServerGenerator extends ProxySpec {
+final class ServerGenerator extends ProxySpec with MethodMapperMixin {
   static const _serverName = 'jsonRpcServer';
   static const _serverRef = Reference(_serverName);
   static const _paramsParamName = 'p';
@@ -29,13 +32,23 @@ final class ServerGenerator extends ProxySpec {
         (b) => b
           ..name = '${_class.name}Server'
           ..abstract = true
-          ..implements.add(refer(_class.name))
+          ..implements.add(TypeReference((b) => b..symbol = _class.name))
           ..fields.add(
             Field(
               (b) => b
                 ..name = _serverName
                 ..modifier = FieldModifier.final$
                 ..type = Types.jsonRpc2Server,
+            ),
+          )
+          ..methods.addAll(
+            _class.methods.map(
+              (method) => mapMethod(
+                method,
+                (b) => b
+                  ..annotations.add(Annotations.protected)
+                  ..annotations.add(Annotations.override),
+              ),
             ),
           )
           ..methods.add(_buildRegisterMethod()),
@@ -75,19 +88,38 @@ final class ServerGenerator extends ProxySpec {
                   ..type = Types.jsonRpc2Parameters,
               ),
           ])
+          ..modifier = MethodModifier.async
           ..body = Block.of([
             if (hasPositional)
               ...method.parameters
                   .mapIndexed(_parameterBuilder.buildPositional),
             if (hasNamed)
               ...method.parameters.map(_parameterBuilder.buildNamed),
+            _buildInvocation(method),
           ]),
       ).closure,
     ]).statement;
   }
+
+  Code _buildInvocation(MethodElement method) {
+    final invocation = refer(method.name).call(
+      [
+        for (final p in method.parameters.where((p) => p.isPositional))
+          refer('\$${p.name}'),
+      ],
+      {
+        for (final p in method.parameters.where((p) => p.isNamed))
+          p.name: refer('\$${p.name}'),
+      },
+    );
+
+    return SerializationBuilder.toJson(
+      getReturnType(method),
+      invocation.awaited.parenthesized,
+    ).returned.statement;
+  }
 }
 
-// TODO handle null values
-// TODO disallow generics
 // TODO map Uri/DateTime
 // TODO explicit toJson?
+// TODO extract exceptions

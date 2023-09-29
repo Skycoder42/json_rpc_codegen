@@ -16,58 +16,7 @@ abstract base class SerializationBuilder {
 
   /// @nodoc
   static Iterable<Spec> buildGlobalMethods() sync* {
-    yield Method(
-      (b) => b
-        ..name = _maybeMapName
-        ..returns = TypeReference(
-          (b) => b
-            ..symbol = 'TConverted'
-            ..isNullable = true,
-        )
-        ..types.add(
-          TypeReference(
-            (b) => b
-              ..symbol = 'TConverted'
-              ..bound = refer('Object'),
-          ),
-        )
-        ..types.add(
-          TypeReference(
-            (b) => b
-              ..symbol = 'TJson'
-              ..bound = refer('Object'),
-          ),
-        )
-        ..requiredParameters.add(
-          Parameter(
-            (b) => b
-              ..name = r'$value'
-              ..type = TypeReference(
-                (b) => b
-                  ..symbol = 'TJson'
-                  ..isNullable = true,
-              ),
-          ),
-        )
-        ..requiredParameters.add(
-          Parameter(
-            (b) => b
-              ..name = r'$convert'
-              ..type = FunctionType(
-                (b) => b
-                  ..returnType = refer('TConverted')
-                  ..requiredParameters.add(refer('TJson')),
-              ),
-          ),
-        )
-        ..body = refer(r'$value')
-            .equalTo(literalNull)
-            .conditional(
-              literalNull,
-              refer(r'$convert').call([refer(r'$value')]),
-            )
-            .code,
-    );
+    yield _buildMaybeMap();
   }
 
   /// @nodoc
@@ -81,7 +30,6 @@ abstract base class SerializationBuilder {
     } else if (type.isDartCoreMap) {
       return _fromMap(type, value, noCast: noCast);
     } else if (type.isEnum) {
-      // TODO add everywhere
       return _ifNotNull(
         type,
         value,
@@ -93,9 +41,12 @@ abstract base class SerializationBuilder {
     } else if (_isPrimitiveType(type)) {
       return _maybeCast(value, Types.fromDartType(type), noCast);
     } else {
-      return Types.fromDartType(type).newInstanceNamed('fromJson', [
-        value, // TODO.asA(Types.map(Types.string, Types.dynamic)),
-      ]);
+      return _ifNotNull(
+        type,
+        value,
+        (ref) => Types.fromDartType(type, isNull: false)
+            .newInstanceNamed('fromJson', [ref]),
+      );
     }
   }
 
@@ -123,9 +74,13 @@ abstract base class SerializationBuilder {
 
     final iterable = _maybeCast(
       value,
-      Types.list(),
+      TypeReference(
+        (b) => b
+          ..replace(Types.list())
+          ..isNullable = type.isNullableType,
+      ),
       noCast,
-    ).property('map').call([
+    ).autoProperty('map', type.isNullableType).call([
       Method(
         (b) => b
           ..requiredParameters.add(
@@ -181,7 +136,15 @@ abstract base class SerializationBuilder {
     const keyParamRef = Reference(r'$k');
     const valueParamRef = Reference(r'$v');
 
-    return _maybeCast(value, Types.map(), noCast).property('map').call([
+    return _maybeCast(
+      value,
+      TypeReference(
+        (b) => b
+          ..replace(Types.map())
+          ..isNullable = type.isNullableType,
+      ),
+      noCast,
+    ).autoProperty('map', type.isNullableType).call([
       Method(
         (b) => b
           ..requiredParameters.addAll([
@@ -273,4 +236,57 @@ abstract base class SerializationBuilder {
       ).closure,
     ]);
   }
+
+  static Method _buildMaybeMap() => Method(
+        (b) => b
+          ..name = _maybeMapName
+          ..returns = TypeReference(
+            (b) => b
+              ..symbol = 'TConverted'
+              ..isNullable = true,
+          )
+          ..types.add(
+            TypeReference(
+              (b) => b
+                ..symbol = 'TConverted'
+                ..bound = refer('Object'),
+            ),
+          )
+          ..types.add(
+            TypeReference(
+              (b) => b
+                ..symbol = 'TJson'
+                ..bound = refer('Object'),
+            ),
+          )
+          ..requiredParameters.add(
+            Parameter(
+              (b) => b
+                ..name = r'$value'
+                ..type = TypeReference(
+                  (b) => b
+                    ..symbol = 'TJson'
+                    ..isNullable = true,
+                ),
+            ),
+          )
+          ..requiredParameters.add(
+            Parameter(
+              (b) => b
+                ..name = r'$convert'
+                ..type = FunctionType(
+                  (b) => b
+                    ..returnType = refer('TConverted')
+                    ..requiredParameters.add(refer('TJson')),
+                ),
+            ),
+          )
+          ..body = refer(r'$value')
+              .equalTo(literalNull)
+              .conditional(
+                literalNull,
+                refer(r'$convert').call([refer(r'$value')]),
+              )
+              .code,
+      );
 }

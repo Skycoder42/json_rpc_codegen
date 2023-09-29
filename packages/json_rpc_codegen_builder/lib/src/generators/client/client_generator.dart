@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
 import '../common/annotations.dart';
+import '../common/method_mapper_mixin.dart';
 import '../common/serialization_builder.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
@@ -12,7 +13,7 @@ import 'wrapper_builder.dart';
 
 /// @nodoc
 @internal
-final class ClientGenerator extends ProxySpec {
+final class ClientGenerator extends ProxySpec with MethodMapperMixin {
   static const _clientName = 'jsonRpcClient';
   static const _clientRef = Reference(_clientName);
 
@@ -29,7 +30,7 @@ final class ClientGenerator extends ProxySpec {
   Class build() => Class(
         (b) => b
           ..name = '${_class.name}Client'
-          ..implements.add(refer(_class.name))
+          ..implements.add(TypeReference((b) => b..symbol = _class.name))
           ..fields.add(
             Field(
               (b) => b
@@ -44,63 +45,30 @@ final class ClientGenerator extends ProxySpec {
       );
 
   Method _buildMethod(MethodElement method) {
-    if (method.returnType is VoidType) {
+    final returnType = getReturnType(method);
+    if (returnType is VoidType) {
       return _buildNotificationMethod(method);
-    } else if (method.returnType.isDartAsyncFuture ||
-        method.returnType.isDartAsyncFutureOr) {
-      return _buildRequestMethod(method);
     } else {
-      throw InvalidGenerationSourceError(
-        'The return type of RPC methods must be either '
-        'void or Future<T> or FutureOr<T>',
-        element: method,
-        // ignore: missing_whitespace_between_adjacent_strings
-        todo: 'Change the return type to void or to Future'
-            '<${method.returnType.getDisplayString(withNullability: true)}>',
-      );
+      return _buildRequestMethod(method, returnType);
     }
   }
 
-  Method _buildNotificationMethod(MethodElement method) => Method(
-        (b) => _buildMethodBase(method, b)
+  Method _buildNotificationMethod(MethodElement method) => mapMethod(
+        method,
+        (b) => b
           ..returns = Types.$void
+          ..annotations.add(Annotations.override)
           ..body = _buildNotificationBody(method),
       );
 
-  Method _buildRequestMethod(MethodElement method) => Method(
-        (b) => _buildMethodBase(method, b)
-          ..returns = Types.fromDartType(method.returnType)
-          ..modifier = MethodModifier.async
-          ..body = _buildRequestBody(method),
-      );
-
-  MethodBuilder _buildMethodBase(MethodElement method, MethodBuilder builder) =>
-      builder
-        ..name = method.name
-        ..annotations.add(Annotations.override)
-        ..types.addAll(method.typeParameters.map(Types.fromTypeParameter))
-        ..requiredParameters.addAll(
-          method.parameters
-              .where((e) => e.isRequiredPositional)
-              .map((e) => _buildParameter(e, true)),
-        )
-        ..optionalParameters.addAll(
-          method.parameters
-              .where((e) => !e.isRequiredPositional)
-              .map((e) => _buildParameter(e, false)),
-        );
-
-  Parameter _buildParameter(ParameterElement parameter, bool positional) =>
-      Parameter(
+  Method _buildRequestMethod(MethodElement method, DartType returnType) =>
+      mapMethod(
+        method,
         (b) => b
-          ..name = parameter.name
-          ..type = Types.fromDartType(parameter.type)
-          ..named = parameter.isNamed
-          ..required = parameter.isRequiredNamed
-          ..covariant = parameter.isCovariant
-          ..defaultTo = parameter.hasDefaultValue
-              ? Code(parameter.defaultValueCode!)
-              : null,
+          ..returns = Types.future(Types.fromDartType(returnType))
+          ..modifier = MethodModifier.async
+          ..annotations.add(Annotations.override)
+          ..body = _buildRequestBody(method, returnType),
       );
 
   Code _buildNotificationBody(MethodElement method) => _buildMethodInvocation(
@@ -108,21 +76,18 @@ final class ClientGenerator extends ProxySpec {
         method,
       ).code;
 
-  Code _buildRequestBody(MethodElement method) {
-    final returnType = method.returnType as InterfaceType;
-    final futureType = returnType.typeArguments.single;
-
+  Code _buildRequestBody(MethodElement method, DartType returnType) {
     final invocation = _buildMethodInvocation(
       _clientRef.property('sendRequest'),
       method,
     );
 
-    const resultVarRef = Reference('result');
+    const resultVarRef = Reference(r'$result');
     return Block.of([
       declareFinal(resultVarRef.symbol!, type: Types.dynamic)
           .assign(invocation.awaited)
           .statement,
-      SerializationBuilder.fromJson(futureType, resultVarRef)
+      SerializationBuilder.fromJson(returnType, resultVarRef)
           .returned
           .statement,
     ]);

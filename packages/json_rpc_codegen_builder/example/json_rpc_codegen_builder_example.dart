@@ -1,7 +1,5 @@
 // ignore_for_file: unreachable_from_main
 
-import 'dart:convert';
-
 import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 
 part 'json_rpc_codegen_builder_example.g.dart';
@@ -24,20 +22,20 @@ class User {
 
 @jsonRpc
 abstract interface class SampleApi {
-  void hello(String name, [int times = 1]);
+  FutureOr<void> hello(String name, [int times = 1]);
 
-  void notifyGeneric<T1, T2 extends num>({
-    required T1 data,
-    List<T2>? measures,
+  FutureOr<void> notify({
+    required int id,
+    List<double>? measures,
   });
 
-  Future<String> echo(String message);
+  FutureOr<String> echo(String message);
 
-  Future<User> createUser(Map<String, List<Permission>?> permissions);
+  FutureOr<User?> createUser(Map<String, List<Permission>?> permissions);
 
-  Future<List<List<User>>> userMatrix([Permission? permission]);
+  FutureOr<List<List<User>?>> userMatrix([Permission? permission]);
 
-  Future<Map<String, List<Permission>>> permissions();
+  FutureOr<Map<String, List<Permission>>> permissions();
 }
 
 void main() {}

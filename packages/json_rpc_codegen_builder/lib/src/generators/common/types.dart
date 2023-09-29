@@ -14,18 +14,20 @@ abstract base class Types {
     DartType dartType, {
     bool? isNull,
   }) =>
-      TypeReference(
-        (b) {
-          b
-            ..symbol = dartType.element!.name
-            ..isNullable =
-                isNull ?? dartType.nullabilitySuffix != NullabilitySuffix.none;
+      dartType is VoidType
+          ? $void
+          : TypeReference(
+              (b) {
+                b
+                  ..symbol = dartType.element!.name
+                  ..isNullable = isNull ??
+                      dartType.nullabilitySuffix != NullabilitySuffix.none;
 
-          if (dartType is InterfaceType) {
-            b.types.addAll(dartType.typeArguments.map(fromDartType));
-          }
-        },
-      );
+                if (dartType is InterfaceType) {
+                  b.types.addAll(dartType.typeArguments.map(fromDartType));
+                }
+              },
+            );
 
   /// @nodoc
   static TypeReference fromTypeParameter(TypeParameterElement typeParameter) =>
@@ -61,6 +63,15 @@ abstract base class Types {
   static TypeReference future([TypeReference? type]) => TypeReference(
         (b) => b
           ..symbol = 'Future'
+          ..types.addAll([
+            if (type != null) type,
+          ]),
+      );
+
+  /// @nodoc
+  static TypeReference futureOr([TypeReference? type]) => TypeReference(
+        (b) => b
+          ..symbol = 'FutureOr'
           ..types.addAll([
             if (type != null) type,
           ]),
