@@ -42,6 +42,7 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc> {
 
   Library _buildLibrary(ClassElement clazz) => Library(
         (b) => b
+          ..ignoreForFile.add('type=lint')
           ..body.add(ClientGenerator(clazz))
           ..body.add(ServerGenerator(clazz))
           ..body.addAll(SerializationMixin.buildGlobalMethods()),

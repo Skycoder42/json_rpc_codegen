@@ -2,6 +2,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart' hide FunctionType;
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
+import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
 
 import '../proxy_spec.dart';
@@ -56,11 +57,24 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     } else if (_isPrimitiveType(type)) {
       return _maybeCast(value, Types.fromDartType(type), noCast);
     } else {
+      final jsonType = _fromJsonType(type);
+      if (jsonType == null) {
+        throw InvalidGenerationSourceError(
+          'Unable to build deserialization code for $type. Is not a standard '
+          'dart type and no valid .fromJson constructor could be found.',
+          element: type.element,
+          todo:
+              'Add a fromJson constructor that a single, positional parameter.',
+        );
+      }
+
       return _ifNotNull(
         type,
         value,
-        (ref) => Types.fromDartType(type, isNull: false)
-            .newInstanceNamed('fromJson', [ref]),
+        (ref) => Types.fromDartType(type, isNull: false).newInstanceNamed(
+          'fromJson',
+          [ref.asA(Types.fromDartType(jsonType))],
+        ),
       );
     }
   }
@@ -199,6 +213,18 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
       type.isDartCoreInt ||
       type.isDartCoreDouble ||
       type.isDartCoreString;
+
+  DartType? _fromJsonType(DartType type) {
+    final element = type.element;
+    if (element case ClassElement()) {
+      final fromJsonConstructor =
+          element.constructors.firstWhere((c) => c.name == 'fromJson');
+      final jsonArg = fromJsonConstructor.parameters.firstOrNull;
+      return jsonArg?.type;
+    } else {
+      return null;
+    }
+  }
 
   Expression _maybeCast(
     Expression ref,
