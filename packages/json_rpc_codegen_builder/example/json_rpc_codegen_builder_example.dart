@@ -40,6 +40,8 @@ abstract interface class SampleApi {
   FutureOr<void> setHomepage(Uri url, [DateTime? timestamp]);
 
   FutureOr<Uri> findForDates(Iterable<DateTime> times);
+
+  FutureOr<void> log(String message, dynamic context);
 }
 
 void main() {}

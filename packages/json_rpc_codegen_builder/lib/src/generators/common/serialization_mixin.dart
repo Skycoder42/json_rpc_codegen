@@ -17,7 +17,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
   static const _maybeMapRef = Reference(_maybeMapName);
 
   /// @nodoc
-  static Iterable<Spec> buildGlobalMethods() sync* {
+  static Iterable<Spec> buildGlobals() sync* {
     yield _buildMaybeMap();
   }
 
@@ -56,6 +56,8 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
       );
     } else if (_isPrimitiveType(type)) {
       return _maybeCast(value, Types.fromDartType(type), noCast);
+    } else if (type is DynamicType) {
+      return value;
     } else {
       final jsonType = _fromJsonType(type);
       if (jsonType == null) {

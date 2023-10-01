@@ -153,6 +153,4 @@ final class ServerGenerator extends ProxySpec
   }
 }
 
-// TODO fromJson casts
-// TODO support dynamic?
 // TODO Peer support

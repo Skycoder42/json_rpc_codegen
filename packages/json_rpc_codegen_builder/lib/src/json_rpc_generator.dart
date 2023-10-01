@@ -7,6 +7,7 @@ import 'package:source_gen/source_gen.dart';
 
 import 'generators/client/client_generator.dart';
 import 'generators/common/serialization_mixin.dart';
+import 'generators/server/parameter_builder_mixin.dart';
 import 'generators/server/server_generator.dart';
 
 /// @nodoc
@@ -45,6 +46,7 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc> {
           ..ignoreForFile.add('type=lint')
           ..body.add(ClientGenerator(clazz))
           ..body.add(ServerGenerator(clazz))
-          ..body.addAll(SerializationMixin.buildGlobalMethods()),
+          ..body.addAll(SerializationMixin.buildGlobals())
+          ..body.addAll(ParameterBuilderMixin.buildGlobals()),
       );
 }

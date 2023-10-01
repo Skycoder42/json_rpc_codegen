@@ -5,4 +5,3 @@ export 'package:meta/meta.dart' show protected, visibleForOverriding;
 export 'package:stream_channel/stream_channel.dart' show StreamChannel;
 
 export 'src/annotations.dart';
-export 'src/extensions.dart';
