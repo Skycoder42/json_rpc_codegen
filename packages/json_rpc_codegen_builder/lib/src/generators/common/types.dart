@@ -137,6 +137,21 @@ abstract base class Types {
     (b) => b..symbol = 'ErrorCallback',
   );
 
+  /// @nodoc
+  static final clientBase = TypeReference(
+    (b) => b..symbol = 'ClientBase',
+  );
+
+  /// @nodoc
+  static final serverBase = TypeReference(
+    (b) => b..symbol = 'ServerBase',
+  );
+
+  /// @nodoc
+  static final peerBase = TypeReference(
+    (b) => b..symbol = 'PeerBase',
+  );
+
   static TypeReference _named(String name) => TypeReference(
         (b) => b..symbol = name,
       );

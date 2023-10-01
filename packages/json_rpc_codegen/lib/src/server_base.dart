@@ -7,14 +7,14 @@ import 'package:stream_channel/stream_channel.dart';
 /// A base class for all generated JSON RPC servers that wraps the [Server].
 abstract class ServerBase {
   /// The internally use JSON-RPC server to handle requests to the server.
-  final Server jsonRpc;
+  final Server jsonRpcInstance;
 
   /// See [Server].
   ServerBase(
     StreamChannel<String> channel, {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
-  }) : jsonRpc = Server(
+  }) : jsonRpcInstance = Server(
           channel,
           onUnhandledError: onUnhandledError,
           strictProtocolChecks: strictProtocolChecks,
@@ -27,7 +27,7 @@ abstract class ServerBase {
     StreamChannel channel, {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
-  }) : jsonRpc = Server.withoutJson(
+  }) : jsonRpcInstance = Server.withoutJson(
           channel,
           onUnhandledError: onUnhandledError,
           strictProtocolChecks: strictProtocolChecks,
@@ -36,27 +36,27 @@ abstract class ServerBase {
   }
 
   /// Creates a new instance from an existing server.
-  ServerBase.fromServer(this.jsonRpc) {
+  ServerBase.fromServer(this.jsonRpcInstance) {
     registerMethods();
   }
 
   /// See [Server.onUnhandledError].
-  ErrorCallback? get onUnhandledError => jsonRpc.onUnhandledError;
+  ErrorCallback? get onUnhandledError => jsonRpcInstance.onUnhandledError;
 
   /// See [Server.strictProtocolChecks].
-  bool get strictProtocolChecks => jsonRpc.strictProtocolChecks;
+  bool get strictProtocolChecks => jsonRpcInstance.strictProtocolChecks;
 
   /// See [Server.done].
-  Future<void> get done => jsonRpc.done;
+  Future<void> get done => jsonRpcInstance.done;
 
   /// See [Server.isClosed].
-  bool get isClosed => jsonRpc.isClosed;
+  bool get isClosed => jsonRpcInstance.isClosed;
 
   /// See [Server.listen].
-  Future<void> listen() => jsonRpc.listen();
+  Future<void> listen() => jsonRpcInstance.listen();
 
   /// See [Server.close].
-  Future<void> close() => jsonRpc.close();
+  Future<void> close() => jsonRpcInstance.close();
 
   /// Can be overridden to implement custom handling for unknown method calls.
   ///
@@ -74,6 +74,6 @@ abstract class ServerBase {
   @visibleForOverriding
   @mustCallSuper
   void registerMethods() {
-    jsonRpc.registerFallback(onUnknownMethod);
+    jsonRpcInstance.registerFallback(onUnknownMethod);
   }
 }

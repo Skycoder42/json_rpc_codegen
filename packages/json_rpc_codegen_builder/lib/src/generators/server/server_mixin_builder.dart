@@ -4,61 +4,34 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import '../common/annotations.dart';
-import '../common/base_wrapper_builder_mixin.dart';
 import '../common/closure_builder_mixin.dart';
 import '../common/method_mapper_mixin.dart';
 import '../common/serialization_mixin.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
 import 'parameter_builder_mixin.dart';
-import 'wrapper_builder_mixin.dart';
 
 /// @nodoc
 @internal
-final class ServerGenerator extends ProxySpec
+final class ServerMixinBuilder extends ProxySpec
     with
         MethodMapperMixin,
         ClosureBuilderMixin,
         SerializationMixin,
-        BaseWrapperBuilderMixin,
-        WrapperBuilderMixin,
         ParameterBuilderMixin {
-  static const _serverName = 'jsonRpcServer';
-  static const _serverRef = Reference(_serverName);
-  static const _registerMethodName = '_registerMethods';
-  static const _registerMethoRef = Reference('_registerMethods');
-  static const _onUnknownMethodName = 'onUnknownMethod';
-  static const _onUnknownMethodRef = Reference('onUnknownMethod');
+  static const _rpcGetterRef = Reference('jsonRpcInstance');
 
   final ClassElement _class;
 
   /// @nodoc
-  const ServerGenerator(this._class);
+  const ServerMixinBuilder(this._class);
 
   @override
-  Class build() => Class(
+  Mixin build() => Mixin(
         (b) => b
-          ..name = '${_class.name}Server'
-          ..abstract = true
+          ..name = '${_class.name}ServerMixin'
+          ..on = Types.serverBase
           ..implements.add(TypeReference((b) => b..symbol = _class.name))
-          ..fields.add(
-            Field(
-              (b) => b
-                ..name = _serverName
-                ..modifier = FieldModifier.final$
-                ..type = Types.jsonRpc2Server,
-            ),
-          )
-          ..constructors.addAll(
-            buildConstructors(_serverRef).map(
-              (c) => Constructor(
-                (b) => b
-                  ..replace(c)
-                  ..body = _registerMethoRef.call(const []).statement,
-              ),
-            ),
-          )
-          ..methods.addAll(buildWrapperMethods(_serverRef))
           ..methods.addAll(
             _class.methods.map(
               (method) => mapMethod(
@@ -67,26 +40,26 @@ final class ServerGenerator extends ProxySpec
               ),
             ),
           )
-          ..methods.add(_buildFallback())
           ..methods.add(_buildRegisterMethod()),
       );
 
   Method _buildRegisterMethod() => Method(
         (b) => b
-          ..name = _registerMethodName
+          ..name = 'registerMethods'
           ..returns = Types.$void
+          ..annotations.add(Annotations.override)
+          ..annotations.add(Annotations.visibleForOverriding)
+          ..annotations.add(Annotations.mustCallSuper)
           ..body = Block.of([
+            refer('super').property('registerMethods').call(const []).statement,
             ..._class.methods.map(_buildRegisterFor),
-            _serverRef
-                .property('registerFallback')
-                .call(const [_onUnknownMethodRef]).statement,
           ]),
       );
 
   Code _buildRegisterFor(MethodElement method) {
     final parameterMode = validateParameters(method);
 
-    return _serverRef.property('registerMethod').call([
+    return _rpcGetterRef.property('registerMethod').call([
       literalString(method.name),
       if (parameterMode == ParameterMode.none)
         closure0(
@@ -127,30 +100,4 @@ final class ServerGenerator extends ProxySpec
       invocation.awaited.parenthesized,
     );
   }
-
-  Method _buildFallback() {
-    const paramsParamRef = Reference('params');
-    return Method(
-      (b) => b
-        ..name = _onUnknownMethodName
-        ..returns = Types.futureOr(Types.dynamic)
-        ..annotations.add(Annotations.visibleForOverriding)
-        ..requiredParameters.add(
-          Parameter(
-            (b) => b
-              ..name = paramsParamRef.symbol!
-              ..type = Types.jsonRpc2Parameters,
-          ),
-        )
-        ..body = Types.jsonRpc2RpcException
-            .newInstanceNamed(
-              'methodNotFound',
-              [paramsParamRef.property('method')],
-            )
-            .thrown
-            .code,
-    );
-  }
 }
-
-// TODO Peer support

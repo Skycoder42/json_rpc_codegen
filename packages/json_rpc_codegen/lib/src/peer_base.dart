@@ -7,17 +7,18 @@ import 'package:stream_channel/stream_channel.dart';
 import 'client_base.dart';
 import 'server_base.dart';
 
+/// A base class for all generated JSON RPC peers that wraps the [Peer].
 abstract class PeerBase implements ClientBase, ServerBase {
   /// The internally use JSON-RPC peer
   @override
-  final Peer jsonRpc;
+  final Peer jsonRpcInstance;
 
   /// See [Peer].
   PeerBase(
     StreamChannel<String> channel, {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
-  }) : jsonRpc = Peer(
+  }) : jsonRpcInstance = Peer(
           channel,
           onUnhandledError: onUnhandledError,
           strictProtocolChecks: strictProtocolChecks,
@@ -30,7 +31,7 @@ abstract class PeerBase implements ClientBase, ServerBase {
     StreamChannel channel, {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
-  }) : jsonRpc = Peer.withoutJson(
+  }) : jsonRpcInstance = Peer.withoutJson(
           channel,
           onUnhandledError: onUnhandledError,
           strictProtocolChecks: strictProtocolChecks,
@@ -39,38 +40,38 @@ abstract class PeerBase implements ClientBase, ServerBase {
   }
 
   /// Creates a new instance from an existing peer.
-  PeerBase.fromPeer(this.jsonRpc) {
+  PeerBase.fromPeer(this.jsonRpcInstance) {
     registerMethods();
   }
 
   /// See [Peer.onUnhandledError]
   @override
-  ErrorCallback? get onUnhandledError => jsonRpc.onUnhandledError;
+  ErrorCallback? get onUnhandledError => jsonRpcInstance.onUnhandledError;
 
   /// See [Peer.strictProtocolChecks]
   @override
-  bool get strictProtocolChecks => jsonRpc.strictProtocolChecks;
+  bool get strictProtocolChecks => jsonRpcInstance.strictProtocolChecks;
 
   /// See [Peer.done]
   @override
-  Future<void> get done => jsonRpc.done;
+  Future<void> get done => jsonRpcInstance.done;
 
   /// See [Peer.isClosed]
   @override
-  bool get isClosed => jsonRpc.isClosed;
+  bool get isClosed => jsonRpcInstance.isClosed;
 
   /// See [Peer.listen]
   @override
-  Future<void> listen() => jsonRpc.listen();
+  Future<void> listen() => jsonRpcInstance.listen();
 
   /// See [Peer.close]
   @override
-  Future<void> close() => jsonRpc.close();
+  Future<void> close() => jsonRpcInstance.close();
 
   /// See [Peer.withBatch]
   @override
   void withBatch(FutureOr<void> Function() callback) =>
-      jsonRpc.withBatch(callback);
+      jsonRpcInstance.withBatch(callback);
 
   /// Can be overridden to implement custom handling for unknown method calls.
   ///
@@ -87,6 +88,6 @@ abstract class PeerBase implements ClientBase, ServerBase {
   @visibleForOverriding
   @mustCallSuper
   void registerMethods() {
-    jsonRpc.registerFallback(onUnknownMethod);
+    jsonRpcInstance.registerFallback(onUnknownMethod);
   }
 }

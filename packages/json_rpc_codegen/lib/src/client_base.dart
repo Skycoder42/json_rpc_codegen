@@ -6,31 +6,31 @@ import 'package:stream_channel/stream_channel.dart';
 /// A base class for all generated JSON RPC clients that wraps the [Client]
 abstract class ClientBase {
   /// The internally use JSON-RPC client to make the requests to the server
-  final Client jsonRpc;
+  final Client jsonRpcInstance;
 
   /// See [Client]
-  ClientBase(StreamChannel<String> channel) : jsonRpc = Client(channel);
+  ClientBase(StreamChannel<String> channel) : jsonRpcInstance = Client(channel);
 
   /// See [Client.withoutJson]
   ClientBase.withoutJson(StreamChannel channel)
-      : jsonRpc = Client.withoutJson(channel);
+      : jsonRpcInstance = Client.withoutJson(channel);
 
   /// Creates a new instance from an existing client
-  ClientBase.fromClient(this.jsonRpc);
+  ClientBase.fromClient(this.jsonRpcInstance);
 
   /// See [Client.done]
-  Future<void> get done => jsonRpc.done;
+  Future<void> get done => jsonRpcInstance.done;
 
   /// See [Client.isClosed]
-  bool get isClosed => jsonRpc.isClosed;
+  bool get isClosed => jsonRpcInstance.isClosed;
 
   /// See [Client.listen]
-  Future<void> listen() => jsonRpc.listen();
+  Future<void> listen() => jsonRpcInstance.listen();
 
   /// See [Client.close]
-  Future<void> close() => jsonRpc.close();
+  Future<void> close() => jsonRpcInstance.close();
 
   /// See [Client.withBatch]
   void withBatch(FutureOr<void> Function() callback) =>
-      jsonRpc.withBatch(callback);
+      jsonRpcInstance.withBatch(callback);
 }

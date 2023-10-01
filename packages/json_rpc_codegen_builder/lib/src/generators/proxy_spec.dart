@@ -5,12 +5,12 @@ import 'package:meta/meta.dart';
 
 /// @nodoc
 @internal
-abstract base class ProxySpec<T extends Spec> implements Spec {
+abstract base class ProxySpec implements Spec {
   /// @nodoc
   const ProxySpec();
 
   /// @nodoc
-  T build();
+  Spec build();
 
   @override
   R accept<R>(SpecVisitor<R> visitor, [R? context]) =>

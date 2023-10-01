@@ -3,47 +3,30 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 
-import '../common/base_wrapper_builder_mixin.dart';
 import '../common/closure_builder_mixin.dart';
 import '../common/method_mapper_mixin.dart';
 import '../common/serialization_mixin.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
-import 'wrapper_builder_mixin.dart';
 
 /// @nodoc
 @internal
-final class ClientGenerator extends ProxySpec
-    with
-        MethodMapperMixin,
-        ClosureBuilderMixin,
-        SerializationMixin,
-        BaseWrapperBuilderMixin,
-        WrapperBuilderMixin {
-  static const _clientName = 'jsonRpcClient';
-  static const _clientRef = Reference(_clientName);
+final class ClientMixinBuilder extends ProxySpec
+    with MethodMapperMixin, ClosureBuilderMixin, SerializationMixin {
+  static const _rpcGetterRef = Reference('jsonRpcInstance');
 
   final ClassElement _class;
 
   /// @nodoc
-  const ClientGenerator(this._class);
+  const ClientMixinBuilder(this._class);
 
   /// @nodoc
   @override
-  Class build() => Class(
+  Mixin build() => Mixin(
         (b) => b
-          ..name = '${_class.name}Client'
+          ..name = '${_class.name}ClientMixin'
+          ..on = Types.clientBase
           ..implements.add(Types.fromClass(_class))
-          ..fields.add(
-            Field(
-              (b) => b
-                ..name = _clientName
-                ..modifier = FieldModifier.final$
-                ..type = Types.jsonRpc2Client,
-            ),
-          )
-          ..constructors.addAll(buildConstructors(_clientRef))
-          ..methods.addAll(buildWrapperMethods(_clientRef))
           ..methods.addAll(_class.methods.map(_buildMethod)),
       );
 
@@ -73,13 +56,13 @@ final class ClientGenerator extends ProxySpec
       );
 
   Code _buildNotificationBody(MethodElement method) => _buildMethodInvocation(
-        _clientRef.property('sendNotification'),
+        _rpcGetterRef.property('sendNotification'),
         method,
       ).code;
 
   Code _buildRequestBody(MethodElement method, DartType returnType) {
     final invocation = _buildMethodInvocation(
-      _clientRef.property('sendRequest'),
+      _rpcGetterRef.property('sendRequest'),
       method,
     );
 
