@@ -23,6 +23,22 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc> {
   const JsonRpcGenerator(this.builderOptions);
 
   @override
+  Future<String> generate(LibraryReader library, BuildStep buildStep) async {
+    final buffer = StringBuffer();
+
+    // add library prefix
+    _buildLibraryPrefix(buffer);
+
+    // add content
+    buffer.write(await super.generate(library, buildStep));
+
+    // add library suffix
+    _buildLibrarySuffix(buffer);
+
+    return buffer.toString();
+  }
+
+  @override
   String generateForAnnotatedElement(
     Element element,
     ConstantReader annotation,
@@ -38,27 +54,41 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc> {
     }
 
     final jsonRpc = JsonRpcReader(annotation);
+    final buffer = StringBuffer();
+    final emitter = _createEmitter();
+    if (jsonRpc.client) {
+      ClientMixinBuilder(element).accept(emitter, buffer);
+    }
+    if (jsonRpc.server) {
+      ServerMixinBuilder(element).accept(emitter, buffer);
+    }
+    if (jsonRpc.client && !jsonRpc.mixinsOnly) {
+      ClientClassBuilder(element).accept(emitter, buffer);
+    }
+    if (jsonRpc.server && !jsonRpc.mixinsOnly) {
+      ServerClassBuilder(element).accept(emitter, buffer);
+    }
+
+    return buffer.toString();
+  }
+
+  DartEmitter _createEmitter() {
     final emitter = DartEmitter(
       orderDirectives: true,
       useNullSafetySyntax: true,
     );
-    return _buildLibrary(jsonRpc, element)
-        .accept(emitter, StringBuffer())
-        .toString();
+    return emitter;
   }
 
-  Library _buildLibrary(JsonRpcReader jsonRpc, ClassElement clazz) => Library(
+  void _buildLibraryPrefix(StringBuffer buffer) => Library(
         (b) => b
           ..ignoreForFile.add('type=lint')
-          ..body.addAll([
-            if (jsonRpc.client) ClientMixinBuilder(clazz),
-            if (jsonRpc.server) ServerMixinBuilder(clazz),
-            if (jsonRpc.client && !jsonRpc.mixinsOnly)
-              ClientClassBuilder(clazz),
-            if (jsonRpc.server && !jsonRpc.mixinsOnly)
-              ServerClassBuilder(clazz),
-          ])
+          ..ignoreForFile.add('unused_element'),
+      ).accept<StringSink>(_createEmitter(), buffer);
+
+  void _buildLibrarySuffix(StringBuffer buffer) => Library(
+        (b) => b
           ..body.addAll(SerializationMixin.buildGlobals())
           ..body.addAll(ParameterBuilderMixin.buildGlobals()),
-      );
+      ).accept<StringSink>(_createEmitter(), buffer);
 }

@@ -17,5 +17,5 @@ targets:
             - lib
             - test
           include:
-            - test/apis/**
+            - test/integration/models/**
             - example/**
