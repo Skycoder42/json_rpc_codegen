@@ -22,11 +22,11 @@ class User {
 
 @jsonRpc
 abstract interface class SampleApi {
-  FutureOr<void> hello(String name, [int times = 1]);
+  FutureOr<void> hello(String name, [@ServerDefault(1) int? times]);
 
   FutureOr<void> notify({
     required int id,
-    List<double>? measures,
+    @ClientDefault(<double>[1, 2]) List<double> measures,
   });
 
   FutureOr<String> echo(String message);
@@ -41,7 +41,16 @@ abstract interface class SampleApi {
 
   FutureOr<Uri> findForDates(Iterable<DateTime> times);
 
-  FutureOr<void> log(String message, dynamic context);
+  FutureOr<void> log(
+    String message,
+    dynamic context, [
+    @ClientDefault(User('admin', 'admin')) User user,
+  ]);
+
+  FutureOr<bool> validate({
+    @ServerDefault(User('admin', 'admin')) User? user,
+    @ServerDefault(Permission.administrate) Permission? permission,
+  });
 }
 
 void main() {}

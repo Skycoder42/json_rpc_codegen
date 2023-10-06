@@ -1,8 +1,12 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
+import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 import 'package:meta/meta.dart';
+import 'package:source_gen/source_gen.dart';
+import 'package:source_helper/source_helper.dart';
 
+import '../../readers/default_reader.dart';
 import '../common/closure_builder_mixin.dart';
 import '../common/method_mapper_mixin.dart';
 import '../common/serialization_mixin.dart';
@@ -41,6 +45,7 @@ final class ClientMixinBuilder extends ProxySpec
 
   Method _buildNotificationMethod(MethodElement method) => mapMethod(
         method,
+        defaultValueBuilder: _buildDefaultValue,
         (b) => b
           ..returns = Types.$void
           ..body = _buildNotificationBody(method),
@@ -49,11 +54,29 @@ final class ClientMixinBuilder extends ProxySpec
   Method _buildRequestMethod(MethodElement method, DartType returnType) =>
       mapMethod(
         method,
+        defaultValueBuilder: _buildDefaultValue,
         (b) => b
           ..returns = Types.future(Types.fromDartType(returnType))
           ..modifier = MethodModifier.async
           ..body = _buildRequestBody(method, returnType),
       );
+
+  Code? _buildDefaultValue(ParameterElement param) {
+    final clientDefault = DefaultReader.client(param);
+    if (clientDefault != null) {
+      return clientDefault.valueCode;
+    }
+
+    if (param.isOptional && !param.type.isNullableType) {
+      throw InvalidGenerationSourceError(
+        'Optional parameters without a @ClientDefault must be nullable!',
+        element: param,
+        todo: 'Change the parameter type to ${param.type}?',
+      );
+    }
+
+    return null;
+  }
 
   Code _buildNotificationBody(MethodElement method) => _buildMethodInvocation(
         _rpcGetterRef.property('sendNotification'),

@@ -74,8 +74,9 @@ base mixin MethodMapperMixin on ProxySpec {
   @protected
   Method mapMethod(
     MethodElement method,
-    MethodBuilder Function(MethodBuilder b) build,
-  ) =>
+    MethodBuilder Function(MethodBuilder b) build, {
+    Code? Function(ParameterElement param)? defaultValueBuilder,
+  }) =>
       Method((b) {
         if (method.typeParameters.isNotEmpty) {
           throw InvalidGenerationSourceError(
@@ -92,26 +93,38 @@ base mixin MethodMapperMixin on ProxySpec {
           ..requiredParameters.addAll(
             method.parameters
                 .where((e) => e.isRequiredPositional)
-                .map((e) => _buildParameter(e, true)),
+                .map((e) => _buildParameter(e, true, defaultValueBuilder)),
           )
           ..optionalParameters.addAll(
             method.parameters
                 .where((e) => !e.isRequiredPositional)
-                .map((e) => _buildParameter(e, false)),
+                .map((e) => _buildParameter(e, false, defaultValueBuilder)),
           );
         build(b);
       });
 
-  Parameter _buildParameter(ParameterElement parameter, bool positional) =>
-      Parameter(
-        (b) => b
-          ..name = parameter.name
-          ..type = Types.fromDartType(parameter.type)
-          ..named = parameter.isNamed
-          ..required = parameter.isRequiredNamed
-          ..covariant = parameter.isCovariant
-          ..defaultTo = parameter.hasDefaultValue
-              ? Code(parameter.defaultValueCode!)
-              : null,
+  Parameter _buildParameter(
+    ParameterElement parameter,
+    bool positional,
+    Code? Function(ParameterElement param)? defaultValueBuilder,
+  ) {
+    if (parameter.hasDefaultValue) {
+      throw InvalidGenerationSourceError(
+        'Cannot use normal default values on RPC method parameters. '
+        'Must be provided via @ClientDefault or @ServerDefault.',
+        element: parameter,
+        todo: 'Pass the default value vie @ClientDefault or @ServerDefault.',
       );
+    }
+
+    return Parameter(
+      (b) => b
+        ..name = parameter.name
+        ..type = Types.fromDartType(parameter.type)
+        ..named = parameter.isNamed
+        ..required = parameter.isRequiredNamed
+        ..covariant = parameter.isCovariant
+        ..defaultTo = defaultValueBuilder?.call(parameter),
+    );
+  }
 }

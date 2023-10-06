@@ -119,22 +119,19 @@ base mixin ParameterBuilderMixin
       if (param.isOptional) {
         return paramRef.property(_maybeNullOrName).call([
           closure,
-          if (param.hasDefaultValue) _defaultFor(param) else literalNull,
+          // if (param.hasDefaultValue) _defaultFor(param) else literalNull,
         ]);
       } else {
         return paramRef.property(_nullOrName).call([closure]);
       }
     } else {
       if (param.isOptional) {
-        return paramRef.property('${getter}Or').call([_defaultFor(param)]);
+        return paramRef.property('${getter}Or').call([/*_defaultFor(param)*/]);
       } else {
         return paramRef.property(getter);
       }
     }
   }
-
-  Expression _defaultFor(ParameterElement param) =>
-      CodeExpression(Code(param.defaultValueCode!));
 
   static Extension _buildParameterExtensions() {
     final typeT = TypeReference((b) => b..symbol = 'T');
