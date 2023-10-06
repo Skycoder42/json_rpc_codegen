@@ -1,11 +1,11 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
-import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
 
+import '../../builders/iterable_if.dart';
 import '../../readers/default_reader.dart';
 import '../common/closure_builder_mixin.dart';
 import '../common/method_mapper_mixin.dart';
@@ -103,21 +103,64 @@ final class ClientMixinBuilder extends ProxySpec
     return target.call([
       literalString(method.name),
       if (parameterMode.hasPositional)
-        literalList(
-          [
-            for (final p in method.parameters) toJson(p.type, refer(p.name)),
-          ],
-          Types.dynamic,
-        ),
+        _buildPositionalParameters(method.parameters),
       if (parameterMode.hasNamed)
         literalMap(
           {
+            // TODO enforce value not null!
             for (final p in method.parameters)
-              literalString(p.name): toJson(p.type, refer(p.name)),
+              if (p.isOptional && DefaultReader.client(p) == null)
+                IterableIf(
+                  refer(p.name).notEqualTo(literalNull),
+                  literalString(p.name),
+                ): toJson(p.type, refer(p.name))
+              else
+                literalString(p.name): toJson(p.type, refer(p.name)),
           },
           Types.string,
           Types.dynamic,
         ),
     ]);
+  }
+
+  Expression _buildPositionalParameters(
+    List<ParameterElement> params,
+  ) {
+    final lastRequiredIndex = params.indexed
+            .toList()
+            .reversed
+            .skipWhile(
+              (r) => r.$2.isOptional && DefaultReader.client(r.$2) == null,
+            )
+            .map((r) => r.$1)
+            .firstOrNull ??
+        -1;
+
+    final paramExpressions = <Expression>[];
+    Expression? condition;
+    for (final (index, param) in params.indexed.toList().reversed) {
+      if (index <= lastRequiredIndex) {
+        paramExpressions.add(toJson(param.type, refer(param.name)));
+        continue;
+      }
+
+      if (condition == null) {
+        condition = refer(param.name).notEqualTo(literalNull);
+      } else {
+        condition = refer(param.name).notEqualTo(literalNull).or(condition);
+      }
+
+      paramExpressions.add(
+        IterableIf(
+          condition,
+          toJson(param.type, refer(param.name)),
+        ),
+      );
+    }
+
+    return literalList(
+      paramExpressions.reversed,
+      Types.dynamic,
+    );
   }
 }

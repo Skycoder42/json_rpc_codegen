@@ -22,7 +22,12 @@ class User {
 
 @jsonRpc
 abstract interface class SampleApi {
-  FutureOr<void> hello(String name, [@ServerDefault(1) int? times]);
+  FutureOr<void> hello(
+    String name, [
+    @ServerDefault(1) int? times,
+    @ServerDefault(0) int? delay,
+    @ServerDefault(10.5) double? interval,
+  ]);
 
   FutureOr<void> notify({
     required int id,
