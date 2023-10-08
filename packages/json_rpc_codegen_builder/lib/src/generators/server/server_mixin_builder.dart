@@ -1,8 +1,13 @@
 import 'package:analyzer/dart/element/element.dart';
-import 'package:code_builder/code_builder.dart' hide ParameterBuilder;
+import 'package:analyzer/dart/element/type.dart';
+import 'package:code_builder/code_builder.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
+import 'package:source_gen/source_gen.dart';
+import 'package:source_helper/source_helper.dart';
 
+import '../../extensions/analyzer_extensions.dart';
+import '../../readers/defaults_reader.dart';
 import '../common/annotations.dart';
 import '../common/closure_builder_mixin.dart';
 import '../common/method_mapper_mixin.dart';
@@ -29,20 +34,44 @@ final class ServerMixinBuilder extends ProxySpec
   @override
   Mixin build() => Mixin(
         (b) => b
-          ..name = '${_class.name}ServerMixin'
+          ..name = '${_class.publicName}ServerMixin'
           ..on = Types.serverBase
-          ..implements.add(TypeReference((b) => b..symbol = _class.name))
           ..methods.addAll(
             _class.methods.map(
               (method) => mapMethod(
                 method,
-                buildMethod: (b) => b..annotations.add(Annotations.protected),
-                buildParam: (param, b) {},
+                buildMethod: (b) => b
+                  ..annotations.add(Annotations.protected)
+                  ..returns = Types.futureOr(b.returns! as TypeReference),
+                buildParam: (p, b) => _buildParam(method, p, b),
+                checkRequired: (_) => true,
               ),
             ),
           )
           ..methods.add(_buildRegisterMethod()),
       );
+
+  void _buildParam(
+    MethodElement method,
+    ParameterElement parameter,
+    ParameterBuilder builder,
+  ) {
+    builder
+      ..named = false
+      ..required = false;
+
+    if (parameter.isOptional &&
+        parameter.type.isNullableType &&
+        parameter.hasDefaultValue &&
+        DefaultsReader.isServerDefault(method)) {
+      throw InvalidGenerationSourceError(
+        'An RPC cannot have an nullable optional parameter with a server '
+        'sided default value.',
+        element: parameter,
+        todo: 'Make the type non nullable or remove the default value',
+      );
+    }
+  }
 
   Method _buildRegisterMethod() => Method(
         (b) => b
@@ -65,7 +94,7 @@ final class ServerMixinBuilder extends ProxySpec
       if (parameterMode == ParameterMode.none)
         closure0(
           modifier: MethodModifier.async,
-          () => _buildInvocation(method).code,
+          () => _buildInvocation(method, withReturn: false).code,
         )
       else
         closure1(
@@ -78,13 +107,16 @@ final class ServerMixinBuilder extends ProxySpec
                   .mapIndexed((i, e) => buildPositional(p1, i, e)),
             if (parameterMode.hasNamed)
               ...method.parameters.map((e) => buildNamed(p1, e)),
-            _buildInvocation(method).returned.statement,
+            _buildInvocation(method, withReturn: true).statement,
           ]),
         ),
     ]).statement;
   }
 
-  Expression _buildInvocation(MethodElement method) {
+  Expression _buildInvocation(
+    MethodElement method, {
+    required bool withReturn,
+  }) {
     final invocation = refer(method.name).call(
       [
         for (final p in method.parameters.where((p) => p.isPositional))
@@ -96,9 +128,14 @@ final class ServerMixinBuilder extends ProxySpec
       },
     );
 
-    return toJson(
+    if (method.returnType is VoidType || method.returnType.isDartCoreNull) {
+      return invocation.awaited;
+    }
+
+    final jsonConverted = toJson(
       getReturnType(method),
       invocation.awaited.parenthesized,
     );
+    return withReturn ? jsonConverted.returned : jsonConverted;
   }
 }

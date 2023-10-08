@@ -2,6 +2,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 
+import '../../extensions/analyzer_extensions.dart';
 import '../common/base_constructor_builder_mixin.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
@@ -18,10 +19,10 @@ final class ClientClassBuilder extends ProxySpec
   @override
   Class build() => Class(
         (b) => b
-          ..name = '${_class.name}Client'
+          ..name = '${_class.publicName}Client'
           ..extend = Types.clientBase
           ..mixins.add(
-            TypeReference((b) => b..symbol = '${_class.name}ClientMixin'),
+            TypeReference((b) => b..symbol = '${_class.publicName}ClientMixin'),
           )
           ..constructors.addAll(buildConstructors('fromClient')),
       );

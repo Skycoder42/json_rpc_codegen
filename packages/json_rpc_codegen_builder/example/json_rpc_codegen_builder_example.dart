@@ -26,8 +26,8 @@ abstract class _SampleApi {
   void hello(
     String name, [
     int times = 5,
-    int? delay = 100,
     double? interval,
+    int delay = 100,
   ]);
 
   @clientDefaults
@@ -45,7 +45,7 @@ abstract class _SampleApi {
   Map<String, List<Permission>> permissions();
 
   // ignore: prefer_void_to_null
-  Null setHomepage(Uri url, [DateTime? timestamp]);
+  Null setHomepage({required Uri url, DateTime? timestamp});
 
   Uri findForDates(Iterable<DateTime> times);
 
@@ -57,8 +57,10 @@ abstract class _SampleApi {
   ]);
 
   bool validate({
-    User? user = const User('admin', 'admin'),
-    Permission? permission = Permission.administrate,
+    User user = const User('admin', 'admin'),
+    required User? authorizeFor,
+    Permission permission = Permission.administrate,
+    List<Uri>? resources,
   });
 }
 

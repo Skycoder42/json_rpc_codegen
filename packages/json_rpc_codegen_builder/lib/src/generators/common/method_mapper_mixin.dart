@@ -1,6 +1,7 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
@@ -95,6 +96,7 @@ base mixin MethodMapperMixin on ProxySpec {
     required void Function(MethodBuilder b) buildMethod,
     required void Function(ParameterElement param, ParameterBuilder b)
         buildParam,
+    bool Function(ParameterElement param) checkRequired = _defaultCheckRequired,
   }) =>
       Method((b) {
         if (method.typeParameters.isNotEmpty) {
@@ -110,12 +112,12 @@ base mixin MethodMapperMixin on ProxySpec {
           ..returns = Types.fromDartType(method.returnType)
           ..requiredParameters.addAll(
             method.parameters
-                .where((e) => e.isRequiredPositional)
+                .where(checkRequired)
                 .map((e) => _buildParameter(e, buildParam)),
           )
           ..optionalParameters.addAll(
             method.parameters
-                .where((e) => !e.isRequiredPositional)
+                .whereNot(checkRequired)
                 .map((e) => _buildParameter(e, buildParam)),
           );
         buildMethod(b);
@@ -137,4 +139,7 @@ base mixin MethodMapperMixin on ProxySpec {
           buildParam(parameter, b);
         },
       );
+
+  static bool _defaultCheckRequired(ParameterElement param) =>
+      param.isRequiredPositional;
 }

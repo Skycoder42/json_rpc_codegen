@@ -55,10 +55,9 @@ final class ClientMixinBuilder extends ProxySpec
       mapMethod(
         method,
         buildMethod: (b) => b
-          ..returns = returnType.isDartCoreNull
-              ? Types.future(Types.$void)
-              : Types.future(Types.fromDartType(returnType))
-          ..modifier = MethodModifier.async
+          ..returns = Types.future(Types.fromDartType(returnType))
+          ..modifier =
+              method.returnType.isDartCoreNull ? null : MethodModifier.async
           ..body = _buildRequestBody(method, returnType),
         buildParam: (p, b) => _buildParam(method, p, b),
       );
@@ -101,13 +100,17 @@ final class ClientMixinBuilder extends ProxySpec
       method,
     );
 
-    const resultVarRef = Reference(r'$result');
-    return Block.of([
-      declareFinal(resultVarRef.symbol!, type: Types.dynamic)
-          .assign(invocation.awaited)
-          .statement,
-      fromJson(returnType, resultVarRef).returned.statement,
-    ]);
+    if (returnType.isDartCoreNull) {
+      return invocation.code;
+    } else {
+      const resultVarRef = Reference(r'$result');
+      return Block.of([
+        declareFinal(resultVarRef.symbol!, type: Types.dynamic)
+            .assign(invocation.awaited)
+            .statement,
+        fromJson(returnType, resultVarRef).returned.statement,
+      ]);
+    }
   }
 
   Expression _buildMethodInvocation(Expression target, MethodElement method) {

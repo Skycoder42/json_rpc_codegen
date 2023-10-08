@@ -2,6 +2,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 
+import '../../extensions/analyzer_extensions.dart';
 import '../common/base_constructor_builder_mixin.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
@@ -18,11 +19,11 @@ final class ServerClassBuilder extends ProxySpec
   @override
   Class build() => Class(
         (b) => b
-          ..name = '${_class.name}Server'
+          ..name = '${_class.publicName}Server'
           ..abstract = true
           ..extend = Types.serverBase
           ..mixins.add(
-            TypeReference((b) => b..symbol = '${_class.name}ServerMixin'),
+            TypeReference((b) => b..symbol = '${_class.publicName}ServerMixin'),
           )
           ..constructors.addAll(
             buildConstructors('fromServer', [

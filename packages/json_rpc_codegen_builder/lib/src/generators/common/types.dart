@@ -14,7 +14,7 @@ abstract base class Types {
     DartType dartType, {
     bool? isNull,
   }) =>
-      dartType is VoidType
+      dartType is VoidType || dartType.isDartCoreNull
           ? $void
           : TypeReference(
               (b) {
