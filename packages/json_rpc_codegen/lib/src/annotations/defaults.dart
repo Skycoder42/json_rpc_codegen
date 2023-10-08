@@ -1,21 +1,25 @@
 import 'package:meta/meta_meta.dart';
 
-/// Adds a server side default value to an optional RPC parameter.
-@Target({TargetKind.parameter})
-class ServerDefault {
-  /// The default value. Must be a compile time constant.
-  final dynamic value;
-
+/// Configures the class or method to apply default values on the server side.
+///
+/// This is the default if nothing else is configured.
+@Target({TargetKind.classType, TargetKind.method})
+class ServerDefaults {
   /// Default constructor.
-  const ServerDefault(this.value);
+  const ServerDefaults();
 }
 
-/// Adds a client side default value to an optional RPC parameter.
-@Target({TargetKind.parameter})
-class ClientDefault {
-  /// The default value. Must be a compile time constant.
-  final dynamic value;
+/// Configures the class or method to apply default values on the server side.
+///
+/// This is the default if nothing else is configured.
+const serverDefaults = ServerDefaults();
 
+/// Configures the class or method to apply default values on the client side.
+@Target({TargetKind.classType, TargetKind.method})
+class ClientDefaults {
   /// Default constructor.
-  const ClientDefault(this.value);
+  const ClientDefaults();
 }
+
+/// Configures the class or method to apply default values on the client side.
+const clientDefaults = ServerDefaults();

@@ -6,7 +6,8 @@ import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
 
 import '../../builders/iterable_if.dart';
-import '../../readers/default_reader.dart';
+import '../../extensions/analyzer_extensions.dart';
+import '../../readers/defaults_reader.dart';
 import '../common/closure_builder_mixin.dart';
 import '../common/method_mapper_mixin.dart';
 import '../common/serialization_mixin.dart';
@@ -28,9 +29,8 @@ final class ClientMixinBuilder extends ProxySpec
   @override
   Mixin build() => Mixin(
         (b) => b
-          ..name = '${_class.name}ClientMixin'
+          ..name = '${_class.publicName}ClientMixin'
           ..on = Types.clientBase
-          ..implements.add(Types.fromClass(_class))
           ..methods.addAll(_class.methods.map(_buildMethod)),
       );
 
@@ -45,37 +45,49 @@ final class ClientMixinBuilder extends ProxySpec
 
   Method _buildNotificationMethod(MethodElement method) => mapMethod(
         method,
-        defaultValueBuilder: _buildDefaultValue,
-        (b) => b
+        buildMethod: (b) => b
           ..returns = Types.$void
           ..body = _buildNotificationBody(method),
+        buildParam: (p, b) => _buildParam(method, p, b),
       );
 
   Method _buildRequestMethod(MethodElement method, DartType returnType) =>
       mapMethod(
         method,
-        defaultValueBuilder: _buildDefaultValue,
-        (b) => b
-          ..returns = Types.future(Types.fromDartType(returnType))
+        buildMethod: (b) => b
+          ..returns = returnType.isDartCoreNull
+              ? Types.future(Types.$void)
+              : Types.future(Types.fromDartType(returnType))
           ..modifier = MethodModifier.async
           ..body = _buildRequestBody(method, returnType),
+        buildParam: (p, b) => _buildParam(method, p, b),
       );
 
-  Code? _buildDefaultValue(ParameterElement param) {
-    final clientDefault = DefaultReader.client(param);
-    if (clientDefault != null) {
-      return clientDefault.valueCode;
+  void _buildParam(
+    MethodElement method,
+    ParameterElement parameter,
+    ParameterBuilder builder,
+  ) {
+    if (parameter.isRequired) {
+      return;
     }
 
-    if (param.isOptional && !param.type.isNullableType) {
-      throw InvalidGenerationSourceError(
-        'Optional parameters without a @ClientDefault must be nullable!',
-        element: param,
-        todo: 'Change the parameter type to ${param.type}?',
-      );
+    final isClientDefault = DefaultsReader.isClientDefault(method);
+    if (isClientDefault) {
+      if (parameter.hasDefaultValue) {
+        builder.defaultTo = Code(parameter.defaultValueCode!);
+      } else if (!parameter.type.isNullableType) {
+        throw InvalidGenerationSourceError(
+          'An RPC method parameter that uses client defaults must either be '
+          'nullable or have an explicit default value set.',
+          element: parameter,
+          todo:
+              'Change the type to ${parameter.type}? or specify a default value',
+        );
+      }
+    } else {
+      builder.type = Types.fromDartType(parameter.type, isNull: true);
     }
-
-    return null;
   }
 
   Code _buildNotificationBody(MethodElement method) => _buildMethodInvocation(
@@ -99,21 +111,22 @@ final class ClientMixinBuilder extends ProxySpec
   }
 
   Expression _buildMethodInvocation(Expression target, MethodElement method) {
+    final isServerDefault = DefaultsReader.isServerDefault(method);
     final parameterMode = validateParameters(method);
+
     return target.call([
       literalString(method.name),
       if (parameterMode.hasPositional)
-        _buildPositionalParameters(method.parameters),
+        _buildPositionalParameters(method.parameters, isServerDefault),
       if (parameterMode.hasNamed)
         literalMap(
           {
-            // TODO enforce value not null!
             for (final p in method.parameters)
-              if (p.isOptional && DefaultReader.client(p) == null)
+              if (p.isOptional && isServerDefault)
                 IterableIf(
                   refer(p.name).notEqualTo(literalNull),
                   literalString(p.name),
-                ): toJson(p.type, refer(p.name))
+                ): toJson(p.type, refer(p.name), isNull: false)
               else
                 literalString(p.name): toJson(p.type, refer(p.name)),
           },
@@ -125,12 +138,22 @@ final class ClientMixinBuilder extends ProxySpec
 
   Expression _buildPositionalParameters(
     List<ParameterElement> params,
+    bool isServerDefault,
   ) {
+    if (!isServerDefault) {
+      return literalList(
+        [
+          for (final p in params) toJson(p.type, refer(p.name)),
+        ],
+        Types.dynamic,
+      );
+    }
+
     final lastRequiredIndex = params.indexed
             .toList()
             .reversed
             .skipWhile(
-              (r) => r.$2.isOptional && DefaultReader.client(r.$2) == null,
+              (r) => r.$2.isOptional,
             )
             .map((r) => r.$1)
             .firstOrNull ??
@@ -144,7 +167,9 @@ final class ClientMixinBuilder extends ProxySpec
         continue;
       }
 
+      bool? overwriteIsNull;
       if (condition == null) {
+        overwriteIsNull = false;
         condition = refer(param.name).notEqualTo(literalNull);
       } else {
         condition = refer(param.name).notEqualTo(literalNull).or(condition);
@@ -153,7 +178,11 @@ final class ClientMixinBuilder extends ProxySpec
       paramExpressions.add(
         IterableIf(
           condition,
-          toJson(param.type, refer(param.name)),
+          toJson(
+            param.type,
+            refer(param.name),
+            isNull: overwriteIsNull,
+          ),
         ),
       );
     }

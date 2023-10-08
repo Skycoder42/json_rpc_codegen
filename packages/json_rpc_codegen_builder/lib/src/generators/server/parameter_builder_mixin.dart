@@ -5,7 +5,7 @@ import 'package:meta/meta.dart';
 import 'package:source_helper/source_helper.dart';
 
 import '../common/closure_builder_mixin.dart';
-import '../common/code_builder_extensions.dart';
+import '../../extensions/code_builder_extensions.dart';
 import '../common/serialization_mixin.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';

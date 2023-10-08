@@ -5,7 +5,6 @@ import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
 import '../proxy_spec.dart';
-import 'annotations.dart';
 import 'types.dart';
 
 /// @nodoc
@@ -35,17 +34,36 @@ base mixin MethodMapperMixin on ProxySpec {
   /// @nodoc
   @protected
   DartType getReturnType(MethodElement method) {
-    if (!method.returnType.isDartAsyncFutureOr) {
+    if (method.returnType.isDartAsyncFuture ||
+        method.returnType.isDartAsyncFutureOr ||
+        method.returnType.isDartAsyncStream) {
+      final futureType =
+          (method.returnType as InterfaceType).typeArguments.single;
       throw InvalidGenerationSourceError(
-        'The return type of RPC methods must be FutureOr<T>',
+        'The return type of RPC methods must be not be asynchronous!',
         element: method,
-        // ignore: missing_whitespace_between_adjacent_strings
-        todo: 'Change return type to FutureOr'
-            '<${method.returnType.getDisplayString(withNullability: true)}>',
+        todo: 'Change return type to '
+            '${futureType.getDisplayString(withNullability: true)}.',
       );
     }
 
-    return (method.returnType as InterfaceType).typeArguments.single;
+    if (method.returnType.isDartCoreFunction) {
+      throw InvalidGenerationSourceError(
+        'The return type of RPC methods cannot be a function!',
+        element: method,
+      );
+    }
+
+    if (method.returnType.isDartCoreType ||
+        method.returnType.isDartCoreSymbol) {
+      throw InvalidGenerationSourceError(
+        'The return type of RPC methods cannot be a '
+        '${method.returnType.getDisplayString(withNullability: false)}',
+        element: method,
+      );
+    }
+
+    return method.returnType;
   }
 
   /// @nodoc
@@ -73,9 +91,10 @@ base mixin MethodMapperMixin on ProxySpec {
   /// @nodoc
   @protected
   Method mapMethod(
-    MethodElement method,
-    MethodBuilder Function(MethodBuilder b) build, {
-    Code? Function(ParameterElement param)? defaultValueBuilder,
+    MethodElement method, {
+    required void Function(MethodBuilder b) buildMethod,
+    required void Function(ParameterElement param, ParameterBuilder b)
+        buildParam,
   }) =>
       Method((b) {
         if (method.typeParameters.isNotEmpty) {
@@ -89,42 +108,33 @@ base mixin MethodMapperMixin on ProxySpec {
         b
           ..name = method.name
           ..returns = Types.fromDartType(method.returnType)
-          ..annotations.add(Annotations.override)
           ..requiredParameters.addAll(
             method.parameters
                 .where((e) => e.isRequiredPositional)
-                .map((e) => _buildParameter(e, true, defaultValueBuilder)),
+                .map((e) => _buildParameter(e, buildParam)),
           )
           ..optionalParameters.addAll(
             method.parameters
                 .where((e) => !e.isRequiredPositional)
-                .map((e) => _buildParameter(e, false, defaultValueBuilder)),
+                .map((e) => _buildParameter(e, buildParam)),
           );
-        build(b);
+        buildMethod(b);
       });
 
   Parameter _buildParameter(
     ParameterElement parameter,
-    bool positional,
-    Code? Function(ParameterElement param)? defaultValueBuilder,
-  ) {
-    if (parameter.hasDefaultValue) {
-      throw InvalidGenerationSourceError(
-        'Cannot use normal default values on RPC method parameters. '
-        'Must be provided via @ClientDefault or @ServerDefault.',
-        element: parameter,
-        todo: 'Pass the default value vie @ClientDefault or @ServerDefault.',
-      );
-    }
+    void Function(ParameterElement param, ParameterBuilder b) buildParam,
+  ) =>
+      Parameter(
+        (b) {
+          b
+            ..name = parameter.name
+            ..type = Types.fromDartType(parameter.type)
+            ..named = parameter.isNamed
+            ..required = parameter.isRequiredNamed
+            ..covariant = parameter.isCovariant;
 
-    return Parameter(
-      (b) => b
-        ..name = parameter.name
-        ..type = Types.fromDartType(parameter.type)
-        ..named = parameter.isNamed
-        ..required = parameter.isRequiredNamed
-        ..covariant = parameter.isCovariant
-        ..defaultTo = defaultValueBuilder?.call(parameter),
-    );
-  }
+          buildParam(parameter, b);
+        },
+      );
 }

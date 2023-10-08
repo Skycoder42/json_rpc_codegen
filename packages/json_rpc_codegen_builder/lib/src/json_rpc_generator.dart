@@ -44,11 +44,9 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc> {
     ConstantReader annotation,
     BuildStep buildStep,
   ) {
-    if (element is! ClassElement ||
-        !element.isAbstract ||
-        !element.isInterface) {
+    if (element is! ClassElement || !element.isAbstract || !element.isPrivate) {
       throw InvalidGenerationSourceError(
-        'The $JsonRpc annotation can only be used on abstract interfaces',
+        'The $JsonRpc annotation can only be used on abstract private classes',
         element: element,
       );
     }
@@ -92,3 +90,5 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc> {
           ..body.addAll(ParameterBuilderMixin.buildGlobals()),
       ).accept<StringSink>(_createEmitter(), buffer);
 }
+
+// TODO support sets, object and records

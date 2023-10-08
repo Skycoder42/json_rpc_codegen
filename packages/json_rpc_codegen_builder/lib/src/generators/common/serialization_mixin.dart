@@ -7,7 +7,7 @@ import 'package:source_helper/source_helper.dart';
 
 import '../proxy_spec.dart';
 import 'closure_builder_mixin.dart';
-import 'code_builder_extensions.dart';
+import '../../extensions/code_builder_extensions.dart';
 import 'types.dart';
 
 /// @nodoc
@@ -83,15 +83,17 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
 
   /// @nodoc
   @protected
-  Expression toJson(DartType type, Expression value) {
+  Expression toJson(DartType type, Expression value, {bool? isNull}) {
     if (type.isDartCoreIterable || type.isDartCoreList) {
-      return _toList(type, value);
+      return _toList(type, value, isNull: isNull);
     } else if (type.isDartCoreMap) {
-      return _toMap(type, value);
+      return _toMap(type, value, isNull: isNull);
     } else if (type.isEnum) {
-      return value.autoProperty('name', type.isNullableType);
+      return value.autoProperty('name', isNull ?? type.isNullableType);
     } else if (type case InterfaceType(element: ClassElement(name: 'Uri'))) {
-      return value.autoProperty('toString', type.isNullableType).call(const []);
+      return value
+          .autoProperty('toString', isNull ?? type.isNullableType)
+          .call(const []);
     } else if (type
         case InterfaceType(
           element: ClassElement(
@@ -99,7 +101,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
           )
         )) {
       return value
-          .autoProperty('toIso8601String', type.isNullableType)
+          .autoProperty('toIso8601String', isNull ?? type.isNullableType)
           .call(const []);
     } else {
       return value;
@@ -131,7 +133,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
         : iterable;
   }
 
-  Expression _toList(DartType type, Expression value) {
+  Expression _toList(DartType type, Expression value, {bool? isNull}) {
     final interfaceType = type as InterfaceType;
     final listType = interfaceType.typeArguments.single;
 
@@ -140,13 +142,13 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     if (identical(convertExpression, elementParamRef)) {
       return type.isDartCoreIterable
           ? value
-              .property('toList')
+              .autoProperty('toList', isNull ?? type.isNullableType)
               .call(const [], const {'growable': literalFalse})
           : value;
     }
 
     return value
-        .autoProperty('map', type.isNullableType)
+        .autoProperty('map', isNull ?? type.isNullableType)
         .call([
           closure1(elementParamRef.symbol!, (p1) => convertExpression.code),
         ])
@@ -181,7 +183,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     ]);
   }
 
-  Expression _toMap(DartType type, Expression value) {
+  Expression _toMap(DartType type, Expression value, {bool? isNull}) {
     final interfaceType = type as InterfaceType;
     final keyType = interfaceType.typeArguments[0];
     final valueType = interfaceType.typeArguments[1];
@@ -196,7 +198,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
       return value;
     }
 
-    return value.autoProperty('map', type.isNullableType).call([
+    return value.autoProperty('map', isNull ?? type.isNullableType).call([
       closure2(
         keyParamRef.symbol!,
         valueParamRef.symbol!,

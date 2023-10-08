@@ -36,7 +36,8 @@ final class ServerMixinBuilder extends ProxySpec
             _class.methods.map(
               (method) => mapMethod(
                 method,
-                (b) => b..annotations.add(Annotations.protected),
+                buildMethod: (b) => b..annotations.add(Annotations.protected),
+                buildParam: (param, b) {},
               ),
             ),
           )

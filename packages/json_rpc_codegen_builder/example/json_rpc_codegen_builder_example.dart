@@ -21,40 +21,44 @@ class User {
 }
 
 @jsonRpc
-abstract interface class SampleApi {
-  FutureOr<void> hello(
+// ignore: unused_element
+abstract class _SampleApi {
+  void hello(
     String name, [
-    @ServerDefault(1) int? times,
-    @ServerDefault(0) int? delay,
-    @ServerDefault(10.5) double? interval,
+    int times = 5,
+    int? delay = 100,
+    double? interval,
   ]);
 
-  FutureOr<void> notify({
+  @clientDefaults
+  void notify({
     required int id,
-    @ClientDefault(<double>[1, 2]) List<double> measures,
+    List<double> measures = const [1, 2],
   });
 
-  FutureOr<String> echo(String message);
+  String echo(String message);
 
-  FutureOr<User?> createUser(Map<String, List<Permission>?> permissions);
+  User? createUser(Map<String, List<Permission>?> permissions);
 
-  FutureOr<List<List<User>?>> userMatrix([Permission? permission]);
+  List<List<User>?> userMatrix([Permission? permission]);
 
-  FutureOr<Map<String, List<Permission>>> permissions();
+  Map<String, List<Permission>> permissions();
 
-  FutureOr<void> setHomepage(Uri url, [DateTime? timestamp]);
+  // ignore: prefer_void_to_null
+  Null setHomepage(Uri url, [DateTime? timestamp]);
 
-  FutureOr<Uri> findForDates(Iterable<DateTime> times);
+  Uri findForDates(Iterable<DateTime> times);
 
-  FutureOr<void> log(
+  @clientDefaults
+  void log(
     String message,
     dynamic context, [
-    @ClientDefault(User('admin', 'admin')) User user,
+    User user = const User('admin', 'admin'),
   ]);
 
-  FutureOr<bool> validate({
-    @ServerDefault(User('admin', 'admin')) User? user,
-    @ServerDefault(Permission.administrate) Permission? permission,
+  bool validate({
+    User? user = const User('admin', 'admin'),
+    Permission? permission = Permission.administrate,
   });
 }
 
