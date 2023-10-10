@@ -27,14 +27,16 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     DartType type,
     Expression value, {
     bool noCast = false,
+    bool? isNull,
   }) {
     if (type.isDartCoreIterable || type.isDartCoreList) {
-      return _fromList(type, value, noCast: noCast);
+      return _fromList(type, value, noCast: noCast, isNull: isNull);
     } else if (type.isDartCoreMap) {
-      return _fromMap(type, value, noCast: noCast);
+      return _fromMap(type, value, noCast: noCast, isNull: isNull);
     } else if (type.isEnum) {
       return _ifNotNull(
         type,
+        isNull ?? type.isNullableType,
         value,
         (ref) => Types.fromDartType(type, isNull: false)
             .property('values')
@@ -49,6 +51,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
         )) {
       return _ifNotNull(
         type,
+        isNull ?? type.isNullableType,
         value,
         (ref) => Types.fromDartType(type, isNull: false)
             .property('parse')
@@ -72,6 +75,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
 
       return _ifNotNull(
         type,
+        isNull ?? type.isNullableType,
         value,
         (ref) => Types.fromDartType(type, isNull: false).newInstanceNamed(
           'fromJson',
@@ -112,15 +116,16 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     DartType type,
     Expression value, {
     bool noCast = false,
+    bool? isNull,
   }) {
     final interfaceType = type as InterfaceType;
     final listType = interfaceType.typeArguments.single;
 
     final iterable = _maybeCast(
       value,
-      Types.list().asNullable(type.isNullableType),
+      Types.list().asNullable(isNull ?? type.isNullableType),
       noCast,
-    ).autoProperty('map', type.isNullableType).call([
+    ).autoProperty('map', isNull ?? type.isNullableType).call([
       closure1(
         r'$e',
         type1: Types.dynamic,
@@ -160,6 +165,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     DartType type,
     Expression value, {
     bool noCast = false,
+    bool? isNull,
   }) {
     final interfaceType = type as InterfaceType;
     final keyType = interfaceType.typeArguments[0];
@@ -167,9 +173,9 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
 
     return _maybeCast(
       value,
-      Types.map().asNullable(type.isNullableType),
+      Types.map().asNullable(isNull ?? type.isNullableType),
       noCast,
-    ).autoProperty('map', type.isNullableType).call([
+    ).autoProperty('map', isNull ?? type.isNullableType).call([
       closure2(
         r'$k',
         r'$v',
@@ -239,10 +245,11 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
 
   Expression _ifNotNull(
     DartType type,
+    bool isNull,
     Expression value,
     Expression Function(Expression ref) buildExpression,
   ) {
-    if (!type.isNullableType) {
+    if (!isNull) {
       return buildExpression(value);
     }
 

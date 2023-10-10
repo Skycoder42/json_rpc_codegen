@@ -163,7 +163,7 @@ final class ClientMixinBuilder extends ProxySpec
         -1;
 
     final paramExpressions = <Expression>[];
-    Expression? condition;
+    Expression? condition; // TODO assert non null instead
     for (final (index, param) in params.indexed.toList().reversed) {
       if (index <= lastRequiredIndex) {
         paramExpressions.add(toJson(param.type, refer(param.name)));

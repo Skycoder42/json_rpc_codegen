@@ -2,10 +2,12 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart' hide FunctionType;
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
+import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
 
-import '../common/closure_builder_mixin.dart';
 import '../../extensions/code_builder_extensions.dart';
+import '../../readers/defaults_reader.dart';
+import '../common/closure_builder_mixin.dart';
 import '../common/serialization_mixin.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
@@ -55,34 +57,37 @@ base mixin ParameterBuilderMixin
   Expression _buildConversion(Expression paramRef, ParameterElement param) {
     final paramType = param.type;
     if (paramType.isDartCoreInt) {
-      return _access(paramRef, param, 'asInt');
+      return _accessPrimitive(paramRef, param, 'asInt');
     } else if (paramType.isDartCoreDouble) {
-      return _access(paramRef, param, 'asNum')
+      return _accessPrimitive(paramRef, param, 'asNum')
           .autoProperty('toDouble', paramType.isNullableType)
           .call(const []);
     } else if (paramType.isDartCoreNum) {
-      return _access(paramRef, param, 'asNum');
+      return _accessPrimitive(paramRef, param, 'asNum');
     } else if (paramType.isDartCoreBool) {
-      return _access(paramRef, param, 'asBool');
+      return _accessPrimitive(paramRef, param, 'asBool');
     } else if (paramType.isDartCoreString) {
-      return _access(paramRef, param, 'asString');
+      return _accessPrimitive(paramRef, param, 'asString');
     } else if (paramType.isEnum) {
-      return fromJson(
-        paramType,
-        _access(paramRef, param, 'asString'),
-        noCast: true,
+      return _accessJsonConverted(
+        paramRef,
+        param,
+        'asString',
+        (e) => fromJson(paramType, e, noCast: true, isNull: false),
       );
     } else if (paramType.isDartCoreList || paramType.isDartCoreIterable) {
-      return fromJson(
-        paramType,
-        _access(paramRef, param, 'asList'),
-        noCast: true,
+      return _accessJsonConverted(
+        paramRef,
+        param,
+        'asList',
+        (e) => fromJson(paramType, e, noCast: true, isNull: false),
       );
     } else if (paramType.isDartCoreMap) {
-      return fromJson(
-        paramType,
-        _access(paramRef, param, 'asMap'),
-        noCast: true,
+      return _accessJsonConverted(
+        paramRef,
+        param,
+        'asMap',
+        (e) => fromJson(paramType, e, noCast: true, isNull: false),
       );
     } else if (paramType
         case InterfaceType(
@@ -90,45 +95,87 @@ base mixin ParameterBuilderMixin
             name: 'Uri',
           )
         )) {
-      return _access(paramRef, param, 'asUri');
+      return _accessPrimitive(paramRef, param, 'asUri');
     } else if (paramType
         case InterfaceType(
           element: ClassElement(
             name: 'DateTime',
           )
         )) {
-      return _access(paramRef, param, 'asDateTime');
+      return _accessPrimitive(paramRef, param, 'asDateTime');
     } else if (paramType is DynamicType) {
-      return _access(paramRef, param, 'value');
+      return _accessPrimitive(paramRef, param, 'value');
     } else {
-      return fromJson(
-        paramType,
-        _access(paramRef, param, 'value'),
-        noCast: true,
+      return _accessJsonConverted(
+        paramRef,
+        param,
+        'value',
+        (e) => fromJson(paramType, e, noCast: true, isNull: false),
       );
     }
   }
 
-  Expression _access(
+  Expression _accessPrimitive(
     Expression paramRef,
     ParameterElement param,
     String getter,
   ) {
+    final isServerDefault = DefaultsReader.isServerDefault(
+      param.enclosingElement! as MethodElement,
+    );
+
     if (param.type.isNullableType && param.type is! DynamicType) {
       final closure = closure1(r'$v', (p1) => p1.property(getter).code);
-      if (param.isOptional) {
-        return paramRef.property(_maybeNullOrName).call([
-          closure,
-          // if (param.hasDefaultValue) _defaultFor(param) else literalNull,
-        ]);
+
+      if (param.isOptional && isServerDefault) {
+        _ensureHasNoDefault(param);
+        return paramRef.property(_maybeNullOrName).call([closure]);
       } else {
         return paramRef.property(_nullOrName).call([closure]);
       }
     } else {
-      if (param.isOptional) {
-        return paramRef.property('${getter}Or').call([/*_defaultFor(param)*/]);
+      if (param.isOptional && isServerDefault) {
+        _ensureHasDefault(param);
+        return paramRef.property('${getter}Or').call([
+          _getDefault(param),
+        ]);
       } else {
         return paramRef.property(getter);
+      }
+    }
+  }
+
+  Expression _accessJsonConverted(
+    Expression paramRef,
+    ParameterElement param,
+    String getter,
+    Expression Function(Expression e) fromJson,
+  ) {
+    final isServerDefault = DefaultsReader.isServerDefault(
+      param.enclosingElement! as MethodElement,
+    );
+
+    if (param.type.isNullableType && param.type is! DynamicType) {
+      final closure = closure1(
+        r'$v',
+        (p1) => fromJson(p1.property(getter)).code,
+      );
+
+      if (param.isOptional && isServerDefault) {
+        _ensureHasNoDefault(param);
+        return paramRef.property(_maybeNullOrName).call([closure]);
+      } else {
+        return paramRef.property(_nullOrName).call([closure]);
+      }
+    } else {
+      if (param.isOptional && isServerDefault) {
+        _ensureHasDefault(param);
+        return paramRef.property('exists').conditional(
+              fromJson(paramRef.property(getter)),
+              _getDefault(param),
+            );
+      } else {
+        return fromJson(paramRef.property(getter));
       }
     }
   }
@@ -164,11 +211,12 @@ base mixin ParameterBuilderMixin
               ..types.add(typeT)
               ..returns = typeT.asNullable(true)
               ..requiredParameters.add(_buildGetter(getterParamRef, typeT))
-              ..requiredParameters.add(
+              ..optionalParameters.add(
                 Parameter(
                   (b) => b
                     ..name = defaultValueParamRef.symbol!
-                    ..type = typeT.asNullable(true),
+                    ..type = typeT.asNullable(true)
+                    ..defaultTo = literalNull.code,
                 ),
               )
               ..body = refer('exists')
@@ -192,4 +240,27 @@ base mixin ParameterBuilderMixin
               ..requiredParameters.add(Types.jsonRpc2Parameter),
           ),
       );
+  CodeExpression _getDefault(ParameterElement param) =>
+      CodeExpression(Code(param.defaultValueCode!));
+
+  void _ensureHasDefault(ParameterElement param) {
+    if (!param.hasDefaultValue) {
+      throw InvalidGenerationSourceError(
+        'Non nullable optional parameters must have a default value.',
+        element: param,
+        todo: 'Make the type nullable or specify a default value.',
+      );
+    }
+  }
+
+  void _ensureHasNoDefault(ParameterElement param) {
+    if (param.hasDefaultValue) {
+      throw InvalidGenerationSourceError(
+        'An RPC method cannot have an nullable optional parameter with a '
+        'server sided default value.',
+        element: param,
+        todo: 'Make the type non nullable or remove the default value.',
+      );
+    }
+  }
 }
