@@ -7,6 +7,7 @@ import 'package:source_helper/source_helper.dart';
 
 import '../../extensions/code_builder_extensions.dart';
 import '../../readers/defaults_reader.dart';
+import '../common/annotations.dart';
 import '../common/closure_builder_mixin.dart';
 import '../common/serialization_mixin.dart';
 import '../common/types.dart';
@@ -18,7 +19,6 @@ base mixin ParameterBuilderMixin
     on ProxySpec, SerializationMixin, ClosureBuilderMixin {
   static const _maybeOrName = r'$maybeOr';
   static const _nullOrName = r'$nullOr';
-  static const _nullOrRef = Reference(_nullOrName);
   static const _maybeNullOrName = r'$maybeNullOr';
 
   /// @nodoc
@@ -217,6 +217,7 @@ base mixin ParameterBuilderMixin
           Method(
             (b) => b
               ..name = _maybeOrName
+              ..annotations.add(Annotations.pragmaPreferInline)
               ..types.add(typeT)
               ..returns = typeT
               ..requiredParameters.add(_buildGetter(getterParamRef, typeT))
@@ -239,6 +240,7 @@ base mixin ParameterBuilderMixin
           Method(
             (b) => b
               ..name = _nullOrName
+              ..annotations.add(Annotations.pragmaPreferInline)
               ..types.add(typeT)
               ..returns = typeT.asNullable(true)
               ..requiredParameters.add(_buildGetter(getterParamRef, typeT))
@@ -255,6 +257,7 @@ base mixin ParameterBuilderMixin
           Method(
             (b) => b
               ..name = _maybeNullOrName
+              ..annotations.add(Annotations.pragmaPreferInline)
               ..types.add(typeT)
               ..returns = typeT.asNullable(true)
               ..requiredParameters.add(_buildGetter(getterParamRef, typeT))

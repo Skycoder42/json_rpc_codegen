@@ -56,8 +56,7 @@ final class ClientMixinBuilder extends ProxySpec
         method,
         buildMethod: (b) => b
           ..returns = Types.future(Types.fromDartType(returnType))
-          ..modifier =
-              method.returnType.isDartCoreNull ? null : MethodModifier.async
+          ..modifier = MethodModifier.async
           ..body = _buildRequestBody(method, returnType),
         buildParam: (p, b) => _buildParam(method, p, b),
       );
@@ -92,35 +91,44 @@ final class ClientMixinBuilder extends ProxySpec
   Code _buildNotificationBody(MethodElement method) => _buildMethodInvocation(
         _rpcGetterRef.property('sendNotification'),
         method,
-      ).code;
+        isAsync: false,
+      );
 
-  Code _buildRequestBody(MethodElement method, DartType returnType) {
-    final invocation = _buildMethodInvocation(
-      _rpcGetterRef.property('sendRequest'),
-      method,
-    );
+  Code _buildRequestBody(MethodElement method, DartType returnType) =>
+      _buildMethodInvocation(
+        _rpcGetterRef.property('sendRequest'),
+        method,
+        isAsync: true,
+        buildReturn: returnType.isDartCoreNull
+            ? null
+            : (invocation) sync* {
+                const resultVarRef = Reference(r'$result');
+                yield declareFinal(resultVarRef.symbol!, type: Types.dynamic)
+                    .assign(invocation.awaited)
+                    .statement;
+                yield fromJson(returnType, resultVarRef).returned.statement;
+              },
+      );
 
-    if (returnType.isDartCoreNull) {
-      return invocation.code;
-    } else {
-      const resultVarRef = Reference(r'$result');
-      return Block.of([
-        declareFinal(resultVarRef.symbol!, type: Types.dynamic)
-            .assign(invocation.awaited)
-            .statement,
-        fromJson(returnType, resultVarRef).returned.statement,
-      ]);
-    }
-  }
-
-  Expression _buildMethodInvocation(Expression target, MethodElement method) {
+  Code _buildMethodInvocation(
+    Expression target,
+    MethodElement method, {
+    required bool isAsync,
+    Iterable<Code> Function(Expression invocation)? buildReturn,
+  }) {
     final isServerDefault = DefaultsReader.isServerDefault(method);
     final parameterMode = validateParameters(method);
 
-    return target.call([
+    final assertions = <Code>[];
+
+    final invocation = target.call([
       literalString(method.name),
       if (parameterMode.hasPositional)
-        _buildPositionalParameters(method.parameters, isServerDefault),
+        _buildPositionalParameters(
+          method.parameters,
+          isServerDefault,
+          assertions,
+        ),
       if (parameterMode.hasNamed)
         literalMap(
           {
@@ -137,11 +145,24 @@ final class ClientMixinBuilder extends ProxySpec
           Types.dynamic,
         ),
     ]);
+
+    if (assertions.isEmpty && buildReturn == null) {
+      return invocation.code;
+    } else {
+      return Block.of([
+        ...assertions.reversed,
+        if (buildReturn == null)
+          isAsync ? invocation.awaited.statement : invocation.statement
+        else
+          ...buildReturn(invocation),
+      ]);
+    }
   }
 
   Expression _buildPositionalParameters(
     List<ParameterElement> params,
     bool isServerDefault,
+    List<Code> assertions,
   ) {
     if (!isServerDefault) {
       return literalList(
@@ -163,7 +184,7 @@ final class ClientMixinBuilder extends ProxySpec
         -1;
 
     final paramExpressions = <Expression>[];
-    Expression? condition; // TODO assert non null instead
+    Expression? assertRest;
     for (final (index, param) in params.indexed.toList().reversed) {
       if (index <= lastRequiredIndex) {
         paramExpressions.add(toJson(param.type, refer(param.name)));
@@ -171,16 +192,23 @@ final class ClientMixinBuilder extends ProxySpec
       }
 
       bool? overwriteIsNull;
-      if (condition == null) {
+      if (assertRest == null) {
         overwriteIsNull = false;
-        condition = refer(param.name).notEqualTo(literalNull);
+        assertRest = refer(param.name).equalTo(literalNull);
       } else {
-        condition = refer(param.name).notEqualTo(literalNull).or(condition);
+        assertions.add(
+          refer('assert').call([
+            refer(param.name)
+                .notEqualTo(literalNull)
+                .or(assertRest.parenthesized),
+          ]).statement,
+        );
+        assertRest = refer(param.name).equalTo(literalNull).and(assertRest);
       }
 
       paramExpressions.add(
         IterableIf(
-          condition,
+          refer(param.name).notEqualTo(literalNull),
           toJson(
             param.type,
             refer(param.name),

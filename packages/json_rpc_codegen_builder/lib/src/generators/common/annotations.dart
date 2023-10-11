@@ -18,4 +18,7 @@ abstract base class Annotations {
 
   /// @nodoc
   static const Reference mustCallSuper = Reference('mustCallSuper');
+
+  static const Reference pragmaPreferInline =
+      Reference("pragma('vm:prefer-inline')");
 }
