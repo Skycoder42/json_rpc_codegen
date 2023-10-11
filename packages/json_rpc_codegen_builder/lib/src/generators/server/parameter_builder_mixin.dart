@@ -16,6 +16,7 @@ import '../proxy_spec.dart';
 @internal
 base mixin ParameterBuilderMixin
     on ProxySpec, SerializationMixin, ClosureBuilderMixin {
+  static const _maybeOrName = r'$maybeOr';
   static const _nullOrName = r'$nullOr';
   static const _nullOrRef = Reference(_nullOrName);
   static const _maybeNullOrName = r'$maybeNullOr';
@@ -155,12 +156,12 @@ base mixin ParameterBuilderMixin
       param.enclosingElement! as MethodElement,
     );
 
-    if (param.type.isNullableType && param.type is! DynamicType) {
-      final closure = closure1(
-        r'$v',
-        (p1) => fromJson(p1.property(getter)).code,
-      );
+    final closure = closure1(
+      r'$v',
+      (p1) => fromJson(p1.property(getter)).code,
+    );
 
+    if (param.type.isNullableType && param.type is! DynamicType) {
       if (param.isOptional && isServerDefault) {
         _ensureHasNoDefault(param);
         return paramRef.property(_maybeNullOrName).call([closure]);
@@ -170,76 +171,16 @@ base mixin ParameterBuilderMixin
     } else {
       if (param.isOptional && isServerDefault) {
         _ensureHasDefault(param);
-        return paramRef.property('exists').conditional(
-              fromJson(paramRef.property(getter)),
-              _getDefault(param),
-            );
+        return paramRef.property(_maybeOrName).call([
+          closure,
+          _getDefault(param),
+        ]);
       } else {
         return fromJson(paramRef.property(getter));
       }
     }
   }
 
-  static Extension _buildParameterExtensions() {
-    final typeT = TypeReference((b) => b..symbol = 'T');
-    const getterParamRef = Reference('getter');
-    const defaultValueParamRef = Reference('defaultValue');
-    return Extension(
-      (b) => b
-        ..name = r'_$JsonRpc2ParameterExtensions'
-        ..on = Types.jsonRpc2Parameter
-        ..methods.add(
-          Method(
-            (b) => b
-              ..name = _nullOrName
-              ..types.add(typeT)
-              ..returns = typeT.asNullable(true)
-              ..requiredParameters.add(_buildGetter(getterParamRef, typeT))
-              ..body = refer('value')
-                  .equalTo(literalNull)
-                  .conditional(
-                    literalNull,
-                    getterParamRef.call([refer('this')]),
-                  )
-                  .code,
-          ),
-        )
-        ..methods.add(
-          Method(
-            (b) => b
-              ..name = _maybeNullOrName
-              ..types.add(typeT)
-              ..returns = typeT.asNullable(true)
-              ..requiredParameters.add(_buildGetter(getterParamRef, typeT))
-              ..optionalParameters.add(
-                Parameter(
-                  (b) => b
-                    ..name = defaultValueParamRef.symbol!
-                    ..type = typeT.asNullable(true)
-                    ..defaultTo = literalNull.code,
-                ),
-              )
-              ..body = refer('exists')
-                  .conditional(
-                    _nullOrRef.call(const [getterParamRef], const {}, [typeT]),
-                    defaultValueParamRef,
-                  )
-                  .code,
-          ),
-        ),
-    );
-  }
-
-  static Parameter _buildGetter(Reference name, TypeReference type) =>
-      Parameter(
-        (b) => b
-          ..name = name.symbol!
-          ..type = FunctionType(
-            (b) => b
-              ..returnType = type
-              ..requiredParameters.add(Types.jsonRpc2Parameter),
-          ),
-      );
   CodeExpression _getDefault(ParameterElement param) =>
       CodeExpression(Code(param.defaultValueCode!));
 
@@ -263,4 +204,80 @@ base mixin ParameterBuilderMixin
       );
     }
   }
+
+  static Extension _buildParameterExtensions() {
+    final typeT = TypeReference((b) => b..symbol = 'T');
+    const getterParamRef = Reference('getter');
+    const defaultValueParamRef = Reference('defaultValue');
+    return Extension(
+      (b) => b
+        ..name = r'_$JsonRpc2ParameterExtensions'
+        ..on = Types.jsonRpc2Parameter
+        ..methods.add(
+          Method(
+            (b) => b
+              ..name = _maybeOrName
+              ..types.add(typeT)
+              ..returns = typeT
+              ..requiredParameters.add(_buildGetter(getterParamRef, typeT))
+              ..requiredParameters.add(
+                Parameter(
+                  (b) => b
+                    ..name = defaultValueParamRef.symbol!
+                    ..type = typeT,
+                ),
+              )
+              ..body = refer('exists')
+                  .conditional(
+                    getterParamRef.call([refer('this')]),
+                    defaultValueParamRef,
+                  )
+                  .code,
+          ),
+        )
+        ..methods.add(
+          Method(
+            (b) => b
+              ..name = _nullOrName
+              ..types.add(typeT)
+              ..returns = typeT.asNullable(true)
+              ..requiredParameters.add(_buildGetter(getterParamRef, typeT))
+              ..body = refer('value')
+                  .notEqualTo(literalNull)
+                  .conditional(
+                    getterParamRef.call([refer('this')]),
+                    literalNull,
+                  )
+                  .code,
+          ),
+        )
+        ..methods.add(
+          Method(
+            (b) => b
+              ..name = _maybeNullOrName
+              ..types.add(typeT)
+              ..returns = typeT.asNullable(true)
+              ..requiredParameters.add(_buildGetter(getterParamRef, typeT))
+              ..body = refer('exists')
+                  .and(refer('value').notEqualTo(literalNull))
+                  .conditional(
+                    getterParamRef.call([refer('this')]),
+                    literalNull,
+                  )
+                  .code,
+          ),
+        ),
+    );
+  }
+
+  static Parameter _buildGetter(Reference name, TypeReference type) =>
+      Parameter(
+        (b) => b
+          ..name = name.symbol!
+          ..type = FunctionType(
+            (b) => b
+              ..returnType = type
+              ..requiredParameters.add(Types.jsonRpc2Parameter),
+          ),
+      );
 }
