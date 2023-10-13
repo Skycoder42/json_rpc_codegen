@@ -76,7 +76,9 @@ base mixin ParameterBuilderMixin
         'asString',
         (e) => fromJson(paramType, e, noCast: true, isNull: false),
       );
-    } else if (paramType.isDartCoreList || paramType.isDartCoreIterable) {
+    } else if (paramType.isDartCoreIterable ||
+        paramType.isDartCoreList ||
+        paramType.isDartCoreSet) {
       return _accessJsonConverted(
         paramRef,
         param,

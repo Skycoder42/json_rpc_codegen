@@ -5,9 +5,9 @@ import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
 
+import '../../extensions/code_builder_extensions.dart';
 import '../proxy_spec.dart';
 import 'closure_builder_mixin.dart';
-import '../../extensions/code_builder_extensions.dart';
 import 'types.dart';
 
 /// @nodoc
@@ -29,7 +29,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     bool noCast = false,
     bool? isNull,
   }) {
-    if (type.isDartCoreIterable || type.isDartCoreList) {
+    if (type.isDartCoreIterable || type.isDartCoreList || type.isDartCoreSet) {
       return _fromList(type, value, noCast: noCast, isNull: isNull);
     } else if (type.isDartCoreMap) {
       return _fromMap(type, value, noCast: noCast, isNull: isNull);
@@ -88,7 +88,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
   /// @nodoc
   @protected
   Expression toJson(DartType type, Expression value, {bool? isNull}) {
-    if (type.isDartCoreIterable || type.isDartCoreList) {
+    if (type.isDartCoreIterable || type.isDartCoreList || type.isDartCoreSet) {
       return _toList(type, value, isNull: isNull);
     } else if (type.isDartCoreMap) {
       return _toMap(type, value, isNull: isNull);
@@ -121,21 +121,30 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     final interfaceType = type as InterfaceType;
     final listType = interfaceType.typeArguments.single;
 
-    final iterable = _maybeCast(
+    var iterable = _maybeCast(
       value,
       Types.list().asNullable(isNull ?? type.isNullableType),
       noCast,
-    ).autoProperty('map', isNull ?? type.isNullableType).call([
-      closure1(
-        r'$e',
-        type1: Types.dynamic,
-        (p1) => fromJson(listType, p1).code,
-      ),
-    ]);
+    );
 
-    return type.isDartCoreList
-        ? iterable.property('toList').call(const [])
-        : iterable;
+    if (listType is! DynamicType) {
+      iterable =
+          iterable.autoProperty('map', isNull ?? type.isNullableType).call([
+        closure1(
+          r'$e',
+          type1: Types.dynamic,
+          (p1) => fromJson(listType, p1).code,
+        ),
+      ]);
+    }
+
+    if (type.isDartCoreList) {
+      iterable = iterable.property('toList').call(const []);
+    } else if (type.isDartCoreSet) {
+      iterable = iterable.property('toSet').call(const []);
+    }
+
+    return iterable;
   }
 
   Expression _toList(DartType type, Expression value, {bool? isNull}) {
@@ -145,7 +154,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     const elementParamRef = Reference(r'$e');
     final convertExpression = toJson(listType, elementParamRef);
     if (identical(convertExpression, elementParamRef)) {
-      return type.isDartCoreIterable
+      return !type.isDartCoreList
           ? value
               .autoProperty('toList', isNull ?? type.isNullableType)
               .call(const [], const {'growable': literalFalse})
@@ -171,22 +180,28 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     final keyType = interfaceType.typeArguments[0];
     final valueType = interfaceType.typeArguments[1];
 
-    return _maybeCast(
+    var map = _maybeCast(
       value,
       Types.map().asNullable(isNull ?? type.isNullableType),
       noCast,
-    ).autoProperty('map', isNull ?? type.isNullableType).call([
-      closure2(
-        r'$k',
-        r'$v',
-        type1: Types.dynamic,
-        type2: Types.dynamic,
-        (p1, p2) => Types.mapEntry.newInstance([
-          fromJson(keyType, p1),
-          fromJson(valueType, p2),
-        ]).code,
-      ),
-    ]);
+    );
+
+    if (keyType is! DynamicType || valueType is! DynamicType) {
+      map = map.autoProperty('map', isNull ?? type.isNullableType).call([
+        closure2(
+          r'$k',
+          r'$v',
+          type1: Types.dynamic,
+          type2: Types.dynamic,
+          (p1, p2) => Types.mapEntry.newInstance([
+            fromJson(keyType, p1),
+            fromJson(valueType, p2),
+          ]).code,
+        ),
+      ]);
+    }
+
+    return map;
   }
 
   Expression _toMap(DartType type, Expression value, {bool? isNull}) {

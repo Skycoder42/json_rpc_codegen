@@ -91,4 +91,4 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc> {
       ).accept<StringSink>(_createEmitter(), buffer);
 }
 
-// TODO support sets, object and records
+// TODO support records

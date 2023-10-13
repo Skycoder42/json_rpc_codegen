@@ -38,7 +38,7 @@ abstract class _SampleApi {
 
   String echo(String message);
 
-  User? createUser(Map<String, List<Permission>?> permissions);
+  User? createUser(Map<String, Set<Permission>?> permissions);
 
   List<List<User>?> userMatrix([Permission? permission]);
 
@@ -62,6 +62,8 @@ abstract class _SampleApi {
     Permission permission = Permission.administrate,
     List<Uri>? resources,
   });
+
+  Map merge(Set keys, Iterable values);
 }
 
 void main() {}
