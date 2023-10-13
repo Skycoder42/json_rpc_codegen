@@ -64,6 +64,11 @@ abstract class _SampleApi {
   });
 
   Map merge(Set keys, Iterable values);
+
+  (int, List<User>?, Permission, (int, int)) flip(
+    ({int am, List<User>? ul, Permission pm, (int, int) pt}) record,
+    () control,
+  );
 }
 
 void main() {}

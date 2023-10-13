@@ -1,6 +1,6 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
-import 'package:code_builder/code_builder.dart';
+import 'package:code_builder/code_builder.dart' hide RecordType;
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
@@ -39,7 +39,7 @@ final class ServerMixinBuilder extends ProxySpec
                 method,
                 buildMethod: (b) => b
                   ..annotations.add(Annotations.protected)
-                  ..returns = Types.futureOr(b.returns! as TypeReference),
+                  ..returns = Types.futureOr(b.returns),
                 buildParam: (_, builder) => builder
                   ..named = false
                   ..required = false,
@@ -71,7 +71,7 @@ final class ServerMixinBuilder extends ProxySpec
       if (parameterMode == ParameterMode.none)
         closure0(
           modifier: MethodModifier.async,
-          () => _buildInvocation(method, withReturn: false).code,
+          () => Block.of(_buildInvocation(method)),
         )
       else
         closure1(
@@ -84,28 +84,36 @@ final class ServerMixinBuilder extends ProxySpec
                   .mapIndexed((i, e) => buildPositional(p1, i, e)),
             if (parameterMode.hasNamed)
               ...method.parameters.map((e) => buildNamed(p1, e)),
-            _buildInvocation(method, withReturn: true).statement,
+            ..._buildInvocation(method),
           ]),
         ),
     ]).statement;
   }
 
-  Expression _buildInvocation(
-    MethodElement method, {
-    required bool withReturn,
-  }) {
+  Iterable<Code> _buildInvocation(
+    MethodElement method,
+  ) sync* {
     final invocation = refer(method.name).call([
       for (final p in method.parameters) paramRefFor(p),
     ]);
 
     if (method.returnType is VoidType || method.returnType.isDartCoreNull) {
-      return invocation.awaited;
+      yield invocation.awaited.statement;
+      return;
     }
 
-    final jsonConverted = toJson(
-      getReturnType(method),
-      invocation.awaited.parenthesized,
-    );
-    return withReturn ? jsonConverted.returned : jsonConverted;
+    final returnType = getReturnType(method);
+    if (returnType is RecordType) {
+      const resultRef = Reference(r'$result');
+      yield declareFinal(resultRef.symbol!)
+          .assign(invocation.awaited)
+          .statement;
+      yield toJson(returnType, resultRef).returned.statement;
+    } else {
+      yield toJson(
+        returnType,
+        invocation.awaited.parenthesized,
+      ).returned.statement;
+    }
   }
 }

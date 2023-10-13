@@ -1,8 +1,9 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
-import 'package:analyzer/dart/element/type.dart';
+import 'package:analyzer/dart/element/type.dart' as ast_type;
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
+import 'package:source_helper/source_helper.dart';
 
 /// @nodoc
 @internal
@@ -10,11 +11,16 @@ abstract base class Types {
   Types._();
 
   /// @nodoc
-  static TypeReference fromDartType(
-    DartType dartType, {
+  static Reference fromDartType(
+    ast_type.DartType dartType, {
     bool? isNull,
-  }) =>
-      dartType is VoidType || dartType.isDartCoreNull
+  }) {
+    if (dartType is ast_type.VoidType || dartType.isDartCoreNull) {
+      return $void;
+    } else if (dartType is ast_type.RecordType) {
+      return _fromRecord(dartType);
+    } else {
+      return dartType is ast_type.VoidType || dartType.isDartCoreNull
           ? $void
           : TypeReference(
               (b) {
@@ -23,11 +29,13 @@ abstract base class Types {
                   ..isNullable = isNull ??
                       dartType.nullabilitySuffix != NullabilitySuffix.none;
 
-                if (dartType is InterfaceType) {
+                if (dartType is ast_type.InterfaceType) {
                   b.types.addAll(dartType.typeArguments.map(fromDartType));
                 }
               },
             );
+    }
+  }
 
   /// @nodoc
   static TypeReference fromClass(ClassElement clazz) => _named(clazz.name);
@@ -43,7 +51,7 @@ abstract base class Types {
       );
 
   /// @nodoc
-  static TypeReference list([TypeReference? type]) => TypeReference(
+  static TypeReference list([Reference? type]) => TypeReference(
         (b) => b
           ..symbol = 'List'
           ..types.addAll([
@@ -52,8 +60,7 @@ abstract base class Types {
       );
 
   /// @nodoc
-  static TypeReference map([TypeReference? key, TypeReference? value]) =>
-      TypeReference(
+  static TypeReference map([Reference? key, Reference? value]) => TypeReference(
         (b) => b
           ..symbol = 'Map'
           ..types.addAll([
@@ -63,7 +70,7 @@ abstract base class Types {
       );
 
   /// @nodoc
-  static TypeReference future([TypeReference? type]) => TypeReference(
+  static TypeReference future([Reference? type]) => TypeReference(
         (b) => b
           ..symbol = 'Future'
           ..types.addAll([
@@ -72,7 +79,7 @@ abstract base class Types {
       );
 
   /// @nodoc
-  static TypeReference futureOr([TypeReference? type]) => TypeReference(
+  static TypeReference futureOr([Reference? type]) => TypeReference(
         (b) => b
           ..symbol = 'FutureOr'
           ..types.addAll([
@@ -81,7 +88,7 @@ abstract base class Types {
       );
 
   /// @nodoc
-  static TypeReference streamChannel([TypeReference? type]) => TypeReference(
+  static TypeReference streamChannel([Reference? type]) => TypeReference(
         (b) => b
           ..symbol = 'StreamChannel'
           ..types.addAll([
@@ -157,5 +164,18 @@ abstract base class Types {
 
   static TypeReference _named(String name) => TypeReference(
         (b) => b..symbol = name,
+      );
+
+  static RecordType _fromRecord(ast_type.RecordType record) => RecordType(
+        (b) => b
+          ..isNullable = record.isNullableType
+          ..positionalFieldTypes.addAll([
+            for (final field in record.positionalFields)
+              fromDartType(field.type),
+          ])
+          ..namedFieldTypes.addAll({
+            for (final field in record.namedFields)
+              field.name: fromDartType(field.type),
+          }),
       );
 }

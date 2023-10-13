@@ -1,6 +1,6 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart' hide FunctionType;
-import 'package:code_builder/code_builder.dart';
+import 'package:code_builder/code_builder.dart' hide RecordType;
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
@@ -92,6 +92,29 @@ base mixin ParameterBuilderMixin
         'asMap',
         (e) => fromJson(paramType, e, noCast: true, isNull: false),
       );
+    } else if (paramType is RecordType) {
+      switch ((
+        paramType.positionalFields.isNotEmpty,
+        paramType.namedFields.isNotEmpty
+      )) {
+        case (false, false):
+        case (true, false):
+          return _accessJsonConverted(
+            paramRef,
+            param,
+            'asList',
+            (e) => fromJson(paramType, e, noCast: true, isNull: false),
+          );
+        case (false, true):
+          return _accessJsonConverted(
+            paramRef,
+            param,
+            'asMap',
+            (e) => fromJson(paramType, e, noCast: true, isNull: false),
+          );
+        case (true, true):
+          SerializationMixin.throwInvalidRecord(paramType);
+      }
     } else if (paramType
         case InterfaceType(
           element: ClassElement(

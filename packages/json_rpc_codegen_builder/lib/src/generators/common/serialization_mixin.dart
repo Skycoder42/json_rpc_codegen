@@ -1,6 +1,6 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart' hide FunctionType;
-import 'package:code_builder/code_builder.dart';
+import 'package:code_builder/code_builder.dart' hide RecordType;
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
@@ -13,11 +13,14 @@ import 'types.dart';
 /// @nodoc
 @internal
 base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
+  static const _mapName = r'_$map';
+  static const _mapRef = Reference(_mapName);
   static const _maybeMapName = r'_$maybeMap';
   static const _maybeMapRef = Reference(_maybeMapName);
 
   /// @nodoc
   static Iterable<Spec> buildGlobals() sync* {
+    yield _buildMap();
     yield _buildMaybeMap();
   }
 
@@ -33,6 +36,8 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
       return _fromList(type, value, noCast: noCast, isNull: isNull);
     } else if (type.isDartCoreMap) {
       return _fromMap(type, value, noCast: noCast, isNull: isNull);
+    } else if (type is RecordType) {
+      return _fromRecord(type, value, noCast: noCast, isNull: isNull);
     } else if (type.isEnum) {
       return _ifNotNull(
         type,
@@ -92,6 +97,8 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
       return _toList(type, value, isNull: isNull);
     } else if (type.isDartCoreMap) {
       return _toMap(type, value, isNull: isNull);
+    } else if (type is RecordType) {
+      return _toRecord(type, value, isNull: isNull);
     } else if (type.isEnum) {
       return value.autoProperty('name', isNull ?? type.isNullableType);
     } else if (type case InterfaceType(element: ClassElement(name: 'Uri'))) {
@@ -231,6 +238,101 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     ]);
   }
 
+  Expression _fromRecord(
+    DartType type,
+    Expression value, {
+    bool noCast = false,
+    bool? isNull,
+  }) {
+    final recordType = type as RecordType;
+    if (recordType.namedFields.isNotEmpty &&
+        recordType.positionalFields.isNotEmpty) {
+      throwInvalidRecord(recordType);
+    } else if (recordType.namedFields.isNotEmpty) {
+      return _ifNotNull(
+        type,
+        isNull ?? type.isNullableType,
+        mapNonNull: true,
+        _maybeCast(
+          value,
+          Types.map().asNullable(isNull ?? type.isNullableType),
+          noCast,
+        ),
+        (ref) => literalRecord(const [], {
+          for (final field in recordType.namedFields)
+            field.name: fromJson(
+              field.type,
+              ref.index(literalString(field.name)),
+            ),
+        }),
+      );
+    } else {
+      // empty records are treated as positional
+      return _ifNotNull(
+        type,
+        isNull ?? type.isNullableType,
+        mapNonNull: true,
+        _maybeCast(
+          value,
+          Types.list().asNullable(isNull ?? type.isNullableType),
+          noCast,
+        ),
+        (ref) => literalRecord(
+          [
+            for (final (index, field) in recordType.positionalFields.indexed)
+              fromJson(
+                field.type,
+                ref.index(literalNum(index)),
+              ),
+          ],
+          const {},
+        ),
+      );
+    }
+  }
+
+  Expression _toRecord(DartType type, Expression value, {bool? isNull}) {
+    final recordType = type as RecordType;
+    if (recordType.namedFields.isNotEmpty &&
+        recordType.positionalFields.isNotEmpty) {
+      throwInvalidRecord(recordType);
+    } else if (recordType.namedFields.isNotEmpty) {
+      return _ifNotNull(
+        type,
+        isNull ?? type.isNullableType,
+        value,
+        (ref) => literalMap(
+          {
+            for (final field in recordType.namedFields)
+              literalString(field.name): toJson(
+                field.type,
+                ref.property(field.name),
+              ),
+          },
+          Types.string,
+          Types.dynamic,
+        ),
+      );
+    } else {
+      // empty records are treated as positional
+      return _ifNotNull(
+        type,
+        isNull ?? type.isNullableType,
+        value,
+        (ref) => literalList(
+          {
+            for (final (index, field) in recordType.positionalFields.indexed)
+              toJson(
+                field.type,
+                ref.property('\$${index + 1}'),
+              ),
+          },
+          Types.dynamic,
+        ),
+      );
+    }
+  }
+
   bool _isPrimitiveType(DartType type) =>
       type.isDartCoreNull ||
       type.isDartCoreBool ||
@@ -253,7 +355,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
 
   Expression _maybeCast(
     Expression ref,
-    TypeReference type,
+    Reference type,
     bool noCast,
   ) =>
       noCast ? ref : ref.asA(type);
@@ -262,16 +364,57 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     DartType type,
     bool isNull,
     Expression value,
-    Expression Function(Expression ref) buildExpression,
-  ) {
+    Expression Function(Expression ref) buildExpression, {
+    bool mapNonNull = false,
+  }) {
     if (!isNull) {
-      return buildExpression(value);
+      if (mapNonNull) {
+        return _mapRef.call([
+          value,
+          closure1(r'$v', (p1) => buildExpression(p1).code),
+        ]);
+      } else {
+        return buildExpression(value);
+      }
     }
 
     return _maybeMapRef.call([
       value,
       closure1(r'$v', (p1) => buildExpression(p1).code),
     ]);
+  }
+
+  static Method _buildMap() {
+    final tConverted = TypeReference((b) => b..symbol = 'TConverted');
+    final tJson = TypeReference((b) => b..symbol = 'TJson');
+    const valueParamRef = Reference(r'$value');
+    const convertParamRef = Reference(r'$convert');
+    return Method(
+      (b) => b
+        ..name = _mapName
+        ..returns = tConverted
+        ..types.add(tConverted.boundTo(Types.object))
+        ..types.add(tJson.boundTo(Types.object))
+        ..requiredParameters.add(
+          Parameter(
+            (b) => b
+              ..name = valueParamRef.symbol!
+              ..type = tJson,
+          ),
+        )
+        ..requiredParameters.add(
+          Parameter(
+            (b) => b
+              ..name = convertParamRef.symbol!
+              ..type = FunctionType(
+                (b) => b
+                  ..returnType = tConverted
+                  ..requiredParameters.add(tJson),
+              ),
+          ),
+        )
+        ..body = convertParamRef.call([valueParamRef]).code,
+    );
   }
 
   static Method _buildMaybeMap() {
@@ -310,6 +453,14 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
               convertParamRef.call([valueParamRef]),
             )
             .code,
+    );
+  }
+
+  static Never throwInvalidRecord(RecordType recordType) {
+    throw InvalidGenerationSourceError(
+      'Records cannot be a mixture of positional and named.',
+      element: recordType.element,
+      todo: 'Make all record parameters either positional or named.',
     );
   }
 }

@@ -90,5 +90,3 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc> {
           ..body.addAll(ParameterBuilderMixin.buildGlobals()),
       ).accept<StringSink>(_createEmitter(), buffer);
 }
-
-// TODO support records
