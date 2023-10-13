@@ -1,4 +1,6 @@
 import 'package:code_builder/code_builder.dart';
+// ignore: implementation_imports
+import 'package:code_builder/src/visitors.dart';
 import 'package:meta/meta.dart';
 
 /// @nodoc
@@ -25,4 +27,13 @@ extension TypeReferenceX on TypeReference {
           ..replace(this)
           ..bound = type,
       );
+}
+
+/// @nodoc
+@internal
+extension SpecIterableX on Iterable<Spec> {
+  /// @nodoc
+  void acceptAll<R>(SpecVisitor<R> visitor, [R? context]) => forEach((element) {
+        element.accept<R>(visitor, context);
+      });
 }

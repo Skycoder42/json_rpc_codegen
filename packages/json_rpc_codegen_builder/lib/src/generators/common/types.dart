@@ -108,6 +108,9 @@ abstract base class Types {
   static final mapEntry = _named('MapEntry');
 
   /// @nodoc
+  static final argumentError = _named('ArgumentError');
+
+  /// @nodoc
   static final jsonRpc2Client = TypeReference(
     (b) => b..symbol = 'Client',
   );

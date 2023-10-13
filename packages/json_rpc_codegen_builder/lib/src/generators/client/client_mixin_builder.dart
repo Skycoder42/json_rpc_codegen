@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
 
+import '../../builders/if.dart';
 import '../../builders/iterable_if.dart';
 import '../../extensions/analyzer_extensions.dart';
 import '../../readers/defaults_reader.dart';
@@ -119,7 +120,7 @@ final class ClientMixinBuilder extends ProxySpec
     final isServerDefault = DefaultsReader.isServerDefault(method);
     final parameterMode = validateParameters(method);
 
-    final assertions = <Code>[];
+    final validations = <Code>[];
 
     final invocation = target.call([
       literalString(method.name),
@@ -127,7 +128,7 @@ final class ClientMixinBuilder extends ProxySpec
         _buildPositionalParameters(
           method.parameters,
           isServerDefault,
-          assertions,
+          validations,
         ),
       if (parameterMode.hasNamed)
         literalMap(
@@ -146,11 +147,11 @@ final class ClientMixinBuilder extends ProxySpec
         ),
     ]);
 
-    if (assertions.isEmpty && buildReturn == null) {
+    if (validations.isEmpty && buildReturn == null) {
       return invocation.code;
     } else {
       return Block.of([
-        ...assertions.reversed,
+        ...validations.reversed,
         if (buildReturn == null)
           isAsync ? invocation.awaited.statement : invocation.statement
         else
@@ -162,7 +163,7 @@ final class ClientMixinBuilder extends ProxySpec
   Expression _buildPositionalParameters(
     List<ParameterElement> params,
     bool isServerDefault,
-    List<Code> assertions,
+    List<Code> validations,
   ) {
     if (!isServerDefault) {
       return literalList(
@@ -184,7 +185,8 @@ final class ClientMixinBuilder extends ProxySpec
         -1;
 
     final paramExpressions = <Expression>[];
-    Expression? assertRest;
+    Expression? validateRest;
+    final restNames = <String>[];
     for (final (index, param) in params.indexed.toList().reversed) {
       if (index <= lastRequiredIndex) {
         paramExpressions.add(toJson(param.type, refer(param.name)));
@@ -192,18 +194,34 @@ final class ClientMixinBuilder extends ProxySpec
       }
 
       bool? overwriteIsNull;
-      if (assertRest == null) {
+      if (validateRest == null) {
         overwriteIsNull = false;
-        assertRest = refer(param.name).equalTo(literalNull);
+        validateRest = refer(param.name).notEqualTo(literalNull);
+        restNames.add(param.name);
       } else {
-        assertions.add(
-          refer('assert').call([
+        validations.add(
+          $if(
             refer(param.name)
-                .notEqualTo(literalNull)
-                .or(assertRest.parenthesized),
-          ]).statement,
+                .equalTo(literalNull)
+                .and(validateRest.parenthesized),
+            [
+              Types.argumentError
+                  .newInstance([
+                    literalString(
+                      'Cannot set optional value to null if any of the '
+                      'following parameters (${restNames.join(', ')}) are not '
+                      'null.',
+                    ),
+                    literalString(param.name),
+                  ])
+                  .thrown
+                  .statement,
+            ],
+          ),
         );
-        assertRest = refer(param.name).equalTo(literalNull).and(assertRest);
+        validateRest =
+            refer(param.name).notEqualTo(literalNull).or(validateRest);
+        restNames.add(param.name);
       }
 
       paramExpressions.add(
