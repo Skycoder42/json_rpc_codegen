@@ -14,7 +14,7 @@ void main() {
 import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 
 @jsonRpc
-abstract interface class TestEmpty {}
+abstract class _TestEmpty {}
 ''',
     (library) async {
       expect(

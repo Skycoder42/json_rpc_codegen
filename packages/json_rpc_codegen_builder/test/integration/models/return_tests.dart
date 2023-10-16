@@ -5,32 +5,44 @@ import 'common.dart';
 part 'return_tests.g.dart';
 
 @jsonRpcMixins
-abstract interface class ReturnTests {
-  FutureOr<bool> boolRet();
+abstract class _ReturnTests {
+  bool boolRet();
 
-  FutureOr<num?> numRet();
+  num? numRet();
 
-  FutureOr<int> intRet();
+  int intRet();
 
-  FutureOr<double?> doubleRet();
+  double? doubleRet();
 
-  FutureOr<String> stringRet();
+  String stringRet();
 
-  FutureOr<List<int>> listRet();
+  DateTime dateTimeRet();
 
-  FutureOr<Iterable<bool>> iterableRet();
+  Uri uriRet();
 
-  FutureOr<Map<String, double>> mapRet();
+  dynamic dynamicRet();
 
-  FutureOr<Map<List<String>, Iterable<Map<dynamic, List<num>>>>> deepRet();
+  List<int> listRet();
 
-  FutureOr<User> userRet();
+  Iterable<bool> iterableRet();
 
-  FutureOr<Color> colorRet();
+  Set<String> setRet();
 
-  FutureOr<Permission> permissionRet();
+  Map<String, double> mapRet();
 
-  FutureOr<Iterable<User>> usersRet();
+  Map<List<String>, Iterable<Map<dynamic, List<num>>>> deepRet();
 
-  FutureOr<Map<Color, List<Permission>>> colorPermissionsRet();
+  User userRet();
+
+  Color colorRet();
+
+  Permission permissionRet();
+
+  Iterable<User> usersRet();
+
+  Map<Color, List<Permission>> colorPermissionsRet();
+
+  (int?, Permission, Iterable<User?>, ({int x, int y})) posRecordRet();
+
+  ({double r, Color c, Map<String, String?>? d, (int, int) p}) namedRecordRet();
 }

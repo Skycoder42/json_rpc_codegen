@@ -7,6 +7,7 @@ import 'package:source_helper/source_helper.dart';
 
 import '../../extensions/code_builder_extensions.dart';
 import '../proxy_spec.dart';
+import 'annotations.dart';
 import 'closure_builder_mixin.dart';
 import 'types.dart';
 
@@ -392,6 +393,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     return Method(
       (b) => b
         ..name = _mapName
+        ..annotations.add(Annotations.pragmaPreferInline)
         ..returns = tConverted
         ..types.add(tConverted.boundTo(Types.object))
         ..types.add(tJson.boundTo(Types.object))
@@ -425,6 +427,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     return Method(
       (b) => b
         ..name = _maybeMapName
+        ..annotations.add(Annotations.pragmaPreferInline)
         ..returns = tConverted.asNullable(true)
         ..types.add(tConverted.boundTo(Types.object))
         ..types.add(tJson.boundTo(Types.object))
@@ -456,6 +459,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     );
   }
 
+  /// @nodoc
   static Never throwInvalidRecord(RecordType recordType) {
     throw InvalidGenerationSourceError(
       'Records cannot be a mixture of positional and named.',
