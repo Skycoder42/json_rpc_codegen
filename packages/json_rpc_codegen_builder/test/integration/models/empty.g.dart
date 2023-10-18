@@ -8,8 +8,8 @@ part of 'empty.dart';
 
 // ignore_for_file: type=lint, unused_element
 
-mixin TestEmpty1ClientMixin on ClientBase implements TestEmpty1 {}
-mixin TestEmpty1ServerMixin on ServerBase implements TestEmpty1 {
+mixin TestEmpty1ClientMixin on ClientBase {}
+mixin TestEmpty1ServerMixin on ServerBase {
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -42,8 +42,8 @@ abstract class TestEmpty1Server extends ServerBase with TestEmpty1ServerMixin {
   TestEmpty1Server.fromServer(super.jsonRpcInstance) : super.fromServer();
 }
 
-mixin TestEmpty2ClientMixin on ClientBase implements TestEmpty2 {}
-mixin TestEmpty2ServerMixin on ServerBase implements TestEmpty2 {
+mixin TestEmpty2ClientMixin on ClientBase {}
+mixin TestEmpty2ServerMixin on ServerBase {
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -52,7 +52,7 @@ mixin TestEmpty2ServerMixin on ServerBase implements TestEmpty2 {
   }
 }
 
-mixin TestEmpty5ServerMixin on ServerBase implements TestEmpty5 {
+mixin TestEmpty5ServerMixin on ServerBase {
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -77,7 +77,7 @@ abstract class TestEmpty5Server extends ServerBase with TestEmpty5ServerMixin {
   TestEmpty5Server.fromServer(super.jsonRpcInstance) : super.fromServer();
 }
 
-mixin TestEmpty6ServerMixin on ServerBase implements TestEmpty6 {
+mixin TestEmpty6ServerMixin on ServerBase {
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -86,7 +86,7 @@ mixin TestEmpty6ServerMixin on ServerBase implements TestEmpty6 {
   }
 }
 
-mixin TestEmpty7ClientMixin on ClientBase implements TestEmpty7 {}
+mixin TestEmpty7ClientMixin on ClientBase {}
 
 class TestEmpty7Client extends ClientBase with TestEmpty7ClientMixin {
   TestEmpty7Client(super.channel) : super();
@@ -96,10 +96,10 @@ class TestEmpty7Client extends ClientBase with TestEmpty7ClientMixin {
   TestEmpty7Client.fromClient(super.jsonRpcInstance) : super.fromClient();
 }
 
-mixin TestEmpty8ClientMixin on ClientBase implements TestEmpty8 {}
+mixin TestEmpty8ClientMixin on ClientBase {}
 
-mixin TestEmpty9ClientMixin on ClientBase implements TestEmpty9 {}
-mixin TestEmpty9ServerMixin on ServerBase implements TestEmpty9 {
+mixin TestEmpty9ClientMixin on ClientBase {}
+mixin TestEmpty9ServerMixin on ServerBase {
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -132,8 +132,8 @@ abstract class TestEmpty9Server extends ServerBase with TestEmpty9ServerMixin {
   TestEmpty9Server.fromServer(super.jsonRpcInstance) : super.fromServer();
 }
 
-mixin TestEmpty10ClientMixin on ClientBase implements TestEmpty10 {}
-mixin TestEmpty10ServerMixin on ServerBase implements TestEmpty10 {
+mixin TestEmpty10ClientMixin on ClientBase {}
+mixin TestEmpty10ServerMixin on ServerBase {
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -141,6 +141,11 @@ mixin TestEmpty10ServerMixin on ServerBase implements TestEmpty10 {
     super.registerMethods();
   }
 }
+TConverted _$map<TConverted extends Object, TJson extends Object>(
+  TJson $value,
+  TConverted Function(TJson) $convert,
+) =>
+    $convert($value);
 TConverted? _$maybeMap<TConverted extends Object, TJson extends Object>(
   TJson? $value,
   TConverted Function(TJson) $convert,
@@ -148,11 +153,16 @@ TConverted? _$maybeMap<TConverted extends Object, TJson extends Object>(
     $value == null ? null : $convert($value);
 
 extension _$JsonRpc2ParameterExtensions on Parameter {
-  T? $nullOr<T>(T Function(Parameter) getter) =>
-      value == null ? null : getter(this);
-  T? $maybeNullOr<T>(
+  @pragma('vm:prefer-inline')
+  T $maybeOr<T>(
     T Function(Parameter) getter,
-    T? defaultValue,
+    T defaultValue,
   ) =>
-      exists ? $nullOr<T>(getter) : defaultValue;
+      exists ? getter(this) : defaultValue;
+  @pragma('vm:prefer-inline')
+  T? $nullOr<T>(T Function(Parameter) getter) =>
+      value != null ? getter(this) : null;
+  @pragma('vm:prefer-inline')
+  T? $maybeNullOr<T>(T Function(Parameter) getter) =>
+      exists && value != null ? getter(this) : null;
 }
