@@ -1,0 +1,28 @@
+name: CI/CD for json_rpc_codegen
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "packages/json_rpc_codegen/**"
+      - ".github/workflows/json_rpc_codegen_ci.yaml"
+      - ".github/workflows/json_rpc_codegen_cd.yaml"
+
+jobs:
+  ci:
+    name: CI
+    uses: Skycoder42/dart_test_tools/.github/workflows/dart.yml@main
+    with:
+      workingDirectory: packages/json_rpc_codegen
+      buildRunner: false
+      unitTestPaths: ""
+  cd:
+    name: CD
+    uses: Skycoder42/dart_test_tools/.github/workflows/release.yml@main
+    needs:
+      - ci
+    with:
+      workingDirectory: packages/json_rpc_codegen
+      tagPrefix: json_rpc_codegen-v
+    secrets:
+      githubToken: ${{ secrets.GH_PAT }}
