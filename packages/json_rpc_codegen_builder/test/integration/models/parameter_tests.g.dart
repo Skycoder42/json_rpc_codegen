@@ -469,11 +469,13 @@ mixin ParameterTestsServerMixin on ServerBase {
     );
   }
 }
+@pragma('vm:prefer-inline')
 TConverted _$map<TConverted extends Object, TJson extends Object>(
   TJson $value,
   TConverted Function(TJson) $convert,
 ) =>
     $convert($value);
+@pragma('vm:prefer-inline')
 TConverted? _$maybeMap<TConverted extends Object, TJson extends Object>(
   TJson? $value,
   TConverted Function(TJson) $convert,

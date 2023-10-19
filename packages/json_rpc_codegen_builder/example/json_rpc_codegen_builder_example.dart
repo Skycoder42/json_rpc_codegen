@@ -10,6 +10,8 @@ enum Permission {
   administrate,
 }
 
+enum Stage { all, pre, post }
+
 class User {
   final String firstName;
   final String lastName;
@@ -69,6 +71,16 @@ abstract class _SampleApi {
     ({int am, List<User>? ul, Permission pm, (int, int) pt}) record,
     () control,
   );
+
+  void startServerTask({
+    required int id,
+    required String taskName,
+    bool verbose = false,
+    double? scale,
+  });
+
+  @clientDefaults
+  double getProgress(int id, [Stage stage = Stage.all]);
 }
 
 void main() {}
