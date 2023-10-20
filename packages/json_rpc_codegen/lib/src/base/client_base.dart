@@ -8,12 +8,14 @@ abstract class ClientBase {
   /// The internally use JSON-RPC client to make the requests to the server
   final Client jsonRpcInstance;
 
+  // coverage:ignore-begin
   /// See [Client]
   ClientBase(StreamChannel<String> channel) : jsonRpcInstance = Client(channel);
 
   /// See [Client.withoutJson]
   ClientBase.withoutJson(StreamChannel channel)
       : jsonRpcInstance = Client.withoutJson(channel);
+  // coverage:ignore-end
 
   /// Creates a new instance from an existing client
   ClientBase.fromClient(this.jsonRpcInstance);

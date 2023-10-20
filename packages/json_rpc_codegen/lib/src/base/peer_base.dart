@@ -4,17 +4,22 @@ import 'package:json_rpc_2/json_rpc_2.dart';
 import 'package:meta/meta.dart';
 import 'package:stream_channel/stream_channel.dart';
 
-/// A base class for all generated JSON RPC servers that wraps the [Server].
-abstract class ServerBase {
-  /// The internally use JSON-RPC server to handle requests to the server.
-  final Server jsonRpcInstance;
+import 'client_base.dart';
+import 'server_base.dart';
 
-  /// See [Server].
-  ServerBase(
+/// A base class for all generated JSON RPC peers that wraps the [Peer].
+abstract class PeerBase implements ClientBase, ServerBase {
+  /// The internally use JSON-RPC peer
+  @override
+  final Peer jsonRpcInstance;
+
+  // coverage:ignore-begin
+  /// See [Peer].
+  PeerBase(
     StreamChannel<String> channel, {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
-  }) : jsonRpcInstance = Server(
+  }) : jsonRpcInstance = Peer(
           channel,
           onUnhandledError: onUnhandledError,
           strictProtocolChecks: strictProtocolChecks,
@@ -22,55 +27,66 @@ abstract class ServerBase {
     registerMethods();
   }
 
-  /// See [Server.withoutJson].
-  ServerBase.withoutJson(
+  /// See [Peer.withoutJson].
+  PeerBase.withoutJson(
     StreamChannel channel, {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
-  }) : jsonRpcInstance = Server.withoutJson(
+  }) : jsonRpcInstance = Peer.withoutJson(
           channel,
           onUnhandledError: onUnhandledError,
           strictProtocolChecks: strictProtocolChecks,
         ) {
     registerMethods();
   }
+  // coverage:ignore-end
 
-  /// Creates a new instance from an existing server.
-  ServerBase.fromServer(this.jsonRpcInstance) {
+  /// Creates a new instance from an existing peer.
+  PeerBase.fromPeer(this.jsonRpcInstance) {
     registerMethods();
   }
 
-  /// See [Server.onUnhandledError].
+  /// See [Peer.onUnhandledError]
+  @override
   ErrorCallback? get onUnhandledError => jsonRpcInstance.onUnhandledError;
 
-  /// See [Server.strictProtocolChecks].
+  /// See [Peer.strictProtocolChecks]
+  @override
   bool get strictProtocolChecks => jsonRpcInstance.strictProtocolChecks;
 
-  /// See [Server.done].
+  /// See [Peer.done]
+  @override
   Future<void> get done => jsonRpcInstance.done;
 
-  /// See [Server.isClosed].
+  /// See [Peer.isClosed]
+  @override
   bool get isClosed => jsonRpcInstance.isClosed;
 
-  /// See [Server.listen].
+  /// See [Peer.listen]
+  @override
   Future<void> listen() => jsonRpcInstance.listen();
 
-  /// See [Server.close].
+  /// See [Peer.close]
+  @override
   Future<void> close() => jsonRpcInstance.close();
+
+  /// See [Peer.withBatch]
+  @override
+  void withBatch(FutureOr<void> Function() callback) =>
+      jsonRpcInstance.withBatch(callback);
 
   /// Can be overridden to implement custom handling for unknown method calls.
   ///
   /// The default implementation simply throws [RpcException.methodNotFound],
   /// which will report an error back to the client.
   ///
-  /// See [Server.registerFallback].
+  /// See [Peer.registerFallback].
+  @override
   @visibleForOverriding
   FutureOr<dynamic> onUnknownMethod(Parameters params) =>
       throw RpcException.methodNotFound(params.method);
 
-  /// Internal helper method to register server methods.
-  ///
-  /// You should not invoke this method yourself.
+  @override
   @visibleForOverriding
   @mustCallSuper
   void registerMethods() {

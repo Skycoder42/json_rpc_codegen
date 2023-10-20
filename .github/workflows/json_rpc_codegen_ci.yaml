@@ -15,7 +15,6 @@ jobs:
     with:
       workingDirectory: packages/json_rpc_codegen
       buildRunner: false
-      unitTestPaths: ""
       panaScoreThreshold: 10
   cd:
     name: CD

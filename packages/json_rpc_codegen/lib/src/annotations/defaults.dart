@@ -1,3 +1,5 @@
+// coverage:ignore-file
+
 import 'package:meta/meta_meta.dart';
 
 /// Configures the class or method to apply default values on the server side.

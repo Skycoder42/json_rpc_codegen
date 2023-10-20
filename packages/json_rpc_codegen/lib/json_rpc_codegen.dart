@@ -7,6 +7,6 @@ export 'package:stream_channel/stream_channel.dart' show StreamChannel;
 
 export 'src/annotations/defaults.dart';
 export 'src/annotations/json_rpc.dart';
-export 'src/client_base.dart';
-export 'src/peer_base.dart';
-export 'src/server_base.dart';
+export 'src/base/client_base.dart';
+export 'src/base/peer_base.dart';
+export 'src/base/server_base.dart';

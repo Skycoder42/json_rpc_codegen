@@ -1,3 +1,5 @@
+// coverage:ignore-file
+
 import 'package:meta/meta_meta.dart';
 
 /// Build annotation for JSON-RPC enabled interfaces
