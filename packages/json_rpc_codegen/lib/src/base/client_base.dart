@@ -8,7 +8,7 @@ abstract class ClientBase {
   /// The internally use JSON-RPC client to make the requests to the server
   final Client jsonRpcInstance;
 
-  // coverage:ignore-begin
+  // coverage:ignore-start
   /// See [Client]
   ClientBase(StreamChannel<String> channel) : jsonRpcInstance = Client(channel);
 

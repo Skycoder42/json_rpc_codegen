@@ -9,7 +9,7 @@ abstract class ServerBase {
   /// The internally use JSON-RPC server to handle requests to the server.
   final Server jsonRpcInstance;
 
-  // coverage:ignore-begin
+  // coverage:ignore-start
   /// See [Server].
   ServerBase(
     StreamChannel<String> channel, {

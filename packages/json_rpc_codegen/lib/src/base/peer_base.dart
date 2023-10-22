@@ -13,7 +13,7 @@ abstract class PeerBase implements ClientBase, ServerBase {
   @override
   final Peer jsonRpcInstance;
 
-  // coverage:ignore-begin
+  // coverage:ignore-start
   /// See [Peer].
   PeerBase(
     StreamChannel<String> channel, {
