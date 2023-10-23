@@ -5,6 +5,7 @@ import 'common.dart';
 part 'parameter_tests.g.dart';
 
 @jsonRpcMixins
+// ignore: unused_element
 abstract class _ParameterTests {
   // test all supported parameter types
   void simplePositionalServer(

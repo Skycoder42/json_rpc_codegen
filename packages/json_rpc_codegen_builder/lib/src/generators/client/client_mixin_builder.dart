@@ -80,8 +80,8 @@ final class ClientMixinBuilder extends ProxySpec
           'An RPC method parameter that uses client defaults must either be '
           'nullable or have an explicit default value set.',
           element: parameter,
-          todo:
-              'Change the type to ${parameter.type}? or specify a default value',
+          todo: 'Change the type to ${parameter.type}? '
+              'or specify a default value',
         );
       }
     } else {

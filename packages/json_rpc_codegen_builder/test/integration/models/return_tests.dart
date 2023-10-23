@@ -5,6 +5,7 @@ import 'common.dart';
 part 'return_tests.g.dart';
 
 @jsonRpcMixins
+// ignore: unused_element
 abstract class _ReturnTests {
   bool boolRet();
 
