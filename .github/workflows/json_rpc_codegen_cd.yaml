@@ -1,0 +1,18 @@
+name: CD - Publish json_rpc_codegen to pub.dev
+
+on:
+  push:
+    tags:
+      - "json_rpc_codegen-v*"
+
+jobs:
+  publish:
+    name: Publish
+    uses: Skycoder42/dart_test_tools/.github/workflows/publish.yml@main
+    permissions:
+      id-token: write
+    with:
+      environment: pub-deploy
+      tagPrefix: json_rpc_codegen-v
+      workingDirectory: packages/json_rpc_codegen
+      buildRunner: false
