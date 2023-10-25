@@ -1,8 +1,8 @@
 # json_rpc_codegen
 [![CI/CD for json_rpc_codegen](https://github.com/Skycoder42/json_rpc_codegen/actions/workflows/json_rpc_codegen_ci.yaml/badge.svg)](https://github.com/Skycoder42/json_rpc_codegen/actions/workflows/json_rpc_codegen_ci.yaml)
 [![CI/CD for json_rpc_codegen_builder](https://github.com/Skycoder42/json_rpc_codegen/actions/workflows/json_rpc_codegen_builder_ci.yaml/badge.svg)](https://github.com/Skycoder42/json_rpc_codegen/actions/workflows/json_rpc_codegen_builder_ci.yaml)
-[![Pub Version](https://img.shields.io/pub/v/json_rpc_codegen)](https://pub.dev/packages/json_rpc_codegen)
-[![Pub Version](https://img.shields.io/pub/v/json_rpc_codegen_builder)](https://pub.dev/packages/json_rpc_codegen_builder)
+[![json_rpc_codegen pub version](https://img.shields.io/pub/v/json_rpc_codegen?label=pub%20-%20json_rpc_codegen)](https://pub.dev/packages/json_rpc_codegen)
+[![json_rpc_codegen_builder pub version](https://img.shields.io/pub/v/json_rpc_codegen_builder?label=pub%20-%20json_rpc_codegen_builder)](https://pub.dev/packages/json_rpc_codegen_builder)
 
 A dart code generator that generates typed client and server code for the json_rpc_2 package.
 
