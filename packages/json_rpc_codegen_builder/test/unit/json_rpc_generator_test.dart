@@ -16,7 +16,7 @@ import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 @jsonRpc
 abstract class _TestEmpty {}
 ''',
-    (library) async {
+    (library) {
       expect(
         library.topLevelElements,
         contains(
@@ -51,7 +51,14 @@ abstract class _TestEmpty {}
           isA<ClassElement>()
               .having((m) => m.name, 'name', 'TestEmptyClient')
               .having((m) => m.methods, 'methods', isEmpty)
-              .having((m) => m.fields, 'fields', isEmpty),
+              .having((m) => m.fields, 'fields', isEmpty)
+              .having((m) => m.constructors, 'constructors', [
+            isA<ConstructorElement>().having((m) => m.name, 'name', isEmpty),
+            isA<ConstructorElement>()
+                .having((m) => m.name, 'name', 'withoutJson'),
+            isA<ConstructorElement>()
+                .having((m) => m.name, 'name', 'fromClient'),
+          ]),
         ),
       );
       expect(
@@ -60,7 +67,14 @@ abstract class _TestEmpty {}
           isA<ClassElement>()
               .having((m) => m.name, 'name', 'TestEmptyServer')
               .having((m) => m.methods, 'methods', isEmpty)
-              .having((m) => m.fields, 'fields', isEmpty),
+              .having((m) => m.fields, 'fields', isEmpty)
+              .having((m) => m.constructors, 'constructors', [
+            isA<ConstructorElement>().having((m) => m.name, 'name', isEmpty),
+            isA<ConstructorElement>()
+                .having((m) => m.name, 'name', 'withoutJson'),
+            isA<ConstructorElement>()
+                .having((m) => m.name, 'name', 'fromServer'),
+          ]),
         ),
       );
     },

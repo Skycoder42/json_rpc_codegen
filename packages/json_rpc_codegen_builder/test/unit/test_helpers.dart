@@ -14,7 +14,7 @@ void testCodeGeneration(
   required String sourceContent,
 }) =>
     test(
-      '$builder generates correct code for $assetPrefix.dart',
+      '$builder - generates correct code for $assetPrefix.dart',
       () async {
         final assetId = makeAssetId('a|$assetPrefix.json_rpc_codegen.g.part');
         final reader = await PackageAssetReader.currentIsolate();
