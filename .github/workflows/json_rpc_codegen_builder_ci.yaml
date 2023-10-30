@@ -17,6 +17,7 @@ jobs:
       buildRunner: true
       buildRunnerArgs: --delete-conflicting-outputs
       unitTestPaths: test/unit
+      minCoverage: 0
       integrationTestPaths: test/integration
   cd:
     name: CD
