@@ -23,9 +23,7 @@ class JsonRpc {
 }
 
 /// Build annotation for JSON-RPC enabled interfaces
-@Target({TargetKind.classType})
 const jsonRpc = JsonRpc();
 
 /// Build annotation for JSON-RPC enabled interfaces (mixins only)
-@Target({TargetKind.classType})
 const jsonRpcMixins = JsonRpc(mixinsOnly: true);
