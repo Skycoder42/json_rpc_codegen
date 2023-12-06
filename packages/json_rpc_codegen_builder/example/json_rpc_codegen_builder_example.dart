@@ -81,6 +81,51 @@ abstract class _SampleApi {
 
   @clientDefaults
   double getProgress(int id, [Stage stage = Stage.all]);
+
+  Stream<User> streamUsers(Permission permission);
 }
 
 void main() {}
+
+extension on PeerBase {
+  Stream<User> streamUsers(Permission permission) {
+    const streamId = 42;
+    final controller = StreamController<User>(
+      onListen: () => jsonRpcInstance.sendNotification(
+        'streamUsers',
+        [StreamCommand.listen.name, streamId, permission.name],
+      ),
+      onCancel: () => jsonRpcInstance.sendNotification(
+        'streamUsers',
+        [StreamCommand.cancel.name, streamId],
+      ),
+      onPause: () => jsonRpcInstance.sendNotification(
+        'streamUsers',
+        [StreamCommand.pause.name, streamId],
+      ),
+      onResume: () => jsonRpcInstance.sendNotification(
+        'streamUsers',
+        [StreamCommand.resume.name, streamId],
+      ),
+    );
+
+    jsonRpcInstance.registerMethod('streamUsers',
+        // ignore: avoid_types_on_closure_parameters
+        (Parameters parameters) async {
+      final kind = Kind.values.byName(parameters['kind'].asString);
+      switch (kind) {
+        case Kind.onData:
+          controller.add(User.fromJson(parameters['value'].asMap.cast()));
+        case Kind.onError:
+          controller.addError(
+            Exception(parameters['error'].asString),
+            StackTrace.fromString(parameters['stackTrace'].asString),
+          );
+        case Kind.onDone:
+          await controller.close();
+      }
+    });
+
+    return controller.stream;
+  }
+}

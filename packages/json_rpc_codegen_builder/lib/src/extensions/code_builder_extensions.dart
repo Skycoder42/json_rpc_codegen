@@ -9,6 +9,13 @@ extension ExpressionX on Expression {
   /// @nodoc
   Expression autoProperty(String name, bool isNullable) =>
       isNullable ? nullSafeProperty(name) : property(name);
+
+  Expression get postfixIncrement => CodeExpression(
+        Block.of([
+          code,
+          const Code('++'),
+        ]),
+      );
 }
 
 /// @nodoc

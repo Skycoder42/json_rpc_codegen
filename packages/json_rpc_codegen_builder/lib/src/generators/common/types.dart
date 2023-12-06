@@ -97,6 +97,15 @@ abstract base class Types {
       );
 
   /// @nodoc
+  static TypeReference streamController([Reference? type]) => TypeReference(
+        (b) => b
+          ..symbol = 'StreamController'
+          ..types.addAll([
+            if (type != null) type,
+          ]),
+      );
+
+  /// @nodoc
   static final dynamic = _named('dynamic');
 
   /// @nodoc
@@ -160,6 +169,16 @@ abstract base class Types {
   /// @nodoc
   static final peerBase = TypeReference(
     (b) => b..symbol = 'PeerBase',
+  );
+
+  /// @nodoc
+  static final streamCommand = TypeReference(
+    (b) => b..symbol = 'StreamCommand',
+  );
+
+  /// @nodoc
+  static final streamEvent = TypeReference(
+    (b) => b..symbol = 'StreamEvent',
   );
 
   static TypeReference _named(String name) => TypeReference(

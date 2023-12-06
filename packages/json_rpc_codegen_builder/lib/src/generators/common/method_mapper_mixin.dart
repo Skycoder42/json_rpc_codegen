@@ -36,12 +36,11 @@ base mixin MethodMapperMixin on ProxySpec {
   @protected
   DartType getReturnType(MethodElement method) {
     if (method.returnType.isDartAsyncFuture ||
-        method.returnType.isDartAsyncFutureOr ||
-        method.returnType.isDartAsyncStream) {
+        method.returnType.isDartAsyncFutureOr) {
       final futureType =
           (method.returnType as InterfaceType).typeArguments.single;
       throw InvalidGenerationSourceError(
-        'The return type of RPC methods must be not be asynchronous!',
+        'The return type of RPC methods must be not be a Future or FutureOr!',
         element: method,
         todo: 'Change return type to '
             '${futureType.getDisplayString(withNullability: true)}.',
