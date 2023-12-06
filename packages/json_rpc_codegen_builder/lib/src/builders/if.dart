@@ -62,7 +62,7 @@ class IfThen implements Code {
 
     if (_else != null) {
       context.write(' else {');
-      _else!.acceptAll(visitor, context);
+      _else.acceptAll(visitor, context);
       context.write('}');
     }
 

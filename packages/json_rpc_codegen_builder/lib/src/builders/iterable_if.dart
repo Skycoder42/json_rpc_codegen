@@ -30,7 +30,7 @@ class IterableIf extends Expression {
 
     if (_else != null) {
       context.write(' else ');
-      _else!.accept(visitor, context);
+      _else.accept(visitor, context);
     }
 
     return context;
