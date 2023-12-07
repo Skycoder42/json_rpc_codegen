@@ -2,10 +2,12 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
+import 'package:source_helper/source_helper.dart';
 
 import '../../builders/try_catch.dart';
 import '../../extensions/code_builder_extensions.dart';
 import '../common/method_mapper_mixin.dart';
+import '../common/parameter_builder_mixin.dart';
 import '../common/registration_builder_mixin.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
@@ -18,17 +20,18 @@ base mixin StreamBuilderMixin
         ProxySpec,
         MethodMapperMixin,
         InvocationBuilderMixin,
-        RegistrationBuilderMixin {
+        RegistrationBuilderMixin,
+        ParameterBuilderMixin {
   // TODO reuse somehow
   static const _rpcGetterRef = Reference('jsonRpcInstance');
   static const _streamCounterRef = Reference(r'_$streamCounter');
   static const _controllerMapRef = Reference(r'_$streamControllers');
   static const _streamIdRef = Reference(r'$streamId');
-  static const _paramsRef = Reference(r'$params');
   static const _errorRef = Reference(r'$error');
   static const _stackTraceRef = Reference(r'$stackTrace');
+  static const _paramsName = r'$params';
 
-  bool hasStreams(ClassElement clazz) =>
+  static bool hasStreams(ClassElement clazz) =>
       clazz.methods.any((m) => m.returnType.isDartAsyncStream);
 
   Iterable<Field> buildStreamFields(ClassElement clazz) sync* {
@@ -180,50 +183,86 @@ base mixin StreamBuilderMixin
     final streamType = _streamType(method);
 
     return Block.of([
+      _buildAddMethod(method, streamType),
+      _buildErrorMethod(method, streamType),
+      _buildDoneMethod(method, streamType),
+    ]);
+  }
+
+  Code _buildAddMethod(MethodElement method, DartType streamType) =>
       _rpcGetterRef.property('registerMethod').call([
         literalString('${method.name}#add'),
         closure1(
-          r'$params',
+          _paramsName,
           type1: Types.jsonRpc2Parameters,
           (p1) => _controllerMapRef
-              .index(_paramsRef.index(literalNum(0)).property('asInt'))
+              .index(p1.index(literalNum(0)).property('asInt'))
               .asA(
                 Types.streamController(Types.fromDartType(streamType))
                     .asNullable(true),
               )
               .nullSafeProperty('add')
               .call([
-            //TODO convert parameter
-            _paramsRef.index(literalNum(1)),
+            fromJson(
+              streamType,
+              streamType.isNullableType
+                  ? p1
+                      .index(literalNum(1))
+                      .property(ParameterBuilderMixin.nullOrName)
+                      .call([
+                      closure1(r'$v', (p1) => p1.property('value').code),
+                    ])
+                  : p1.index(literalNum(1)).property('value'),
+            ),
           ]).code,
         ),
-      ]).statement,
+      ]).statement;
+
+  Code _buildErrorMethod(MethodElement method, DartType streamType) =>
       _rpcGetterRef.property('registerMethod').call([
         literalString('${method.name}#error'),
         closure1(
-          r'$params',
+          _paramsName,
           type1: Types.jsonRpc2Parameters,
-          (p1) => _controllerMapRef
-              .index(_paramsRef.index(literalNum(0)).property('asInt'))
-              .asA(
-                Types.streamController(Types.fromDartType(streamType))
-                    .asNullable(true),
-              )
-              .nullSafeProperty('addError')
-              .call([
-            _paramsRef.index(literalNum(1)).property('value'),
-            _paramsRef.index(literalNum(2)).property('asString'),
-          ]).code,
+          (p1) => Block.of([
+            declareFinal(_errorRef.symbol!)
+                .assign(
+                  p1
+                      .index(literalNum(1))
+                      .property('asMap')
+                      .asA(Types.map(Types.string, Types.dynamic)),
+                )
+                .statement,
+            _controllerMapRef
+                .index(p1.index(literalNum(0)).property('asInt'))
+                .asA(
+                  Types.streamController(Types.fromDartType(streamType))
+                      .asNullable(true),
+                )
+                .nullSafeProperty('addError')
+                .call([
+              Types.jsonRpc2RpcException.newInstance([
+                _errorRef.index(literalString('code')).asA(Types.$int),
+                _errorRef.index(literalString('message')).asA(Types.string),
+              ], {
+                'data': _errorRef
+                    .index(literalString('data'))
+                    .asA(Types.object.asNullable(true)),
+              }),
+            ]).statement,
+          ]),
         ),
-      ]).statement,
+      ]).statement;
+
+  Code _buildDoneMethod(MethodElement method, DartType streamType) =>
       _rpcGetterRef.property('registerMethod').call([
         literalString('${method.name}#done'),
         closure1(
-          r'$params',
+          _paramsName,
           type1: Types.jsonRpc2Parameters,
           (p1) => _controllerMapRef
               .property('remove')
-              .call([_paramsRef.index(literalNum(0)).property('asInt')])
+              .call([p1.index(literalNum(0)).property('asInt')])
               .asA(
                 Types.streamController(Types.fromDartType(streamType))
                     .asNullable(true),
@@ -232,35 +271,5 @@ base mixin StreamBuilderMixin
               .call(const [])
               .code,
         ),
-      ]).statement,
-    ]);
-  }
-
-  // Method(
-  //       (b) => b
-  //         ..requiredParameters.add(
-  //           Parameter(
-  //             (b) => b
-  //               ..name = _paramsRef.symbol!
-  //               ..type = Types.jsonRpc2Parameters,
-  //           ),
-  //         )
-  //         ..body = Block.of([
-  //           declareFinal(r'$eventStreamId')
-  //               .assign(
-  //                 _paramsRef.index(literalString('id')).property('asInt'),
-  //               )
-  //               .statement,
-  //           declareFinal('event')
-  //               .assign(
-  //                 Types.streamEvent.property('values').property('byName').call([
-  //                   _paramsRef
-  //                       .index(literalString('event'))
-  //                       .property('asString'),
-  //                 ]),
-  //               )
-  //               .statement,
-  //           // TODO switch/case etc
-  //         ]),
-  //     ).closure;
+      ]).statement;
 }

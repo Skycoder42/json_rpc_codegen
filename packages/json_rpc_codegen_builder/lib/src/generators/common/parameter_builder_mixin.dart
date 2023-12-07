@@ -17,9 +17,9 @@ import 'types.dart';
 @internal
 base mixin ParameterBuilderMixin
     on ProxySpec, SerializationMixin, ClosureBuilderMixin {
-  static const _maybeOrName = r'$maybeOr';
-  static const _nullOrName = r'$nullOr';
-  static const _maybeNullOrName = r'$maybeNullOr';
+  static const maybeOrName = r'$maybeOr';
+  static const nullOrName = r'$nullOr';
+  static const maybeNullOrName = r'$maybeNullOr';
 
   /// @nodoc
   static Iterable<Spec> buildGlobals() sync* {
@@ -155,9 +155,9 @@ base mixin ParameterBuilderMixin
 
       if (param.isOptional && isServerDefault) {
         _ensureHasNoDefault(param);
-        return paramRef.property(_maybeNullOrName).call([closure]);
+        return paramRef.property(maybeNullOrName).call([closure]);
       } else {
-        return paramRef.property(_nullOrName).call([closure]);
+        return paramRef.property(nullOrName).call([closure]);
       }
     } else {
       if (param.isOptional && isServerDefault) {
@@ -189,14 +189,14 @@ base mixin ParameterBuilderMixin
     if (param.type.isNullableType && param.type is! DynamicType) {
       if (param.isOptional && isServerDefault) {
         _ensureHasNoDefault(param);
-        return paramRef.property(_maybeNullOrName).call([closure]);
+        return paramRef.property(maybeNullOrName).call([closure]);
       } else {
-        return paramRef.property(_nullOrName).call([closure]);
+        return paramRef.property(nullOrName).call([closure]);
       }
     } else {
       if (param.isOptional && isServerDefault) {
         _ensureHasDefault(param);
-        return paramRef.property(_maybeOrName).call([
+        return paramRef.property(maybeOrName).call([
           closure,
           _getDefault(param),
         ]);
@@ -241,7 +241,7 @@ base mixin ParameterBuilderMixin
         ..methods.add(
           Method(
             (b) => b
-              ..name = _maybeOrName
+              ..name = maybeOrName
               ..annotations.add(Annotations.pragmaPreferInline)
               ..types.add(typeT)
               ..returns = typeT
@@ -264,7 +264,7 @@ base mixin ParameterBuilderMixin
         ..methods.add(
           Method(
             (b) => b
-              ..name = _nullOrName
+              ..name = nullOrName
               ..annotations.add(Annotations.pragmaPreferInline)
               ..types.add(typeT)
               ..returns = typeT.asNullable(true)
@@ -281,7 +281,7 @@ base mixin ParameterBuilderMixin
         ..methods.add(
           Method(
             (b) => b
-              ..name = _maybeNullOrName
+              ..name = maybeNullOrName
               ..annotations.add(Annotations.pragmaPreferInline)
               ..types.add(typeT)
               ..returns = typeT.asNullable(true)

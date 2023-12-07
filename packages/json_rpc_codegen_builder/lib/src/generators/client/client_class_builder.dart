@@ -6,6 +6,7 @@ import '../../extensions/analyzer_extensions.dart';
 import '../common/base_constructor_builder_mixin.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
+import 'stream_builder_mixin.dart';
 
 /// @nodoc
 @internal
@@ -17,13 +18,36 @@ final class ClientClassBuilder extends ProxySpec
   const ClientClassBuilder(this._class);
 
   @override
-  Class build() => Class(
-        (b) => b
-          ..name = '${_class.publicName}Client'
-          ..extend = Types.clientBase
-          ..mixins.add(
-            TypeReference((b) => b..symbol = '${_class.publicName}ClientMixin'),
-          )
-          ..constructors.addAll(buildConstructors('fromClient')),
-      );
+  Class build() {
+    final hasStreams = StreamBuilderMixin.hasStreams(_class);
+    return Class(
+      (b) => b
+        ..name = '${_class.publicName}Client'
+        ..extend = hasStreams ? Types.peerBase : Types.clientBase
+        ..mixins.add(
+          TypeReference((b) => b..symbol = '${_class.publicName}ClientMixin'),
+        )
+        ..constructors.addAll(
+          buildConstructors(
+            hasStreams ? 'fromPeer' : 'fromClient',
+            hasStreams
+                ? [
+                    Parameter(
+                      (b) => b
+                        ..name = 'onUnhandledError'
+                        ..named = true
+                        ..toSuper = true,
+                    ),
+                    Parameter(
+                      (b) => b
+                        ..name = 'strictProtocolChecks'
+                        ..named = true
+                        ..toSuper = true,
+                    ),
+                  ]
+                : const [],
+          ),
+        ),
+    );
+  }
 }

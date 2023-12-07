@@ -41,7 +41,9 @@ final class ClientMixinBuilder extends ProxySpec
   Mixin build() => Mixin(
         (b) => b
           ..name = '${_class.publicName}ClientMixin'
-          ..on = hasStreams(_class) ? Types.peerBase : Types.clientBase
+          ..on = StreamBuilderMixin.hasStreams(_class)
+              ? Types.peerBase
+              : Types.clientBase
           ..fields.addAll(buildStreamFields(_class))
           ..methods.addAll(
             [
