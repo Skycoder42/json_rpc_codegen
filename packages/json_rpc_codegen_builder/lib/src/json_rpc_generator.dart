@@ -7,8 +7,8 @@ import 'package:source_gen/source_gen.dart';
 
 import 'generators/client/client_class_builder.dart';
 import 'generators/client/client_mixin_builder.dart';
+import 'generators/common/parameter_builder_mixin.dart';
 import 'generators/common/serialization_mixin.dart';
-import 'generators/server/parameter_builder_mixin.dart';
 import 'generators/server/server_class_builder.dart';
 import 'generators/server/server_mixin_builder.dart';
 import 'readers/json_rpc_reader.dart';

@@ -1,19 +1,21 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
 
-import '../../builders/if.dart';
-import '../../builders/iterable_if.dart';
 import '../../extensions/analyzer_extensions.dart';
 import '../../readers/defaults_reader.dart';
 import '../common/closure_builder_mixin.dart';
 import '../common/method_mapper_mixin.dart';
+import '../common/parameter_builder_mixin.dart';
+import '../common/registration_builder_mixin.dart';
 import '../common/serialization_mixin.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
+import 'invocation_builder_mixin.dart';
 import 'stream_builder_mixin.dart';
 
 /// @nodoc
@@ -21,9 +23,12 @@ import 'stream_builder_mixin.dart';
 final class ClientMixinBuilder extends ProxySpec
     with
         MethodMapperMixin,
-        StreamBuilderMixin,
         ClosureBuilderMixin,
-        SerializationMixin {
+        SerializationMixin,
+        InvocationBuilderMixin,
+        ParameterBuilderMixin,
+        RegistrationBuilderMixin,
+        StreamBuilderMixin {
   static const _rpcGetterRef = Reference('jsonRpcInstance');
 
   final ClassElement _class;
@@ -36,9 +41,14 @@ final class ClientMixinBuilder extends ProxySpec
   Mixin build() => Mixin(
         (b) => b
           ..name = '${_class.publicName}ClientMixin'
-          ..on = Types.clientBase
+          ..on = hasStreams(_class) ? Types.peerBase : Types.clientBase
           ..fields.addAll(buildStreamFields(_class))
-          ..methods.addAll(_class.methods.map(_buildMethod)),
+          ..methods.addAll(
+            [
+              ..._class.methods.map(_buildMethod),
+              buildStreamListeners(_class),
+            ].whereNotNull(),
+          ),
       );
 
   Method _buildMethod(MethodElement method) {
@@ -103,14 +113,14 @@ final class ClientMixinBuilder extends ProxySpec
     }
   }
 
-  Code _buildNotificationBody(MethodElement method) => _buildMethodInvocation(
+  Code _buildNotificationBody(MethodElement method) => buildMethodInvocation(
         _rpcGetterRef.property('sendNotification'),
         method,
         isAsync: false,
       );
 
   Code _buildRequestBody(MethodElement method, DartType returnType) =>
-      _buildMethodInvocation(
+      buildMethodInvocation(
         _rpcGetterRef.property('sendRequest'),
         method,
         isAsync: true,
@@ -124,135 +134,4 @@ final class ClientMixinBuilder extends ProxySpec
                 yield fromJson(returnType, resultVarRef).returned.statement;
               },
       );
-
-  Code _buildMethodInvocation(
-    Expression target,
-    MethodElement method, {
-    required bool isAsync,
-    Iterable<Code> Function(Expression invocation)? buildReturn,
-  }) {
-    final isServerDefault = DefaultsReader.isServerDefault(method);
-    final parameterMode = validateParameters(method);
-
-    final validations = <Code>[];
-
-    final invocation = target.call([
-      literalString(method.name),
-      if (parameterMode.hasPositional)
-        _buildPositionalParameters(
-          method.parameters,
-          isServerDefault,
-          validations,
-        ),
-      if (parameterMode.hasNamed)
-        literalMap(
-          {
-            for (final p in method.parameters)
-              if (p.isOptional && isServerDefault)
-                IterableIf(
-                  refer(p.name).notEqualTo(literalNull),
-                  literalString(p.name),
-                ): toJson(p.type, refer(p.name), isNull: false)
-              else
-                literalString(p.name): toJson(p.type, refer(p.name)),
-          },
-          Types.string,
-          Types.dynamic,
-        ),
-    ]);
-
-    if (validations.isEmpty && buildReturn == null) {
-      return invocation.code;
-    } else {
-      return Block.of([
-        ...validations.reversed,
-        if (buildReturn == null)
-          isAsync ? invocation.awaited.statement : invocation.statement
-        else
-          ...buildReturn(invocation),
-      ]);
-    }
-  }
-
-  Expression _buildPositionalParameters(
-    List<ParameterElement> params,
-    bool isServerDefault,
-    List<Code> validations,
-  ) {
-    if (!isServerDefault) {
-      return literalList(
-        [
-          for (final p in params) toJson(p.type, refer(p.name)),
-        ],
-        Types.dynamic,
-      );
-    }
-
-    final lastRequiredIndex = params.indexed
-            .toList()
-            .reversed
-            .skipWhile(
-              (r) => r.$2.isOptional,
-            )
-            .map((r) => r.$1)
-            .firstOrNull ??
-        -1;
-
-    final paramExpressions = <Expression>[];
-    Expression? validateRest;
-    final restNames = <String>[];
-    for (final (index, param) in params.indexed.toList().reversed) {
-      if (index <= lastRequiredIndex) {
-        paramExpressions.add(toJson(param.type, refer(param.name)));
-        continue;
-      }
-
-      bool? overwriteIsNull;
-      if (validateRest == null) {
-        overwriteIsNull = false;
-        validateRest = refer(param.name).notEqualTo(literalNull);
-        restNames.add(param.name);
-      } else {
-        validations.add(
-          $if(
-            refer(param.name)
-                .equalTo(literalNull)
-                .and(validateRest.parenthesized),
-            [
-              Types.argumentError
-                  .newInstance([
-                    literalString(
-                      'Cannot set optional value to null if any of the '
-                      'following parameters (${restNames.join(', ')}) are not '
-                      'null.',
-                    ),
-                    literalString(param.name),
-                  ])
-                  .thrown
-                  .statement,
-            ],
-          ),
-        );
-        validateRest =
-            refer(param.name).notEqualTo(literalNull).or(validateRest);
-        restNames.add(param.name);
-      }
-
-      paramExpressions.add(
-        IterableIf(
-          refer(param.name).notEqualTo(literalNull),
-          toJson(
-            param.type,
-            refer(param.name),
-            isNull: overwriteIsNull,
-          ),
-        ),
-      );
-    }
-
-    return literalList(
-      paramExpressions.reversed,
-      Types.dynamic,
-    );
-  }
 }

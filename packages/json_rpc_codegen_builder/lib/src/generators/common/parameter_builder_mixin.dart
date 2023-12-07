@@ -7,11 +7,11 @@ import 'package:source_helper/source_helper.dart';
 
 import '../../extensions/code_builder_extensions.dart';
 import '../../readers/defaults_reader.dart';
-import '../common/annotations.dart';
-import '../common/closure_builder_mixin.dart';
-import '../common/serialization_mixin.dart';
-import '../common/types.dart';
 import '../proxy_spec.dart';
+import 'annotations.dart';
+import 'closure_builder_mixin.dart';
+import 'serialization_mixin.dart';
+import 'types.dart';
 
 /// @nodoc
 @internal
