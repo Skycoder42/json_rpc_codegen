@@ -2,13 +2,10 @@ import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 
 import '../proxy_spec.dart';
+import 'constants.dart';
 
-/// @nodoc
 @internal
 base mixin BaseConstructorBuilderMixin on ProxySpec {
-  static const _rpcGetterRef = Reference('jsonRpcInstance');
-
-  ///@nodoc
   @protected
   Iterable<Constructor> buildConstructors(
     String fromName, [
@@ -60,7 +57,7 @@ base mixin BaseConstructorBuilderMixin on ProxySpec {
           ..requiredParameters.add(
             Parameter(
               (b) => b
-                ..name = _rpcGetterRef.symbol!
+                ..name = JsonRpcInstance.ref.symbol!
                 ..toSuper = true,
             ),
           )

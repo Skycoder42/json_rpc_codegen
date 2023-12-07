@@ -14,10 +14,8 @@ import 'types.dart';
 /// @nodoc
 @internal
 base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
-  static const _mapName = r'_$map';
-  static const _mapRef = Reference(_mapName);
-  static const _maybeMapName = r'_$maybeMap';
-  static const _maybeMapRef = Reference(_maybeMapName);
+  static const _mapRef = Reference(r'_$map');
+  static const _maybeMapRef = Reference(r'_$maybeMap');
 
   /// @nodoc
   static Iterable<Spec> buildGlobals() sync* {
@@ -392,7 +390,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     const convertParamRef = Reference(r'$convert');
     return Method(
       (b) => b
-        ..name = _mapName
+        ..name = _mapRef.symbol
         ..annotations.add(Annotations.pragmaPreferInline)
         ..returns = tConverted
         ..types.add(tConverted.boundTo(Types.object))
@@ -426,7 +424,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     const convertParamRef = Reference(r'$convert');
     return Method(
       (b) => b
-        ..name = _maybeMapName
+        ..name = _maybeMapRef.symbol
         ..annotations.add(Annotations.pragmaPreferInline)
         ..returns = tConverted.asNullable(true)
         ..types.add(tConverted.boundTo(Types.object))

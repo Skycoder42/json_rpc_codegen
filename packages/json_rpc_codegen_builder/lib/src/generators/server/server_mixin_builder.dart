@@ -23,8 +23,6 @@ final class ServerMixinBuilder extends ProxySpec
         SerializationMixin,
         ParameterBuilderMixin,
         RegistrationBuilderMixin {
-  static const _rpcGetterRef = Reference('jsonRpcInstance');
-
   final ClassElement _class;
 
   /// @nodoc
@@ -52,44 +50,31 @@ final class ServerMixinBuilder extends ProxySpec
           ..methods.add(
             buildRegisterMethods(
               _class.methods.map(
-                (method) => _buildRegisterMethod(
-                  _rpcGetterRef,
-                  method,
-                ),
+                _buildRegisterMethod,
               ),
             ),
           ),
       );
 
-  Code _buildRegisterMethod(
-    Reference jsonRpcInstance,
-    MethodElement method, {
-    String invocationSuffix = '',
-  }) {
+  Code _buildRegisterMethod(MethodElement method) {
     final parameterMode = validateParameters(method);
 
-    return jsonRpcInstance.property('registerMethod').call([
-      literalString('${method.name}$invocationSuffix'),
-      if (parameterMode == ParameterMode.none)
-        closure0(
-          modifier: MethodModifier.async,
-          () => Block.of(_buildInvocation(method)),
-        )
-      else
-        closure1(
-          r'$params',
-          type1: Types.jsonRpc2Parameters,
-          modifier: MethodModifier.async,
-          (p1) => Block.of([
-            if (parameterMode.hasPositional)
-              ...method.parameters
-                  .mapIndexed((i, e) => buildPositional(p1, i, e)),
-            if (parameterMode.hasNamed)
-              ...method.parameters.map((e) => buildNamed(p1, e)),
-            ..._buildInvocation(method),
-          ]),
-        ),
-    ]).statement;
+    return parameterMode == ParameterMode.none
+        ? buildRegisterMethodWithoutParams(
+            method.name,
+            () => Block.of(_buildInvocation(method)),
+          )
+        : buildRegisterMethodWithParams(
+            method.name,
+            (params) => Block.of([
+              if (parameterMode.hasPositional)
+                ...method.parameters
+                    .mapIndexed((i, e) => buildPositional(params, i, e)),
+              if (parameterMode.hasNamed)
+                ...method.parameters.map((e) => buildNamed(params, e)),
+              ..._buildInvocation(method),
+            ]),
+          );
   }
 
   Iterable<Code> _buildInvocation(

@@ -6,6 +6,7 @@ import 'package:source_helper/source_helper.dart';
 
 import '../../builders/try_catch.dart';
 import '../../extensions/code_builder_extensions.dart';
+import '../common/constants.dart';
 import '../common/method_mapper_mixin.dart';
 import '../common/parameter_builder_mixin.dart';
 import '../common/registration_builder_mixin.dart';
@@ -20,16 +21,12 @@ base mixin StreamBuilderMixin
         ProxySpec,
         MethodMapperMixin,
         InvocationBuilderMixin,
-        RegistrationBuilderMixin,
-        ParameterBuilderMixin {
-  // TODO reuse somehow
-  static const _rpcGetterRef = Reference('jsonRpcInstance');
+        RegistrationBuilderMixin {
   static const _streamCounterRef = Reference(r'_$streamCounter');
   static const _controllerMapRef = Reference(r'_$streamControllers');
   static const _streamIdRef = Reference(r'$streamId');
   static const _errorRef = Reference(r'$error');
   static const _stackTraceRef = Reference(r'$stackTrace');
-  static const _paramsName = r'$params';
 
   static bool hasStreams(ClassElement clazz) =>
       clazz.methods.any((m) => m.returnType.isDartAsyncStream);
@@ -163,7 +160,7 @@ base mixin StreamBuilderMixin
   ) {
     if (withArgs) {
       return buildMethodInvocation(
-        _rpcGetterRef.property('sendNotification'),
+        JsonRpcInstance.sendNotification,
         method,
         isAsync: false,
         invocationSuffix: '#$command',
@@ -172,7 +169,7 @@ base mixin StreamBuilderMixin
         },
       );
     } else {
-      return _rpcGetterRef.property('sendNotification').call([
+      return JsonRpcInstance.sendNotification.call([
         literalString('${method.name}#$command'),
         literalList(const [_streamIdRef], Types.dynamic),
       ]).code;
@@ -190,86 +187,77 @@ base mixin StreamBuilderMixin
   }
 
   Code _buildAddMethod(MethodElement method, DartType streamType) =>
-      _rpcGetterRef.property('registerMethod').call([
-        literalString('${method.name}#add'),
-        closure1(
-          _paramsName,
-          type1: Types.jsonRpc2Parameters,
-          (p1) => _controllerMapRef
-              .index(p1.index(literalNum(0)).property('asInt'))
-              .asA(
-                Types.streamController(Types.fromDartType(streamType))
-                    .asNullable(true),
-              )
-              .nullSafeProperty('add')
-              .call([
-            fromJson(
-              streamType,
-              streamType.isNullableType
-                  ? p1
-                      .index(literalNum(1))
-                      .property(ParameterBuilderMixin.nullOrName)
-                      .call([
-                      closure1(r'$v', (p1) => p1.property('value').code),
-                    ])
-                  : p1.index(literalNum(1)).property('value'),
-            ),
-          ]).code,
-        ),
-      ]).statement;
+      buildRegisterMethodWithParams(
+        '${method.name}#add',
+        async: false,
+        (params) => _controllerMapRef
+            .index(params.index(literalNum(0)).property('asInt'))
+            .asA(
+              Types.streamController(Types.fromDartType(streamType))
+                  .asNullable(true),
+            )
+            .nullSafeProperty('add')
+            .call([
+          fromJson(
+            streamType,
+            streamType.isNullableType
+                ? params
+                    .index(literalNum(1))
+                    .property(ParameterBuilderMixin.nullOrName)
+                    .call([
+                    closure1(r'$v', (p1) => p1.property('value').code),
+                  ])
+                : params.index(literalNum(1)).property('value'),
+          ),
+        ]).code,
+      );
 
   Code _buildErrorMethod(MethodElement method, DartType streamType) =>
-      _rpcGetterRef.property('registerMethod').call([
-        literalString('${method.name}#error'),
-        closure1(
-          _paramsName,
-          type1: Types.jsonRpc2Parameters,
-          (p1) => Block.of([
-            declareFinal(_errorRef.symbol!)
-                .assign(
-                  p1
-                      .index(literalNum(1))
-                      .property('asMap')
-                      .asA(Types.map(Types.string, Types.dynamic)),
-                )
-                .statement,
-            _controllerMapRef
-                .index(p1.index(literalNum(0)).property('asInt'))
-                .asA(
-                  Types.streamController(Types.fromDartType(streamType))
-                      .asNullable(true),
-                )
-                .nullSafeProperty('addError')
-                .call([
-              Types.jsonRpc2RpcException.newInstance([
-                _errorRef.index(literalString('code')).asA(Types.$int),
-                _errorRef.index(literalString('message')).asA(Types.string),
-              ], {
-                'data': _errorRef
-                    .index(literalString('data'))
-                    .asA(Types.object.asNullable(true)),
-              }),
-            ]).statement,
-          ]),
-        ),
-      ]).statement;
-
-  Code _buildDoneMethod(MethodElement method, DartType streamType) =>
-      _rpcGetterRef.property('registerMethod').call([
-        literalString('${method.name}#done'),
-        closure1(
-          _paramsName,
-          type1: Types.jsonRpc2Parameters,
-          (p1) => _controllerMapRef
-              .property('remove')
-              .call([p1.index(literalNum(0)).property('asInt')])
+      buildRegisterMethodWithParams(
+        '${method.name}#error',
+        async: false,
+        (params) => Block.of([
+          declareFinal(_errorRef.symbol!)
+              .assign(
+                params
+                    .index(literalNum(1))
+                    .property('asMap')
+                    .asA(Types.map(Types.string, Types.dynamic)),
+              )
+              .statement,
+          _controllerMapRef
+              .index(params.index(literalNum(0)).property('asInt'))
               .asA(
                 Types.streamController(Types.fromDartType(streamType))
                     .asNullable(true),
               )
-              .nullSafeProperty('close')
-              .call(const [])
-              .code,
-        ),
-      ]).statement;
+              .nullSafeProperty('addError')
+              .call([
+            Types.jsonRpc2RpcException.newInstance([
+              _errorRef.index(literalString('code')).asA(Types.$int),
+              _errorRef.index(literalString('message')).asA(Types.string),
+            ], {
+              'data': _errorRef
+                  .index(literalString('data'))
+                  .asA(Types.object.asNullable(true)),
+            }),
+          ]).statement,
+        ]),
+      );
+
+  Code _buildDoneMethod(MethodElement method, DartType streamType) =>
+      buildRegisterMethodWithParams(
+        '${method.name}#done',
+        async: false,
+        (params) => _controllerMapRef
+            .property('remove')
+            .call([params.index(literalNum(0)).property('asInt')])
+            .asA(
+              Types.streamController(Types.fromDartType(streamType))
+                  .asNullable(true),
+            )
+            .nullSafeProperty('close')
+            .call(const [])
+            .code,
+      );
 }

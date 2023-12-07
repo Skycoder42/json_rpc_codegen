@@ -9,6 +9,7 @@ import 'package:source_helper/source_helper.dart';
 import '../../extensions/analyzer_extensions.dart';
 import '../../readers/defaults_reader.dart';
 import '../common/closure_builder_mixin.dart';
+import '../common/constants.dart';
 import '../common/method_mapper_mixin.dart';
 import '../common/parameter_builder_mixin.dart';
 import '../common/registration_builder_mixin.dart';
@@ -29,8 +30,6 @@ final class ClientMixinBuilder extends ProxySpec
         ParameterBuilderMixin,
         RegistrationBuilderMixin,
         StreamBuilderMixin {
-  static const _rpcGetterRef = Reference('jsonRpcInstance');
-
   final ClassElement _class;
 
   /// @nodoc
@@ -116,14 +115,14 @@ final class ClientMixinBuilder extends ProxySpec
   }
 
   Code _buildNotificationBody(MethodElement method) => buildMethodInvocation(
-        _rpcGetterRef.property('sendNotification'),
+        JsonRpcInstance.sendNotification,
         method,
         isAsync: false,
       );
 
   Code _buildRequestBody(MethodElement method, DartType returnType) =>
       buildMethodInvocation(
-        _rpcGetterRef.property('sendRequest'),
+        JsonRpcInstance.sendRequest,
         method,
         isAsync: true,
         buildReturn: returnType.isDartCoreNull
