@@ -20,8 +20,8 @@ import 'stream_builder_mixin.dart';
 @internal
 final class ClientMixinBuilder extends ProxySpec
     with
-        StreamBuilderMixin,
         MethodMapperMixin,
+        StreamBuilderMixin,
         ClosureBuilderMixin,
         SerializationMixin {
   static const _rpcGetterRef = Reference('jsonRpcInstance');
@@ -37,11 +37,7 @@ final class ClientMixinBuilder extends ProxySpec
         (b) => b
           ..name = '${_class.publicName}ClientMixin'
           ..on = Types.clientBase
-          ..fields.addAll(
-            _class.methods
-                .where((m) => getReturnType(m).isDartAsyncStream)
-                .map(buildStreamCounter),
-          )
+          ..fields.addAll(buildStreamFields(_class))
           ..methods.addAll(_class.methods.map(_buildMethod)),
       );
 
@@ -50,7 +46,7 @@ final class ClientMixinBuilder extends ProxySpec
     if (returnType is VoidType) {
       return _buildNotificationMethod(method);
     } else if (returnType.isDartAsyncStream) {
-      return _buildStreamMethod(method, returnType);
+      return _buildStreamMethod(method);
     } else {
       return _buildRequestMethod(method, returnType);
     }
@@ -74,10 +70,9 @@ final class ClientMixinBuilder extends ProxySpec
         buildParam: (p, b) => _buildParam(method, p, b),
       );
 
-  Method _buildStreamMethod(MethodElement method, DartType returnType) =>
-      mapMethod(
+  Method _buildStreamMethod(MethodElement method) => mapMethod(
         method,
-        buildMethod: (b) => b..body = buildStreamBody(method, returnType),
+        buildMethod: (b) => b..body = buildStreamBody(method),
         buildParam: (p, b) => _buildParam(method, p, b),
       );
 

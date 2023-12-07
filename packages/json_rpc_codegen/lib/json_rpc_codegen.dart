@@ -10,5 +10,3 @@ export 'src/annotations/json_rpc.dart';
 export 'src/base/client_base.dart';
 export 'src/base/peer_base.dart';
 export 'src/base/server_base.dart';
-export 'src/stream/stream_command.dart';
-export 'src/stream/stream_event.dart';

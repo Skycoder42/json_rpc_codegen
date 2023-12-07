@@ -115,6 +115,9 @@ abstract base class Types {
   static final $bool = _named('bool');
 
   /// @nodoc
+  static final $int = _named('int');
+
+  /// @nodoc
   static final object = _named('Object');
 
   /// @nodoc

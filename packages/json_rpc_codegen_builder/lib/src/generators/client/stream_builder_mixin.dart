@@ -1,96 +1,149 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
-import 'package:json_rpc_codegen/json_rpc_codegen.dart' hide Parameter;
 import 'package:meta/meta.dart';
 
+import '../../builders/try_catch.dart';
 import '../../extensions/code_builder_extensions.dart';
+import '../common/method_mapper_mixin.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
 
 /// @nodoc
 @internal
-base mixin StreamBuilderMixin on ProxySpec {
+base mixin StreamBuilderMixin on ProxySpec, MethodMapperMixin {
   // TODO reuse somehow
   static const _rpcGetterRef = Reference('jsonRpcInstance');
+  static const _streamCounter = Reference(r'_$streamCounter');
+  static const _controllerMap = Reference(r'_$streamControllers');
   static const _streamIdRef = Reference(r'$streamId');
-  static const _controllerRef = Reference(r'$controller');
   static const _paramsRef = Reference(r'$params');
+  static const _errorRef = Reference(r'$error');
+  static const _stackTraceRef = Reference(r'$stackTrace');
 
-  /// @nodoc
-  Field buildStreamCounter(MethodElement method) => Field(
-        (b) => b
-          ..name = '\$${method.name}StreamCounter'
-          ..modifier = FieldModifier.var$
-          ..assignment = literalNum(0).code,
-      );
+  Iterable<Field> buildStreamFields(ClassElement clazz) sync* {
+    if (!clazz.methods.any((m) => m.returnType.isDartAsyncStream)) {
+      return;
+    }
 
-  /// @nodoc
-  Code buildStreamBody(
-    MethodElement method,
-    DartType returnType,
-  ) =>
-      Block.of(_buildStreamBodyImpl(method, returnType));
+    yield Field(
+      (b) => b
+        ..name = _streamCounter.symbol
+        ..modifier = FieldModifier.var$
+        ..assignment = literalNum(0).code,
+    );
+    yield Field(
+      (b) => b
+        ..name = _controllerMap.symbol
+        ..modifier = FieldModifier.final$
+        ..assignment = literalMap(
+          const {},
+          Types.$int,
+          Types.streamController(),
+        ).code,
+    );
+  }
 
-  Iterable<Code> _buildStreamBodyImpl(
-    MethodElement method,
-    DartType returnType,
-  ) sync* {
-    final streamType = (returnType as InterfaceType).typeArguments.single;
+  Code buildStreamBody(MethodElement method) =>
+      Block.of(_buildStreamBodyImpl(method));
+
+  Iterable<Code> _buildStreamBodyImpl(MethodElement method) sync* {
+    final streamType = Types.fromDartType(_streamType(method));
 
     yield declareFinal(_streamIdRef.symbol!)
-        .assign(refer('\$${method.name}StreamCounter').postfixIncrement)
+        .assign(_streamCounter.postfixIncrement)
         .statement;
-    yield declareFinal(_controllerRef.symbol!)
+    yield _controllerMap
+        .index(_streamIdRef)
         .assign(
-          Types.streamController(Types.fromDartType(streamType)).newInstance(
+          Types.streamController(streamType).newInstance(
             const [],
             {
               'onListen': _buildStreamNotification(
                 method,
-                StreamCommand.listen,
+                'listen',
                 withArgs: true,
+                closeOnError: true,
               ),
-              'onCancel':
-                  _buildStreamNotification(method, StreamCommand.cancel),
-              'onPause': _buildStreamNotification(method, StreamCommand.pause),
-              'onResume':
-                  _buildStreamNotification(method, StreamCommand.resume),
+              'onCancel': _buildStreamNotification(
+                method,
+                'cancel',
+                withTryCatch: false,
+              ),
+              'onPause': _buildStreamNotification(method, 'pause'),
+              'onResume': _buildStreamNotification(method, 'resume'),
             },
           ),
         )
+        .parenthesized
+        .property('stream')
+        .returned
         .statement;
 
-// TODO move away, cannot be called multiple times
-    yield _rpcGetterRef.property('registerMethod').call([
-      literalString(method.name),
-      _buildStreamListener(),
-    ]).statement;
-
-    yield _controllerRef.property('stream').returned.statement;
+    // // TODO move away, cannot be called multiple times
+    // yield _rpcGetterRef.property('registerMethod').call([
+    //   literalString(method.name),
+    //   _buildStreamListener(),
+    // ]).statement;
   }
+
+  DartType _streamType(MethodElement method) => getReturnType(
+        method,
+        (method.returnType as InterfaceType).typeArguments.single,
+      );
 
   Expression _buildStreamNotification(
     MethodElement method,
-    StreamCommand command, {
+    String command, {
     bool withArgs = false,
+    bool withTryCatch = true,
+    bool closeOnError = false,
   }) =>
       Method(
         (b) => b
-          ..body = _rpcGetterRef.property('sendNotification').call([
-            literalString(method.name),
-            literalList(
-              [
-                Types.streamCommand.property(command.name).property('name'),
-                _streamIdRef,
-                if (withArgs) ...[
-                  // TODO map parameters
-                ],
-              ],
-              Types.dynamic,
-            ),
-          ]).code,
+          ..body = withTryCatch
+              ? Block.of([
+                  try$([
+                    _buildNotificationInvocation(method, command, withArgs)
+                        .statement,
+                  ]).catch$(
+                    error: _errorRef,
+                    stackTrace: _stackTraceRef,
+                    body: [
+                      _controllerMap
+                          .index(_streamIdRef)
+                          .nullSafeProperty('addError')
+                          .call(const [_errorRef, _stackTraceRef]).statement,
+                      if (closeOnError)
+                        _controllerMap
+                            .property('remove')
+                            .call(const [_streamIdRef])
+                            .nullSafeProperty('close')
+                            .call(const [])
+                            .statement,
+                    ],
+                  ),
+                ])
+              : _buildNotificationInvocation(method, command, withArgs).code,
       ).closure;
+
+  Expression _buildNotificationInvocation(
+    MethodElement method,
+    String command,
+    bool withArgs,
+  ) =>
+      _rpcGetterRef.property('sendNotification').call([
+        literalString('${method.name}#$command'),
+        literalList(
+          withArgs
+              ? [
+                  // TODO map parameters with stream id
+                  _streamIdRef,
+                ]
+              : [_streamIdRef],
+          Types.dynamic,
+        ),
+      ]);
 
   Expression _buildStreamListener() => Method(
         (b) => b

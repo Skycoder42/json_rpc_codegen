@@ -34,11 +34,12 @@ enum ParameterMode {
 base mixin MethodMapperMixin on ProxySpec {
   /// @nodoc
   @protected
-  DartType getReturnType(MethodElement method) {
-    if (method.returnType.isDartAsyncFuture ||
-        method.returnType.isDartAsyncFutureOr) {
+  DartType getReturnType(MethodElement method, [DartType? returnType]) {
+    final actualReturnType = returnType ?? method.returnType;
+    if (actualReturnType.isDartAsyncFuture ||
+        actualReturnType.isDartAsyncFutureOr) {
       final futureType =
-          (method.returnType as InterfaceType).typeArguments.single;
+          (actualReturnType as InterfaceType).typeArguments.single;
       throw InvalidGenerationSourceError(
         'The return type of RPC methods must be not be a Future or FutureOr!',
         element: method,
@@ -47,23 +48,22 @@ base mixin MethodMapperMixin on ProxySpec {
       );
     }
 
-    if (method.returnType.isDartCoreFunction) {
+    if (actualReturnType.isDartCoreFunction) {
       throw InvalidGenerationSourceError(
         'The return type of RPC methods cannot be a function!',
         element: method,
       );
     }
 
-    if (method.returnType.isDartCoreType ||
-        method.returnType.isDartCoreSymbol) {
+    if (actualReturnType.isDartCoreType || actualReturnType.isDartCoreSymbol) {
       throw InvalidGenerationSourceError(
         'The return type of RPC methods cannot be a '
-        '${method.returnType.getDisplayString(withNullability: false)}',
+        '${actualReturnType.getDisplayString(withNullability: false)}',
         element: method,
       );
     }
 
-    return method.returnType;
+    return actualReturnType;
   }
 
   /// @nodoc
