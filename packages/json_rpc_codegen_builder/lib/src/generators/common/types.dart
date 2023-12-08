@@ -113,6 +113,8 @@ abstract base class Types {
 
   static final stackTrace = _named('StackTrace');
 
+  static final zone = _named('Zone');
+
   static final jsonRpc2Client = TypeReference(
     (b) => b..symbol = 'Client',
   );

@@ -10,3 +10,7 @@ abstract base class JsonRpcInstance {
 
   static const methodParams = Reference(r'$params');
 }
+
+abstract base class Globals {
+  static const unawaitedRef = Reference('unawaited');
+}

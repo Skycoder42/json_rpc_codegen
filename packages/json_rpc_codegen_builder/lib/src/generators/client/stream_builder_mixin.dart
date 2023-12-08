@@ -4,6 +4,7 @@ import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 import 'package:source_helper/source_helper.dart';
 
+import '../../builders/for_in.dart';
 import '../../builders/try_catch.dart';
 import '../../extensions/code_builder_extensions.dart';
 import '../common/constants.dart';
@@ -25,6 +26,7 @@ base mixin StreamBuilderMixin
   static const _streamCounterRef = Reference(r'_$streamCounter');
   static const _controllerMapRef = Reference(r'_$streamControllers');
   static const _streamIdRef = Reference(r'$streamId');
+  static const _controllerRef = Reference(r'$controller');
   static const _errorRef = Reference(r'$error');
   static const _stackTraceRef = Reference(r'$stackTrace');
 
@@ -65,7 +67,8 @@ base mixin StreamBuilderMixin
     return buildRegisterMethods(
       clazz.methods
           .where((m) => m.returnType.isDartAsyncStream)
-          .map(_buildStreamListeners),
+          .map(_buildStreamListeners)
+          .followedBy([_buildCleanupMethod()]),
     );
   }
 
@@ -101,12 +104,6 @@ base mixin StreamBuilderMixin
         .property('stream')
         .returned
         .statement;
-
-    // // TODO move away, cannot be called multiple times
-    // yield _rpcGetterRef.property('registerMethod').call([
-    //   literalString(method.name),
-    //   _buildStreamListener(),
-    // ]).statement;
   }
 
   DartType _streamType(MethodElement method) => getReturnType(
@@ -129,7 +126,7 @@ base mixin StreamBuilderMixin
 
     if (withTryCatch) {
       if (invocation case ToCodeExpression(isStatement: false)) {
-        invocation = invocation.code.statement;
+        invocation = invocation.code.awaited.statement;
       }
       invocation = try$([invocation]).catch$(
         error: _errorRef,
@@ -150,7 +147,10 @@ base mixin StreamBuilderMixin
       );
     }
 
-    return closure0(() => invocation);
+    return closure0(
+      modifier: withTryCatch ? MethodModifier.async : null,
+      () => invocation,
+    );
   }
 
   Code _buildNotificationInvocation(
@@ -160,16 +160,16 @@ base mixin StreamBuilderMixin
   ) {
     if (withArgs) {
       return buildMethodInvocation(
-        JsonRpcInstance.sendNotification,
+        JsonRpcInstance.sendRequest,
         method,
-        isAsync: false,
+        isAsync: true,
         invocationSuffix: '#$command',
         extraArgs: {
           _streamIdRef.symbol!: _streamIdRef,
         },
       );
     } else {
-      return JsonRpcInstance.sendNotification.call([
+      return JsonRpcInstance.sendRequest.call([
         literalString('${method.name}#$command'),
         literalList(const [_streamIdRef], Types.dynamic),
       ]).code;
@@ -260,4 +260,21 @@ base mixin StreamBuilderMixin
             .call(const [])
             .code,
       );
+
+  Code _buildCleanupMethod() =>
+      JsonRpcInstance.ref.property('done').property('then').call([
+        closure1(
+          '_',
+          (_) => Block.of([
+            ForIn(
+              _controllerRef.symbol!,
+              _controllerMapRef.property('values'),
+              Globals.unawaitedRef.call([
+                _controllerRef.property('close').call(const []),
+              ]).statement,
+            ),
+            _controllerMapRef.property('clear').call(const []).statement,
+          ]),
+        ),
+      ]).statement;
 }

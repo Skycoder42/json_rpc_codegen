@@ -12,7 +12,6 @@ class _IfThenInfo {
   const _IfThenInfo(Expression this._if, this._then);
 }
 
-/// @nodoc
 @internal
 class IfThen implements Code {
   final List<_IfThenInfo> _ifThenStatements;
@@ -20,7 +19,6 @@ class IfThen implements Code {
 
   IfThen._(this._ifThenStatements, this._else);
 
-  /// @nodoc
   IfThen $elseIf(Expression condition, Iterable<Code> body) {
     if (_else != null) {
       throw StateError('Cannot define else if after else');
@@ -28,7 +26,6 @@ class IfThen implements Code {
     return IfThen._([..._ifThenStatements, _IfThenInfo(condition, body)], null);
   }
 
-  /// @nodoc
   IfThen $else(Iterable<Code> body) {
     if (_else != null) {
       throw StateError('Can only define else once');

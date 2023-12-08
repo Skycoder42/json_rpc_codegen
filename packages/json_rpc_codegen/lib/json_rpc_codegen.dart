@@ -1,4 +1,4 @@
-export 'dart:async' show FutureOr, StreamController;
+export 'dart:async' show FutureOr, StreamController, Zone, unawaited;
 
 export 'package:json_rpc_2/json_rpc_2.dart';
 export 'package:meta/meta.dart'
