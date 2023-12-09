@@ -18,20 +18,18 @@ abstract base class Types {
     } else if (dartType is ast_type.RecordType) {
       return _fromRecord(dartType);
     } else {
-      return dartType is ast_type.VoidType || dartType.isDartCoreNull
-          ? $void
-          : TypeReference(
-              (b) {
-                b
-                  ..symbol = dartType.element!.name
-                  ..isNullable = isNull ??
-                      dartType.nullabilitySuffix != NullabilitySuffix.none;
+      return TypeReference(
+        (b) {
+          b
+            ..symbol = dartType.element!.name
+            ..isNullable =
+                isNull ?? dartType.nullabilitySuffix != NullabilitySuffix.none;
 
-                if (dartType is ast_type.InterfaceType) {
-                  b.types.addAll(dartType.typeArguments.map(fromDartType));
-                }
-              },
-            );
+          if (dartType is ast_type.InterfaceType) {
+            b.types.addAll(dartType.typeArguments.map(fromDartType));
+          }
+        },
+      );
     }
   }
 

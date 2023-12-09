@@ -15,8 +15,6 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
     Expression target,
     MethodElement method, {
     required bool isAsync,
-    String invocationSuffix = '',
-    Map<String, Reference> extraArgs = const {},
     Iterable<Code> Function(Expression invocation)? buildReturn,
   }) {
     final isServerDefault = DefaultsReader.isServerDefault(method);
@@ -25,19 +23,17 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
     final validations = <Code>[];
 
     final invocation = target.call([
-      literalString('${method.name}$invocationSuffix'),
+      literalString(method.name),
       if (parameterMode.hasPositional)
         _buildPositionalParameters(
           method.parameters,
           isServerDefault,
-          extraArgs,
           validations,
         ),
       if (parameterMode.hasNamed)
         _buildNamedParameters(
           method.parameters,
           isServerDefault,
-          extraArgs,
         ),
     ]);
 
@@ -57,13 +53,11 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
   Expression _buildPositionalParameters(
     List<ParameterElement> params,
     bool isServerDefault,
-    Map<String, Reference> extraArgs,
     List<Code> validations,
   ) {
     if (!isServerDefault) {
       return literalList(
         [
-          ...extraArgs.values,
           for (final p in params) toJson(p.type, refer(p.name)),
         ],
         Types.dynamic,
@@ -134,7 +128,6 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
 
     return literalList(
       [
-        ...extraArgs.values,
         ...paramExpressions.reversed,
       ],
       Types.dynamic,
@@ -144,12 +137,9 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
   Expression _buildNamedParameters(
     Iterable<ParameterElement> params,
     bool isServerDefault,
-    Map<String, Reference> extraArgs,
   ) =>
       literalMap(
         {
-          for (final MapEntry(key: name, value: ref) in extraArgs.entries)
-            name: ref,
           for (final p in params)
             if (p.isOptional && isServerDefault)
               IterableIf(

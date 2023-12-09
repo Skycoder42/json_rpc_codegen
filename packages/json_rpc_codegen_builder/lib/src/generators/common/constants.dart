@@ -7,6 +7,7 @@ abstract base class JsonRpcInstance {
   static final sendNotification = ref.property('sendNotification');
   static final sendRequest = ref.property('sendRequest');
   static final registerMethod = ref.property('registerMethod');
+  static final isClosed = ref.property('isClosed');
 
   static const methodParams = Reference(r'$params');
 }

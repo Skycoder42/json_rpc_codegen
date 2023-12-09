@@ -23,7 +23,6 @@ base mixin StreamBuilderMixin
         MethodMapperMixin,
         InvocationBuilderMixin,
         RegistrationBuilderMixin {
-  static const _streamCounterRef = Reference(r'_$streamCounter');
   static const _controllerMapRef = Reference(r'_$streamControllers');
   static const _streamIdRef = Reference(r'$streamId');
   static const _controllerRef = Reference(r'$controller');
@@ -38,12 +37,6 @@ base mixin StreamBuilderMixin
       return;
     }
 
-    yield Field(
-      (b) => b
-        ..name = _streamCounterRef.symbol
-        ..modifier = FieldModifier.var$
-        ..assignment = literalNum(0).code,
-    );
     yield Field(
       (b) => b
         ..name = _controllerMapRef.symbol
@@ -75,35 +68,68 @@ base mixin StreamBuilderMixin
   Iterable<Code> _buildStreamBodyImpl(MethodElement method) sync* {
     final streamType = Types.fromDartType(_streamType(method));
 
-    yield declareFinal(_streamIdRef.symbol!)
-        .assign(_streamCounterRef.postfixIncrement)
-        .statement;
-    yield _controllerMapRef
-        .index(_streamIdRef)
+    yield buildMethodInvocation(
+      JsonRpcInstance.sendRequest,
+      method,
+      isAsync: false,
+      buildReturn: (invocation) sync* {
+        yield declareFinal(_streamIdRef.symbol!)
+            .assign(
+              invocation
+                  .property('then')
+                  .call([closure1(r'$id', (id) => id.asA(Types.$int).code)]),
+            )
+            .statement;
+      },
+    );
+
+    yield declareFinal(_controllerRef.symbol!)
         .assign(
           Types.streamController(streamType).newInstance(
             const [],
             {
-              'onListen': _buildStreamNotification(
-                method,
-                'listen',
-                withArgs: true,
-                closeOnError: true,
-              ),
+              'onListen': _buildStreamNotification(method, 'listen'),
               'onCancel': _buildStreamNotification(
                 method,
                 'cancel',
-                withTryCatch: false,
+                asRequest: true,
               ),
               'onPause': _buildStreamNotification(method, 'pause'),
               'onResume': _buildStreamNotification(method, 'resume'),
             },
           ),
         )
-        .parenthesized
-        .property('stream')
-        .returned
         .statement;
+
+    yield _streamIdRef.property('then').call(
+      [
+        closure1(
+          r'$id',
+          (id) => JsonRpcInstance.isClosed
+              .conditional(
+                _controllerRef.property('close').call(const []),
+                _controllerMapRef.index(id).assign(_controllerRef),
+              )
+              .code,
+        ),
+      ],
+      {
+        'onError': closure2(
+          type1: Types.object,
+          _errorRef.symbol!,
+          type2: Types.stackTrace,
+          _stackTraceRef.symbol!,
+          (p1, p2) => _controllerRef
+              .cascade('addError')
+              .call([p1, p2])
+              .cascade('close')
+              .call(const [])
+              .code,
+        ),
+      },
+    ).statement;
+
+    yield _controllerRef.property('stream').returned.statement;
   }
 
   DartType _streamType(MethodElement method) => getReturnType(
@@ -114,67 +140,18 @@ base mixin StreamBuilderMixin
   Expression _buildStreamNotification(
     MethodElement method,
     String command, {
-    bool withArgs = false,
-    bool withTryCatch = true,
-    bool closeOnError = false,
-  }) {
-    var invocation = _buildNotificationInvocation(
-      method,
-      command,
-      withArgs,
-    );
-
-    if (withTryCatch) {
-      if (invocation case ToCodeExpression(isStatement: false)) {
-        invocation = invocation.code.awaited.statement;
-      }
-      invocation = try$([invocation]).catch$(
-        error: _errorRef,
-        stackTrace: _stackTraceRef,
-        body: [
-          _controllerMapRef
-              .index(_streamIdRef)
-              .nullSafeProperty('addError')
-              .call(const [_errorRef, _stackTraceRef]).statement,
-          if (closeOnError)
-            _controllerMapRef
-                .property('remove')
-                .call(const [_streamIdRef])
-                .nullSafeProperty('close')
-                .call(const [])
-                .statement,
-        ],
+    bool asRequest = false,
+  }) =>
+      closure0(
+        modifier: MethodModifier.async,
+        () => (asRequest
+                ? JsonRpcInstance.sendRequest
+                : JsonRpcInstance.sendNotification)
+            .call([
+          literalString('${method.name}#$command'),
+          literalList([StreamBuilderMixin._streamIdRef.awaited]),
+        ]).code,
       );
-    }
-
-    return closure0(
-      modifier: withTryCatch ? MethodModifier.async : null,
-      () => invocation,
-    );
-  }
-
-  Code _buildNotificationInvocation(
-    MethodElement method,
-    String command,
-    bool withArgs,
-  ) {
-    if (withArgs) {
-      return buildMethodInvocation(
-        JsonRpcInstance.sendRequest,
-        method,
-        isAsync: true,
-        invocationSuffix: '#$command',
-        extraArgs: {
-          _streamIdRef.symbol!: _streamIdRef,
-        },
-      );
-    } else {
-      return JsonRpcInstance.sendRequest.call([
-        literalString('${method.name}#$command'),
-        literalList(const [_streamIdRef], Types.dynamic),
-      ]).code;
-    }
-  }
 
   Code _buildStreamListeners(MethodElement method) {
     final streamType = _streamType(method);
