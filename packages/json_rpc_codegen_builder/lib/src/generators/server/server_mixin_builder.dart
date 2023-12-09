@@ -13,6 +13,7 @@ import '../common/registration_builder_mixin.dart';
 import '../common/serialization_mixin.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
+import 'stream_builder_mixin.dart';
 
 /// @nodoc
 @internal
@@ -22,7 +23,8 @@ final class ServerMixinBuilder extends ProxySpec
         ClosureBuilderMixin,
         SerializationMixin,
         ParameterBuilderMixin,
-        RegistrationBuilderMixin {
+        RegistrationBuilderMixin,
+        StreamBuilderMixin {
   final ClassElement _class;
 
   /// @nodoc
@@ -32,14 +34,20 @@ final class ServerMixinBuilder extends ProxySpec
   Mixin build() => Mixin(
         (b) => b
           ..name = '${_class.publicName}ServerMixin'
-          ..on = Types.serverBase
+          ..on = StreamBuilderMixin.hasStreams(_class)
+              ? Types.peerBase
+              : Types.serverBase
+          ..fields.addAll(buildStreamFields(_class))
           ..methods.addAll(
             _class.methods.map(
               (method) => mapMethod(
                 method,
-                buildMethod: (b) => b
-                  ..annotations.add(Annotations.protected)
-                  ..returns = Types.futureOr(b.returns),
+                buildMethod: (b) {
+                  b.annotations.add(Annotations.protected);
+                  if (!method.returnType.isDartAsyncStream) {
+                    b.returns = Types.futureOr(b.returns);
+                  }
+                },
                 buildParam: (_, builder) => builder
                   ..named = false
                   ..required = false,
@@ -83,6 +91,11 @@ final class ServerMixinBuilder extends ProxySpec
     final invocation = refer(method.name).call([
       for (final p in method.parameters) paramRefFor(p),
     ]);
+
+    if (method.returnType.isDartAsyncStream) {
+      yield buildStreamInvocation(method, invocation);
+      return;
+    }
 
     if (method.returnType is VoidType || method.returnType.isDartCoreNull) {
       yield invocation.awaited.statement;

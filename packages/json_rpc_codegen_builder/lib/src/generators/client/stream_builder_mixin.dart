@@ -5,7 +5,6 @@ import 'package:meta/meta.dart';
 import 'package:source_helper/source_helper.dart';
 
 import '../../builders/for_in.dart';
-import '../../builders/try_catch.dart';
 import '../../extensions/code_builder_extensions.dart';
 import '../common/constants.dart';
 import '../common/method_mapper_mixin.dart';
@@ -15,7 +14,6 @@ import '../common/types.dart';
 import '../proxy_spec.dart';
 import 'invocation_builder_mixin.dart';
 
-/// @nodoc
 @internal
 base mixin StreamBuilderMixin
     on

@@ -93,6 +93,14 @@ abstract base class Types {
           ]),
       );
 
+  static TypeReference streamSubscription([Reference? type]) => TypeReference(
+        (b) => b
+          ..symbol = 'StreamSubscription'
+          ..types.addAll([
+            if (type != null) type,
+          ]),
+      );
+
   static final dynamic = _named('dynamic');
 
   static final $void = _named('void');
