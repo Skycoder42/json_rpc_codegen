@@ -1,4 +1,5 @@
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
@@ -8,6 +9,7 @@ import '../common/constants.dart';
 import '../common/method_mapper_mixin.dart';
 import '../common/parameter_builder_mixin.dart';
 import '../common/registration_builder_mixin.dart';
+import '../common/serialization_mixin.dart';
 import '../common/types.dart';
 
 @internal
@@ -15,6 +17,7 @@ base mixin StreamBuilderMixin
     on
         MethodMapperMixin,
         ClosureBuilderMixin,
+        SerializationMixin,
         RegistrationBuilderMixin,
         ParameterBuilderMixin {
   static const _subscriptionsMapRef = Reference(r'_$streamSubscriptions');
@@ -43,12 +46,18 @@ base mixin StreamBuilderMixin
   Code buildStreamRegistrations(MethodElement method) => Block.of([
         buildRegisterMethodWithParams(
           '${method.name}#listen',
+          async: false,
           (params) => Block.of(_buildListenInvocation(method, params)),
         ),
-        _buildSubscriptionRegistration(method, 'cancel', removeSub: true),
+        _buildSubscriptionRegistration(method, 'cancel', remove: true),
         _buildSubscriptionRegistration(method, 'pause'),
         _buildSubscriptionRegistration(method, 'resume'),
       ]);
+
+  DartType _streamType(MethodElement method) => getReturnType(
+        method,
+        (method.returnType as InterfaceType).typeArguments.single,
+      );
 
   Iterable<Code> _buildListenInvocation(
     MethodElement method,
@@ -103,8 +112,11 @@ base mixin StreamBuilderMixin
         ])
         .property('listen')
         .call([
-          closure1('_', (p1) => Block.of([])), // TODO
-        ])
+          _buildOnData(method),
+        ], {
+          'onError': _buildOnError(method),
+          'onDone': _buildOnDone(method),
+        })
         .returned
         .statement;
   }
@@ -112,36 +124,88 @@ base mixin StreamBuilderMixin
   Code _buildSubscriptionRegistration(
     MethodElement method,
     String name, {
-    bool removeSub = false,
+    bool remove = false,
   }) =>
       buildRegisterMethodWithParams(
         '${method.name}#$name',
-        (params) =>
-            Block.of(_buildSubscriptionInvocation(name, params, removeSub)),
+        async: false,
+        (params) => _buildSubscriptionInvocation(name, params, remove).code,
       );
 
-  Iterable<Code> _buildSubscriptionInvocation(
+  Expression _buildSubscriptionInvocation(
     String name,
     Reference params,
-    bool removeSub,
-  ) sync* {
-    yield declareFinal(_streamIdRef.symbol!)
-        .assign(params.index(literalNum(0)).property('asInt'))
-        .statement;
-
-    if (removeSub) {
-      yield _subscriptionsMapRef
+    bool remove,
+  ) {
+    final streamIdRef = params.index(literalNum(0)).property('asInt');
+    if (remove) {
+      return _subscriptionsMapRef
           .property('remove')
-          .call(const [_streamIdRef])
+          .call([streamIdRef])
           .nullSafeProperty(name)
-          .call(const [])
-          .returned
-          .statement;
+          .call(const []);
     } else {
-      yield _subscriptionsMapRef
-          .index(_streamIdRef)
+      return _subscriptionsMapRef
+          .index(streamIdRef)
           .nullSafeProperty(name)
-          .call(const []).statement;
+          .call(const []);
     }
   }
+
+  Expression _buildOnData(MethodElement method) => closure1(
+        r'$data',
+        (dataRef) => JsonRpcInstance.sendNotification.call([
+          literalString('${method.name}#data'),
+          literalList(
+            [
+              _streamIdRef,
+              toJson(_streamType(method), dataRef),
+            ],
+            Types.dynamic,
+          ),
+        ]).code,
+      );
+
+  Expression _buildOnError(MethodElement method) => closure2(
+        type1: Types.object,
+        r'$error',
+        type2: Types.stackTrace,
+        r'$stackTrace',
+        (errorRef, stackTraceRef) => JsonRpcInstance.sendNotification.call([
+          literalString('${method.name}#error'),
+          errorRef.isA(Types.jsonRpc2RpcException).conditional(
+                errorRef,
+                Types.jsonRpc2RpcException.newInstance(
+                  [
+                    JsonRpcInstance.serverError,
+                    JsonRpcInstance.getErrorMessage.call([errorRef]),
+                  ],
+                  {
+                    'data': literalMap({
+                      'full': errorRef.property('toString').call(const []),
+                      'stack': Types.stackTraceChain
+                          .newInstanceNamed('forTrace', [stackTraceRef])
+                          .property('toString')
+                          .call(const []),
+                    }),
+                  },
+                ),
+              ),
+        ]).code,
+      );
+
+  Expression _buildOnDone(MethodElement method) => closure0(
+        () => Block.of([
+          JsonRpcInstance.sendNotification.call([
+            literalString('${method.name}#done'),
+            literalList([_streamIdRef]),
+          ]).statement,
+          _subscriptionsMapRef
+              .property('remove')
+              .call([_streamIdRef])
+              .nullSafeProperty('cancel')
+              .call(const [])
+              .statement,
+        ]),
+      );
 }

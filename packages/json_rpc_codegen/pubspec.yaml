@@ -10,6 +10,7 @@ environment:
 dependencies:
   json_rpc_2: ^3.0.2
   meta: ^1.10.0
+  stack_trace: ^1.11.1
   stream_channel: ^2.1.2
 
 dev_dependencies:

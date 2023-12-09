@@ -145,6 +145,10 @@ abstract base class Types {
     (b) => b..symbol = 'ErrorCallback',
   );
 
+  static final stackTraceChain = TypeReference(
+    (b) => b..symbol = 'Chain',
+  );
+
   static final clientBase = TypeReference(
     (b) => b..symbol = 'ClientBase',
   );
@@ -155,14 +159,6 @@ abstract base class Types {
 
   static final peerBase = TypeReference(
     (b) => b..symbol = 'PeerBase',
-  );
-
-  static final streamCommand = TypeReference(
-    (b) => b..symbol = 'StreamCommand',
-  );
-
-  static final streamEvent = TypeReference(
-    (b) => b..symbol = 'StreamEvent',
   );
 
   static TypeReference _named(String name) => TypeReference(

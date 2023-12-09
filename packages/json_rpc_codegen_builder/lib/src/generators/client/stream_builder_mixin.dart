@@ -115,36 +115,6 @@ base mixin StreamBuilderMixin
         .property('stream')
         .returned
         .statement;
-
-    // yield _streamIdRef.property('then').call(
-    //   [
-    //     closure1(
-    //       r'$id',
-    //       (id) => JsonRpcInstance.isClosed
-    //           .conditional(
-    //             _controllerRef.property('close').call(const []),
-    //             _controllerMapRef.index(id).assign(_controllerRef),
-    //           )
-    //           .code,
-    //     ),
-    //   ],
-    //   {
-    //     'onError': closure2(
-    //       type1: Types.object,
-    //       _errorRef.symbol!,
-    //       type2: Types.stackTrace,
-    //       _stackTraceRef.symbol!,
-    //       (p1, p2) => _controllerRef
-    //           .cascade('addError')
-    //           .call([p1, p2])
-    //           .cascade('close')
-    //           .call(const [])
-    //           .code,
-    //     ),
-    //   },
-    // ).statement;
-
-    // yield _controllerRef.property('stream').returned.statement;
   }
 
   DartType _streamType(MethodElement method) => getReturnType(
@@ -213,7 +183,7 @@ base mixin StreamBuilderMixin
 
   Code _buildAddMethod(MethodElement method, DartType streamType) =>
       buildRegisterMethodWithParams(
-        '${method.name}#add',
+        '${method.name}#data',
         async: false,
         (params) => _controllerMapRef
             .index(params.index(literalNum(0)).property('asInt'))
