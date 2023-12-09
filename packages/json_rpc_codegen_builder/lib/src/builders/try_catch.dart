@@ -28,12 +28,16 @@ class TryCatch implements Code, Spec {
     Reference? error,
     Reference? stackTrace,
     required Iterable<Code> body,
-  }) =>
-      TryCatch._(
-        _try,
-        [..._catch, _CatchInfo(on, error, stackTrace, body)],
-        _finally,
-      );
+  }) {
+    if (on == null && error == null) {
+      throw ArgumentError('Either on or error must be set!');
+    }
+    return TryCatch._(
+      _try,
+      [..._catch, _CatchInfo(on, error, stackTrace, body)],
+      _finally,
+    );
+  }
 
   TryCatch finally$(Iterable<Code> body) {
     if (_finally != null) {

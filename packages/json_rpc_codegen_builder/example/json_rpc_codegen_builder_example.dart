@@ -82,7 +82,11 @@ abstract class _SampleApi {
   @clientDefaults
   double getProgress(int id, [Stage stage = Stage.all]);
 
-  Stream<User> streamUsers(Permission permission);
+  Stream<User> streamUsers(
+    Permission permission, [
+    int limit = 10,
+    int offset = 0,
+  ]);
 }
 
 void main() {}

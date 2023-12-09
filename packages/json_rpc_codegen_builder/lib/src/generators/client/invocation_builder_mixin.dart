@@ -15,7 +15,9 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
     Expression target,
     MethodElement method, {
     required bool isAsync,
+    String invocationSuffix = '',
     Iterable<Code> Function(Expression invocation)? buildReturn,
+    Map<String, Reference> extraArgs = const {},
   }) {
     final isServerDefault = DefaultsReader.isServerDefault(method);
     final parameterMode = validateParameters(method);
@@ -23,17 +25,19 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
     final validations = <Code>[];
 
     final invocation = target.call([
-      literalString(method.name),
+      literalString('${method.name}$invocationSuffix'),
       if (parameterMode.hasPositional)
         _buildPositionalParameters(
           method.parameters,
           isServerDefault,
+          extraArgs,
           validations,
         ),
       if (parameterMode.hasNamed)
         _buildNamedParameters(
           method.parameters,
           isServerDefault,
+          extraArgs,
         ),
     ]);
 
@@ -53,11 +57,13 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
   Expression _buildPositionalParameters(
     List<ParameterElement> params,
     bool isServerDefault,
+    Map<String, Reference> extraArs,
     List<Code> validations,
   ) {
     if (!isServerDefault) {
       return literalList(
         [
+          ...extraArs.values,
           for (final p in params) toJson(p.type, refer(p.name)),
         ],
         Types.dynamic,
@@ -128,6 +134,7 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
 
     return literalList(
       [
+        ...extraArs.values,
         ...paramExpressions.reversed,
       ],
       Types.dynamic,
@@ -137,9 +144,12 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
   Expression _buildNamedParameters(
     Iterable<ParameterElement> params,
     bool isServerDefault,
+    Map<String, Reference> extraArs,
   ) =>
       literalMap(
         {
+          for (final MapEntry(key: key, value: value) in extraArs.entries)
+            key: value,
           for (final p in params)
             if (p.isOptional && isServerDefault)
               IterableIf(

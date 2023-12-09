@@ -65,8 +65,11 @@ final class ServerMixinBuilder extends ProxySpec
       );
 
   Code _buildRegisterMethod(MethodElement method) {
-    final parameterMode = validateParameters(method);
+    if (method.returnType.isDartAsyncStream) {
+      return buildStreamRegistrations(method);
+    }
 
+    final parameterMode = validateParameters(method);
     return parameterMode == ParameterMode.none
         ? buildRegisterMethodWithoutParams(
             method.name,
@@ -91,11 +94,6 @@ final class ServerMixinBuilder extends ProxySpec
     final invocation = refer(method.name).call([
       for (final p in method.parameters) paramRefFor(p),
     ]);
-
-    if (method.returnType.isDartAsyncStream) {
-      yield buildStreamInvocation(method, invocation);
-      return;
-    }
 
     if (method.returnType is VoidType || method.returnType.isDartCoreNull) {
       yield invocation.awaited.statement;

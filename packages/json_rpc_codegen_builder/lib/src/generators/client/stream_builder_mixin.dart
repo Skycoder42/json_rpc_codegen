@@ -5,6 +5,8 @@ import 'package:meta/meta.dart';
 import 'package:source_helper/source_helper.dart';
 
 import '../../builders/for_in.dart';
+import '../../builders/if.dart';
+import '../../builders/try_catch.dart';
 import '../../extensions/code_builder_extensions.dart';
 import '../common/constants.dart';
 import '../common/method_mapper_mixin.dart';
@@ -21,6 +23,7 @@ base mixin StreamBuilderMixin
         MethodMapperMixin,
         InvocationBuilderMixin,
         RegistrationBuilderMixin {
+  static const _streamIdCounterRef = Reference(r'_$streamIdCounter');
   static const _controllerMapRef = Reference(r'_$streamControllers');
   static const _streamIdRef = Reference(r'$streamId');
   static const _controllerRef = Reference(r'$controller');
@@ -34,6 +37,12 @@ base mixin StreamBuilderMixin
     if (!hasStreams(clazz)) {
       return;
     }
+
+    yield Field(
+      (b) => b
+        ..name = _streamIdCounterRef.symbol
+        ..assignment = literalNum(0).code,
+    );
 
     yield Field(
       (b) => b
@@ -66,27 +75,32 @@ base mixin StreamBuilderMixin
   Iterable<Code> _buildStreamBodyImpl(MethodElement method) sync* {
     final streamType = Types.fromDartType(_streamType(method));
 
+    late final Expression invocation;
     yield buildMethodInvocation(
       JsonRpcInstance.sendRequest,
       method,
-      isAsync: false,
-      buildReturn: (invocation) sync* {
-        yield declareFinal(_streamIdRef.symbol!)
-            .assign(
-              invocation
-                  .property('then')
-                  .call([closure1(r'$id', (id) => id.asA(Types.$int).code)]),
-            )
-            .statement;
+      invocationSuffix: '#listen',
+      isAsync: true,
+      extraArgs: {
+        _streamIdRef.symbol!: _streamIdRef,
+      },
+      buildReturn: (i) {
+        invocation = i;
+        return [];
       },
     );
 
-    yield declareFinal(_controllerRef.symbol!)
+    yield declareFinal(_streamIdRef.symbol!)
+        .assign(_streamIdCounterRef.postfixIncrement)
+        .statement;
+
+    yield _controllerMapRef
+        .index(_streamIdRef)
         .assign(
           Types.streamController(streamType).newInstance(
             const [],
             {
-              'onListen': _buildStreamNotification(method, 'listen'),
+              'onListen': _buildOnListen(method, invocation),
               'onCancel': _buildStreamNotification(
                 method,
                 'cancel',
@@ -97,42 +111,79 @@ base mixin StreamBuilderMixin
             },
           ),
         )
+        .parenthesized
+        .property('stream')
+        .returned
         .statement;
 
-    yield _streamIdRef.property('then').call(
-      [
-        closure1(
-          r'$id',
-          (id) => JsonRpcInstance.isClosed
-              .conditional(
-                _controllerRef.property('close').call(const []),
-                _controllerMapRef.index(id).assign(_controllerRef),
-              )
-              .code,
-        ),
-      ],
-      {
-        'onError': closure2(
-          type1: Types.object,
-          _errorRef.symbol!,
-          type2: Types.stackTrace,
-          _stackTraceRef.symbol!,
-          (p1, p2) => _controllerRef
-              .cascade('addError')
-              .call([p1, p2])
-              .cascade('close')
-              .call(const [])
-              .code,
-        ),
-      },
-    ).statement;
+    // yield _streamIdRef.property('then').call(
+    //   [
+    //     closure1(
+    //       r'$id',
+    //       (id) => JsonRpcInstance.isClosed
+    //           .conditional(
+    //             _controllerRef.property('close').call(const []),
+    //             _controllerMapRef.index(id).assign(_controllerRef),
+    //           )
+    //           .code,
+    //     ),
+    //   ],
+    //   {
+    //     'onError': closure2(
+    //       type1: Types.object,
+    //       _errorRef.symbol!,
+    //       type2: Types.stackTrace,
+    //       _stackTraceRef.symbol!,
+    //       (p1, p2) => _controllerRef
+    //           .cascade('addError')
+    //           .call([p1, p2])
+    //           .cascade('close')
+    //           .call(const [])
+    //           .code,
+    //     ),
+    //   },
+    // ).statement;
 
-    yield _controllerRef.property('stream').returned.statement;
+    // yield _controllerRef.property('stream').returned.statement;
   }
 
   DartType _streamType(MethodElement method) => getReturnType(
         method,
         (method.returnType as InterfaceType).typeArguments.single,
+      );
+
+  Expression _buildOnListen(
+    MethodElement method,
+    Expression invocation,
+  ) =>
+      closure0(
+        modifier: MethodModifier.async,
+        () => try$([invocation.awaited.statement]).catch$(
+          error: _errorRef,
+          stackTrace: _stackTraceRef,
+          body: [
+            declareFinal(_controllerRef.symbol!)
+                .assign(
+                  _controllerMapRef
+                      .property('remove')
+                      .call(const [_streamIdRef]),
+                )
+                .statement,
+            $if(
+              _controllerRef.notEqualTo(literalNull),
+              [
+                _controllerRef
+                    .cascade('addError')
+                    .call(const [_errorRef, _stackTraceRef])
+                    .cascade('close')
+                    .call(const [])
+                    .statement,
+              ],
+            ).$else([
+              const Reference('rethrow').statement,
+            ]),
+          ],
+        ),
       );
 
   Expression _buildStreamNotification(
@@ -141,13 +192,12 @@ base mixin StreamBuilderMixin
     bool asRequest = false,
   }) =>
       closure0(
-        modifier: MethodModifier.async,
         () => (asRequest
                 ? JsonRpcInstance.sendRequest
                 : JsonRpcInstance.sendNotification)
             .call([
           literalString('${method.name}#$command'),
-          literalList([StreamBuilderMixin._streamIdRef.awaited]),
+          literalList([StreamBuilderMixin._streamIdRef]),
         ]).code,
       );
 
