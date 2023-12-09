@@ -3,9 +3,8 @@ import 'package:code_builder/code_builder.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
-import '../../builders/if.dart';
-import '../../extensions/code_builder_extensions.dart';
 import '../common/closure_builder_mixin.dart';
+import '../common/constants.dart';
 import '../common/method_mapper_mixin.dart';
 import '../common/parameter_builder_mixin.dart';
 import '../common/registration_builder_mixin.dart';
@@ -42,62 +41,107 @@ base mixin StreamBuilderMixin
   }
 
   Code buildStreamRegistrations(MethodElement method) => Block.of([
-        _buildStreamInvocationImpl(method),
+        buildRegisterMethodWithParams(
+          '${method.name}#listen',
+          (params) => Block.of(_buildListenInvocation(method, params)),
+        ),
+        _buildSubscriptionRegistration(method, 'cancel', removeSub: true),
+        _buildSubscriptionRegistration(method, 'pause'),
+        _buildSubscriptionRegistration(method, 'resume'),
       ]);
 
-  Code _buildStreamInvocationImpl(MethodElement method) {
+  Iterable<Code> _buildListenInvocation(
+    MethodElement method,
+    Reference params,
+  ) sync* {
     final parameterMode = validateParameters(method);
     final index = switch (parameterMode) {
       ParameterMode.named => _streamIdRef,
       _ => literalNum(0),
     };
 
-    return buildRegisterMethodWithParams(
-      method.name,
-      (params) => Block.of([
-        declareFinal(_streamIdRef.symbol!)
-            .assign(params.index(index).property('asInt'))
-            .statement,
-        if (parameterMode.hasPositional)
-          ...method.parameters
-              .mapIndexed((i, e) => buildPositional(params, i + 1, e)),
-        if (parameterMode.hasNamed)
-          ...method.parameters.map((e) => buildNamed(params, e)),
-        ..._buildListenInvocation(method),
-      ]),
-    );
-  }
+    yield declareFinal(_streamIdRef.symbol!)
+        .assign(params.index(index).property('asInt'))
+        .statement;
 
-  Iterable<Code> _buildListenInvocation(MethodElement method) sync* {
     yield _subscriptionsMapRef.property('update').call([
       _streamIdRef,
       closure1(
         '_',
         (p1) => Types.jsonRpc2RpcException
             .newInstance([
-              literalNum(0), // TODO use error code
+              JsonRpcInstance.serverError,
               literalString(
-                'streamId \${${_streamIdRef.symbol}} is already in use!',
+                'streamId \${${_streamIdRef.symbol}} is already in use',
               ),
             ])
             .thrown
             .code,
       ),
     ], {
-      'ifAbsent': closure0(() => Block.of(_buildStreamInvocation(method))),
+      'ifAbsent': closure0(
+        () => Block.of(_buildStreamInvocation(method, parameterMode, params)),
+      ),
     }).statement;
   }
 
-  Iterable<Code> _buildStreamInvocation(MethodElement method) sync* {
+  Iterable<Code> _buildStreamInvocation(
+    MethodElement method,
+    ParameterMode parameterMode,
+    Reference params,
+  ) sync* {
+    if (parameterMode.hasPositional) {
+      yield* method.parameters
+          .mapIndexed((i, e) => buildPositional(params, i + 1, e));
+    }
+    if (parameterMode.hasNamed) {
+      yield* method.parameters.map((e) => buildNamed(params, e));
+    }
     yield refer(method.name)
         .call([
           for (final p in method.parameters) paramRefFor(p),
         ])
         .property('listen')
         .call([
-          closure1('_', (p1) => Block.of([])),
+          closure1('_', (p1) => Block.of([])), // TODO
         ])
         .returned
         .statement;
+  }
+
+  Code _buildSubscriptionRegistration(
+    MethodElement method,
+    String name, {
+    bool removeSub = false,
+  }) =>
+      buildRegisterMethodWithParams(
+        '${method.name}#$name',
+        (params) =>
+            Block.of(_buildSubscriptionInvocation(name, params, removeSub)),
+      );
+
+  Iterable<Code> _buildSubscriptionInvocation(
+    String name,
+    Reference params,
+    bool removeSub,
+  ) sync* {
+    yield declareFinal(_streamIdRef.symbol!)
+        .assign(params.index(literalNum(0)).property('asInt'))
+        .statement;
+
+    if (removeSub) {
+      yield _subscriptionsMapRef
+          .property('remove')
+          .call(const [_streamIdRef])
+          .nullSafeProperty(name)
+          .call(const [])
+          .returned
+          .statement;
+    } else {
+      yield _subscriptionsMapRef
+          .index(_streamIdRef)
+          .nullSafeProperty(name)
+          .call(const []).statement;
+    }
   }
 }

@@ -1,3 +1,5 @@
+import 'package:json_rpc_2/error_code.dart';
+
 export 'dart:async'
     show FutureOr, StreamController, StreamSubscription, unawaited;
 
@@ -11,3 +13,7 @@ export 'src/annotations/json_rpc.dart';
 export 'src/base/client_base.dart';
 export 'src/base/peer_base.dart';
 export 'src/base/server_base.dart';
+
+/// See [SERVER_ERROR]
+// ignore: constant_identifier_names
+const JSON_RPC_2_SERVER_ERROR = SERVER_ERROR;
