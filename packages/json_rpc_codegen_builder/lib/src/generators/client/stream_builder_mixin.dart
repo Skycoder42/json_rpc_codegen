@@ -6,6 +6,7 @@ import 'package:source_helper/source_helper.dart';
 
 import '../../builders/for_in.dart';
 import '../../builders/if.dart';
+import '../../builders/iterable_if.dart';
 import '../../builders/try_catch.dart';
 import '../../extensions/code_builder_extensions.dart';
 import '../common/constants.dart';
@@ -101,13 +102,37 @@ base mixin StreamBuilderMixin
             const [],
             {
               'onListen': _buildOnListen(method, invocation),
-              'onCancel': _buildStreamNotification(
-                method,
-                'cancel',
-                asRequest: true,
+              'onCancel': closure0(
+                () => Types.future().property('wait').call([
+                  literalList([
+                    IterableIf(
+                      JsonRpcInstance.isClosed.negate(),
+                      _buildStreamNotification(
+                        method,
+                        'cancel',
+                        asRequest: true,
+                      ),
+                    ),
+                    IterableIf(
+                      _controllerMapRef
+                          .property('remove')
+                          .call(const [_streamIdRef]).$case(
+                        declareFinal(
+                          type: Types.streamController(),
+                          _controllerRef.symbol!,
+                        ),
+                      ),
+                      _controllerRef.property('close').call(const []),
+                    ),
+                  ]),
+                ]).code,
               ),
-              'onPause': _buildStreamNotification(method, 'pause'),
-              'onResume': _buildStreamNotification(method, 'resume'),
+              'onPause': closure0(
+                () => _buildStreamNotification(method, 'pause').code,
+              ),
+              'onResume': closure0(
+                () => _buildStreamNotification(method, 'resume').code,
+              ),
             },
           ),
         )
@@ -161,15 +186,13 @@ base mixin StreamBuilderMixin
     String command, {
     bool asRequest = false,
   }) =>
-      closure0(
-        () => (asRequest
-                ? JsonRpcInstance.sendRequest
-                : JsonRpcInstance.sendNotification)
-            .call([
-          literalString('${method.name}#$command'),
-          literalList([StreamBuilderMixin._streamIdRef]),
-        ]).code,
-      );
+      (asRequest
+              ? JsonRpcInstance.sendRequest
+              : JsonRpcInstance.sendNotification)
+          .call([
+        literalString('${method.name}#$command'),
+        literalList([StreamBuilderMixin._streamIdRef]),
+      ]);
 
   Code _buildStreamListeners(MethodElement method) {
     final streamType = _streamType(method);
@@ -222,10 +245,6 @@ base mixin StreamBuilderMixin
               .statement,
           _controllerMapRef
               .index(params.index(literalNum(0)).property('asInt'))
-              .asA(
-                Types.streamController(Types.fromDartType(streamType))
-                    .asNullable(true),
-              )
               .nullSafeProperty('addError')
               .call([
             Types.jsonRpc2RpcException.newInstance([
@@ -247,10 +266,6 @@ base mixin StreamBuilderMixin
         (params) => _controllerMapRef
             .property('remove')
             .call([params.index(literalNum(0)).property('asInt')])
-            .asA(
-              Types.streamController(Types.fromDartType(streamType))
-                  .asNullable(true),
-            )
             .nullSafeProperty('close')
             .call(const [])
             .code,

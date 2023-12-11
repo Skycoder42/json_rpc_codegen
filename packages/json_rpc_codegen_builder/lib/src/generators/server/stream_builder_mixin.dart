@@ -4,6 +4,7 @@ import 'package:code_builder/code_builder.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
+import '../../builders/for_in.dart';
 import '../common/closure_builder_mixin.dart';
 import '../common/constants.dart';
 import '../common/method_mapper_mixin.dart';
@@ -22,6 +23,7 @@ base mixin StreamBuilderMixin
         ParameterBuilderMixin {
   static const _subscriptionsMapRef = Reference(r'_$streamSubscriptions');
   static const _streamIdRef = Reference(r'$streamId');
+  static const _subscriptionRef = Reference(r'$subscription');
 
   static bool hasStreams(ClassElement clazz) =>
       clazz.methods.any((m) => m.returnType.isDartAsyncStream);
@@ -52,6 +54,7 @@ base mixin StreamBuilderMixin
         _buildSubscriptionRegistration(method, 'cancel', remove: true),
         _buildSubscriptionRegistration(method, 'pause'),
         _buildSubscriptionRegistration(method, 'resume'),
+        _buildCleanupMethod(),
       ]);
 
   DartType _streamType(MethodElement method) => getReturnType(
@@ -116,6 +119,7 @@ base mixin StreamBuilderMixin
         ], {
           'onError': _buildOnError(method),
           'onDone': _buildOnDone(method),
+          'cancelOnError': literalFalse,
         })
         .returned
         .statement;
@@ -173,7 +177,9 @@ base mixin StreamBuilderMixin
         r'$stackTrace',
         (errorRef, stackTraceRef) => JsonRpcInstance.sendNotification.call([
           literalString('${method.name}#error'),
-          errorRef.isA(Types.jsonRpc2RpcException).conditional(
+          errorRef
+              .isA(Types.jsonRpc2RpcException)
+              .conditional(
                 errorRef,
                 Types.jsonRpc2RpcException.newInstance(
                   [
@@ -190,7 +196,14 @@ base mixin StreamBuilderMixin
                     }),
                   },
                 ),
-              ),
+              )
+              .parenthesized
+              .property('serialize')
+              .call([
+            literalString('${method.name}#\${${_streamIdRef.symbol}}'),
+          ]).index(
+            literalString('error'),
+          ),
         ]).code,
       );
 
@@ -208,4 +221,21 @@ base mixin StreamBuilderMixin
               .statement,
         ]),
       );
+
+  Code _buildCleanupMethod() =>
+      JsonRpcInstance.ref.property('done').property('then').call([
+        closure1(
+          '_',
+          (_) => Block.of([
+            ForIn(
+              _subscriptionRef.symbol!,
+              _subscriptionsMapRef.property('values'),
+              Globals.unawaitedRef.call([
+                _subscriptionRef.property('cancel').call(const []),
+              ]).statement,
+            ),
+            _subscriptionsMapRef.property('clear').call(const []).statement,
+          ]),
+        ),
+      ]).statement;
 }

@@ -16,6 +16,14 @@ extension ExpressionX on Expression {
           const Code('++'),
         ]),
       );
+
+  Expression $case(Expression pattern) => CodeExpression(
+        Block.of([
+          code,
+          const Code(' case '),
+          pattern.code,
+        ]),
+      );
 }
 
 /// @nodoc
