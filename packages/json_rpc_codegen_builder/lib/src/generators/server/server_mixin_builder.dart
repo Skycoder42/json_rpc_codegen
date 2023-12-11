@@ -57,9 +57,9 @@ final class ServerMixinBuilder extends ProxySpec
           )
           ..methods.add(
             buildRegisterMethods(
-              _class.methods.map(
-                _buildRegisterMethod,
-              ),
+              _class.methods
+                  .map(_buildRegisterMethod)
+                  .followedBy(buildStreamCleanupMethod(_class)),
             ),
           ),
       );

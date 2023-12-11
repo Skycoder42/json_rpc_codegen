@@ -32,13 +32,15 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
           isServerDefault,
           extraArgs,
           validations,
-        ),
-      if (parameterMode.hasNamed)
+        )
+      else if (parameterMode.hasNamed)
         _buildNamedParameters(
           method.parameters,
           isServerDefault,
           extraArgs,
-        ),
+        )
+      else
+        literalList(extraArgs.values, Types.dynamic),
     ]);
 
     if (validations.isEmpty && buildReturn == null) {
@@ -57,13 +59,13 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
   Expression _buildPositionalParameters(
     List<ParameterElement> params,
     bool isServerDefault,
-    Map<String, Reference> extraArs,
+    Map<String, Reference> extraArgs,
     List<Code> validations,
   ) {
     if (!isServerDefault) {
       return literalList(
         [
-          ...extraArs.values,
+          ...extraArgs.values,
           for (final p in params) toJson(p.type, refer(p.name)),
         ],
         Types.dynamic,
@@ -89,9 +91,7 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
         continue;
       }
 
-      bool? overwriteIsNull;
       if (validateRest == null) {
-        overwriteIsNull = false;
         validateRest = refer(param.name).notEqualTo(literalNull);
         restNames.add(param.name);
       } else {
@@ -126,7 +126,7 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
           toJson(
             param.type,
             refer(param.name),
-            isNull: overwriteIsNull,
+            isNull: false,
           ),
         ),
       );
@@ -134,7 +134,7 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
 
     return literalList(
       [
-        ...extraArs.values,
+        ...extraArgs.values,
         ...paramExpressions.reversed,
       ],
       Types.dynamic,
@@ -144,11 +144,11 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
   Expression _buildNamedParameters(
     Iterable<ParameterElement> params,
     bool isServerDefault,
-    Map<String, Reference> extraArs,
+    Map<String, Reference> extraArgs,
   ) =>
       literalMap(
         {
-          for (final MapEntry(key: key, value: value) in extraArs.entries)
+          for (final MapEntry(key: key, value: value) in extraArgs.entries)
             key: value,
           for (final p in params)
             if (p.isOptional && isServerDefault)

@@ -54,8 +54,29 @@ base mixin StreamBuilderMixin
         _buildSubscriptionRegistration(method, 'cancel', remove: true),
         _buildSubscriptionRegistration(method, 'pause'),
         _buildSubscriptionRegistration(method, 'resume'),
-        _buildCleanupMethod(),
       ]);
+
+  Iterable<Code> buildStreamCleanupMethod(ClassElement clazz) sync* {
+    if (!hasStreams(clazz)) {
+      return;
+    }
+
+    yield JsonRpcInstance.ref.property('done').property('then').call([
+      closure1(
+        '_',
+        (_) => Block.of([
+          ForIn(
+            _subscriptionRef.symbol!,
+            _subscriptionsMapRef.property('values'),
+            Globals.unawaitedRef.call([
+              _subscriptionRef.property('cancel').call(const []),
+            ]).statement,
+          ),
+          _subscriptionsMapRef.property('clear').call(const []).statement,
+        ]),
+      ),
+    ]).statement;
+  }
 
   DartType _streamType(MethodElement method) => getReturnType(
         method,
@@ -221,21 +242,4 @@ base mixin StreamBuilderMixin
               .statement,
         ]),
       );
-
-  Code _buildCleanupMethod() =>
-      JsonRpcInstance.ref.property('done').property('then').call([
-        closure1(
-          '_',
-          (_) => Block.of([
-            ForIn(
-              _subscriptionRef.symbol!,
-              _subscriptionsMapRef.property('values'),
-              Globals.unawaitedRef.call([
-                _subscriptionRef.property('cancel').call(const []),
-              ]).statement,
-            ),
-            _subscriptionsMapRef.property('clear').call(const []).statement,
-          ]),
-        ),
-      ]).statement;
 }

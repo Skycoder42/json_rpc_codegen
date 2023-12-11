@@ -10,62 +10,98 @@ part of 'return_tests.dart';
 
 mixin ReturnTestsClientMixin on ClientBase {
   Future<bool> boolRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('boolRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'boolRet',
+      <dynamic>[],
+    );
     return ($result as bool);
   }
 
   Future<num?> numRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('numRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'numRet',
+      <dynamic>[],
+    );
     return ($result as num?);
   }
 
   Future<int> intRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('intRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'intRet',
+      <dynamic>[],
+    );
     return ($result as int);
   }
 
   Future<double?> doubleRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('doubleRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'doubleRet',
+      <dynamic>[],
+    );
     return ($result as double?);
   }
 
   Future<String> stringRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('stringRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'stringRet',
+      <dynamic>[],
+    );
     return ($result as String);
   }
 
   Future<DateTime> dateTimeRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('dateTimeRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'dateTimeRet',
+      <dynamic>[],
+    );
     return DateTime.parse(($result as String));
   }
 
   Future<Uri> uriRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('uriRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'uriRet',
+      <dynamic>[],
+    );
     return Uri.parse(($result as String));
   }
 
   Future<dynamic> dynamicRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('dynamicRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'dynamicRet',
+      <dynamic>[],
+    );
     return $result;
   }
 
   Future<List<int>> listRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('listRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'listRet',
+      <dynamic>[],
+    );
     return ($result as List).map((dynamic $e) => ($e as int)).toList();
   }
 
   Future<Iterable<bool>> iterableRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('iterableRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'iterableRet',
+      <dynamic>[],
+    );
     return ($result as List).map((dynamic $e) => ($e as bool));
   }
 
   Future<Set<String>> setRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('setRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'setRet',
+      <dynamic>[],
+    );
     return ($result as List).map((dynamic $e) => ($e as String)).toSet();
   }
 
   Future<Map<String, double>> mapRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('mapRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'mapRet',
+      <dynamic>[],
+    );
     return ($result as Map).map((
       dynamic $k,
       dynamic $v,
@@ -77,7 +113,10 @@ mixin ReturnTestsClientMixin on ClientBase {
   }
 
   Future<Map<List<String>, Iterable<Map<dynamic, List<num>>>>> deepRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('deepRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'deepRet',
+      <dynamic>[],
+    );
     return ($result as Map).map((
       dynamic $k,
       dynamic $v,
@@ -96,29 +135,43 @@ mixin ReturnTestsClientMixin on ClientBase {
   }
 
   Future<User> userRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('userRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'userRet',
+      <dynamic>[],
+    );
     return User.fromJson(($result as Map<String, dynamic>));
   }
 
   Future<Color> colorRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('colorRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'colorRet',
+      <dynamic>[],
+    );
     return Color.fromJson(($result as String));
   }
 
   Future<Permission> permissionRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('permissionRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'permissionRet',
+      <dynamic>[],
+    );
     return Permission.values.byName(($result as String));
   }
 
   Future<Iterable<User>> usersRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('usersRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'usersRet',
+      <dynamic>[],
+    );
     return ($result as List)
         .map((dynamic $e) => User.fromJson(($e as Map<String, dynamic>)));
   }
 
   Future<Map<Color, List<Permission>>> colorPermissionsRet() async {
-    final dynamic $result =
-        await jsonRpcInstance.sendRequest('colorPermissionsRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'colorPermissionsRet',
+      <dynamic>[],
+    );
     return ($result as Map).map((
       dynamic $k,
       dynamic $v,
@@ -133,7 +186,10 @@ mixin ReturnTestsClientMixin on ClientBase {
 
   Future<(int?, Permission, Iterable<User?>, ({int x, int y}))>
       posRecordRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('posRecordRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'posRecordRet',
+      <dynamic>[],
+    );
     return _$map(
       ($result as List),
       ($v) => (
@@ -153,7 +209,10 @@ mixin ReturnTestsClientMixin on ClientBase {
 
   Future<({Color c, Map<String, String?>? d, (int, int) p, double r})>
       namedRecordRet() async {
-    final dynamic $result = await jsonRpcInstance.sendRequest('namedRecordRet');
+    final dynamic $result = await jsonRpcInstance.sendRequest(
+      'namedRecordRet',
+      <dynamic>[],
+    );
     return _$map(
       ($result as Map),
       ($v) => (
