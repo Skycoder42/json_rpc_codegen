@@ -89,7 +89,7 @@ base mixin StreamBuilderMixin
   ) sync* {
     final parameterMode = validateParameters(method);
     final index = switch (parameterMode) {
-      ParameterMode.named => _streamIdRef,
+      ParameterMode.named => literalString(_streamIdRef.symbol!, raw: true),
       _ => literalNum(0),
     };
 

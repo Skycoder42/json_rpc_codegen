@@ -1,3 +1,6 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class User {
   final String firstName;
   final String lastName;
@@ -16,6 +19,21 @@ class User {
 
   @override
   String toString() => '<$firstName $lastName>';
+
+  @override
+  int get hashCode => Object.hash(firstName, lastName);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! User) {
+      return false;
+    }
+
+    return firstName == other.firstName && lastName == other.lastName;
+  }
 }
 
 class Color {

@@ -8,10 +8,10 @@ import 'package:test/test.dart';
 
 import 'models/simple.dart';
 
-class MockSimpleServer extends Mock implements SimpleServer {}
+class _MockSimpleServer extends Mock implements SimpleServer {}
 
 class _TestSimpleServer extends SimpleServer {
-  final mock = MockSimpleServer();
+  final mock = _MockSimpleServer();
 
   _TestSimpleServer(super.channel) : super();
 

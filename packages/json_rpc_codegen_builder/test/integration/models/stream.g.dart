@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'stream_tests.dart';
+part of 'stream.dart';
 
 // **************************************************************************
 // JsonRpcGenerator
@@ -8,7 +8,7 @@ part of 'stream_tests.dart';
 
 // ignore_for_file: type=lint, unused_element
 
-mixin StreamTestsClientMixin on PeerBase {
+mixin StreamClientMixin on PeerBase {
   var _$streamIdCounter = 0;
 
   final _$streamControllers = <int, StreamController>{};
@@ -58,7 +58,7 @@ mixin StreamTestsClientMixin on PeerBase {
         .stream;
   }
 
-  Stream<String> positionalServer(
+  Stream<String> positional(
     String variant,
     User user, [
     List<int>? levels,
@@ -90,7 +90,7 @@ mixin StreamTestsClientMixin on PeerBase {
       onListen: () async {
         try {
           await jsonRpcInstance.sendRequest(
-            'positionalServer#listen',
+            'positional#listen',
             <dynamic>[
               $streamId,
               variant,
@@ -118,7 +118,7 @@ mixin StreamTestsClientMixin on PeerBase {
       onCancel: () => Future.wait([
         if (!jsonRpcInstance.isClosed)
           jsonRpcInstance.sendRequest(
-            'positionalServer#cancel',
+            'positional#cancel',
             [$streamId],
           ),
         if (_$streamControllers.remove($streamId)
@@ -126,11 +126,72 @@ mixin StreamTestsClientMixin on PeerBase {
           $controller.close(),
       ]),
       onPause: () => jsonRpcInstance.sendNotification(
-        'positionalServer#pause',
+        'positional#pause',
         [$streamId],
       ),
       onResume: () => jsonRpcInstance.sendNotification(
-        'positionalServer#resume',
+        'positional#resume',
+        [$streamId],
+      ),
+    ))
+        .stream;
+  }
+
+  Stream<(User, Permission)> named({
+    required String variant,
+    required User user,
+    List<int>? levels,
+    Permission? permission,
+    Uri? reference,
+    Color? color,
+  }) {
+    final $streamId = _$streamIdCounter++;
+    return (_$streamControllers[$streamId] =
+            StreamController<(User, Permission)>(
+      onListen: () async {
+        try {
+          await jsonRpcInstance.sendRequest(
+            'named#listen',
+            <String, dynamic>{
+              r'$streamId': $streamId,
+              'variant': variant,
+              'user': user,
+              if (levels != null) 'levels': levels,
+              if (permission != null) 'permission': permission.name,
+              if (reference != null) 'reference': reference.toString(),
+              if (color != null) 'color': color,
+            },
+          );
+        } catch ($error, $stackTrace) {
+          final $controller = _$streamControllers.remove($streamId);
+          if ($controller != null) {
+            $controller
+              ..addError(
+                $error,
+                $stackTrace,
+              )
+              ..close();
+          } else {
+            rethrow;
+          }
+        }
+      },
+      onCancel: () => Future.wait([
+        if (!jsonRpcInstance.isClosed)
+          jsonRpcInstance.sendRequest(
+            'named#cancel',
+            [$streamId],
+          ),
+        if (_$streamControllers.remove($streamId)
+            case final StreamController $controller)
+          $controller.close(),
+      ]),
+      onPause: () => jsonRpcInstance.sendNotification(
+        'named#pause',
+        [$streamId],
+      ),
+      onResume: () => jsonRpcInstance.sendNotification(
+        'named#resume',
         [$streamId],
       ),
     ))
@@ -165,13 +226,13 @@ mixin StreamTestsClientMixin on PeerBase {
           _$streamControllers.remove($params[0].asInt)?.close(),
     );
     jsonRpcInstance.registerMethod(
-      'positionalServer#data',
+      'positional#data',
       (Parameters $params) =>
           (_$streamControllers[$params[0].asInt] as StreamController<String>?)
               ?.add(($params[1].value as String)),
     );
     jsonRpcInstance.registerMethod(
-      'positionalServer#error',
+      'positional#error',
       (Parameters $params) {
         final $error = ($params[1].asMap as Map<String, dynamic>);
         _$streamControllers[$params[0].asInt]?.addError(RpcException(
@@ -182,7 +243,35 @@ mixin StreamTestsClientMixin on PeerBase {
       },
     );
     jsonRpcInstance.registerMethod(
-      'positionalServer#done',
+      'positional#done',
+      (Parameters $params) =>
+          _$streamControllers.remove($params[0].asInt)?.close(),
+    );
+    jsonRpcInstance.registerMethod(
+      'named#data',
+      (Parameters $params) => (_$streamControllers[$params[0].asInt]
+              as StreamController<(User, Permission)>?)
+          ?.add(_$map(
+        ($params[1].value as List),
+        ($v) => (
+          User.fromJson(($v[0] as Map<String, dynamic>)),
+          Permission.values.byName(($v[1] as String))
+        ),
+      )),
+    );
+    jsonRpcInstance.registerMethod(
+      'named#error',
+      (Parameters $params) {
+        final $error = ($params[1].asMap as Map<String, dynamic>);
+        _$streamControllers[$params[0].asInt]?.addError(RpcException(
+          ($error['code'] as int),
+          ($error['message'] as String),
+          data: ($error['data'] as Object?),
+        ));
+      },
+    );
+    jsonRpcInstance.registerMethod(
+      'named#done',
       (Parameters $params) =>
           _$streamControllers.remove($params[0].asInt)?.close(),
     );
@@ -194,13 +283,22 @@ mixin StreamTestsClientMixin on PeerBase {
     });
   }
 }
-mixin StreamTestsServerMixin on PeerBase {
+mixin StreamServerMixin on PeerBase {
   final _$streamSubscriptions = <int, StreamSubscription>{};
 
   @protected
   Stream<int> simple();
   @protected
-  Stream<String> positionalServer(
+  Stream<String> positional(
+    String variant,
+    User user,
+    List<int> levels,
+    Permission permission,
+    Uri? reference,
+    Color color,
+  );
+  @protected
+  Stream<(User, Permission)> named(
     String variant,
     User user,
     List<int> levels,
@@ -277,7 +375,7 @@ mixin StreamTestsServerMixin on PeerBase {
       (Parameters $params) => _$streamSubscriptions[$params[0].asInt]?.resume(),
     );
     jsonRpcInstance.registerMethod(
-      'positionalServer#listen',
+      'positional#listen',
       (Parameters $params) {
         final $streamId = $params[0].asInt;
         _$streamSubscriptions.update(
@@ -303,7 +401,7 @@ mixin StreamTestsServerMixin on PeerBase {
               ($v) => Color.fromJson(($v.value as String)),
               const Color(255, 255, 255),
             );
-            return positionalServer(
+            return positional(
               $$variant,
               $$user,
               $$levels,
@@ -312,7 +410,7 @@ mixin StreamTestsServerMixin on PeerBase {
               $$color,
             ).listen(
               ($data) => jsonRpcInstance.sendNotification(
-                'positionalServer#data',
+                'positional#data',
                 <dynamic>[
                   $streamId,
                   $data,
@@ -323,7 +421,7 @@ mixin StreamTestsServerMixin on PeerBase {
                 StackTrace $stackTrace,
               ) =>
                   jsonRpcInstance.sendNotification(
-                'positionalServer#error',
+                'positional#error',
                 ($error is RpcException
                         ? $error
                         : RpcException(
@@ -334,11 +432,11 @@ mixin StreamTestsServerMixin on PeerBase {
                               'stack': Chain.forTrace($stackTrace).toString(),
                             },
                           ))
-                    .serialize('positionalServer#${$streamId}')['error'],
+                    .serialize('positional#${$streamId}')['error'],
               ),
               onDone: () {
                 jsonRpcInstance.sendNotification(
-                  'positionalServer#done',
+                  'positional#done',
                   [$streamId],
                 );
                 _$streamSubscriptions.remove($streamId)?.cancel();
@@ -350,16 +448,106 @@ mixin StreamTestsServerMixin on PeerBase {
       },
     );
     jsonRpcInstance.registerMethod(
-      'positionalServer#cancel',
+      'positional#cancel',
       (Parameters $params) =>
           _$streamSubscriptions.remove($params[0].asInt)?.cancel(),
     );
     jsonRpcInstance.registerMethod(
-      'positionalServer#pause',
+      'positional#pause',
       (Parameters $params) => _$streamSubscriptions[$params[0].asInt]?.pause(),
     );
     jsonRpcInstance.registerMethod(
-      'positionalServer#resume',
+      'positional#resume',
+      (Parameters $params) => _$streamSubscriptions[$params[0].asInt]?.resume(),
+    );
+    jsonRpcInstance.registerMethod(
+      'named#listen',
+      (Parameters $params) {
+        final $streamId = $params[r'$streamId'].asInt;
+        _$streamSubscriptions.update(
+          $streamId,
+          (_) => throw RpcException(
+            jsonRpc2ServerError,
+            'streamId ${$streamId} is already in use',
+          ),
+          ifAbsent: () {
+            final $$variant = $params['variant'].asString;
+            final $$user =
+                User.fromJson(($params['user'].value as Map<String, dynamic>));
+            final $$levels = $params['levels'].$maybeOr(
+              ($v) => $v.asList.map((dynamic $e) => ($e as int)).toList(),
+              const [5, 75],
+            );
+            final $$permission = $params['permission'].$maybeOr(
+              ($v) => Permission.values.byName($v.asString),
+              Permission.readOnly,
+            );
+            final $$reference =
+                $params['reference'].$maybeNullOr(($v) => $v.asUri);
+            final $$color = $params['color'].$maybeOr(
+              ($v) => Color.fromJson(($v.value as String)),
+              const Color(255, 255, 255),
+            );
+            return named(
+              $$variant,
+              $$user,
+              $$levels,
+              $$permission,
+              $$reference,
+              $$color,
+            ).listen(
+              ($data) => jsonRpcInstance.sendNotification(
+                'named#data',
+                <dynamic>[
+                  $streamId,
+                  <dynamic>[
+                    $data.$1,
+                    $data.$2.name,
+                  ],
+                ],
+              ),
+              onError: (
+                Object $error,
+                StackTrace $stackTrace,
+              ) =>
+                  jsonRpcInstance.sendNotification(
+                'named#error',
+                ($error is RpcException
+                        ? $error
+                        : RpcException(
+                            jsonRpc2ServerError,
+                            jsonRpc2GetErrorMessage($error),
+                            data: {
+                              'full': $error.toString(),
+                              'stack': Chain.forTrace($stackTrace).toString(),
+                            },
+                          ))
+                    .serialize('named#${$streamId}')['error'],
+              ),
+              onDone: () {
+                jsonRpcInstance.sendNotification(
+                  'named#done',
+                  [$streamId],
+                );
+                _$streamSubscriptions.remove($streamId)?.cancel();
+              },
+              cancelOnError: false,
+            );
+          },
+        );
+      },
+    );
+    jsonRpcInstance.registerMethod(
+      'named#cancel',
+      (Parameters $params) =>
+          _$streamSubscriptions.remove($params[0].asInt)?.cancel(),
+    );
+    jsonRpcInstance.registerMethod(
+      'named#pause',
+      (Parameters $params) => _$streamSubscriptions[$params[0].asInt]?.pause(),
+    );
+    jsonRpcInstance.registerMethod(
+      'named#resume',
       (Parameters $params) => _$streamSubscriptions[$params[0].asInt]?.resume(),
     );
     jsonRpcInstance.done.then((_) {
@@ -371,36 +559,36 @@ mixin StreamTestsServerMixin on PeerBase {
   }
 }
 
-class StreamTestsClient extends PeerBase with StreamTestsClientMixin {
-  StreamTestsClient(
+class StreamClient extends PeerBase with StreamClientMixin {
+  StreamClient(
     super.channel, {
     super.onUnhandledError,
     super.strictProtocolChecks,
   }) : super();
 
-  StreamTestsClient.withoutJson(
+  StreamClient.withoutJson(
     super.channel, {
     super.onUnhandledError,
     super.strictProtocolChecks,
   }) : super.withoutJson();
 
-  StreamTestsClient.fromPeer(super.jsonRpcInstance) : super.fromPeer();
+  StreamClient.fromPeer(super.jsonRpcInstance) : super.fromPeer();
 }
 
-abstract class StreamTestsServer extends PeerBase with StreamTestsServerMixin {
-  StreamTestsServer(
+abstract class StreamServer extends PeerBase with StreamServerMixin {
+  StreamServer(
     super.channel, {
     super.onUnhandledError,
     super.strictProtocolChecks,
   }) : super();
 
-  StreamTestsServer.withoutJson(
+  StreamServer.withoutJson(
     super.channel, {
     super.onUnhandledError,
     super.strictProtocolChecks,
   }) : super.withoutJson();
 
-  StreamTestsServer.fromPeer(super.jsonRpcInstance) : super.fromPeer();
+  StreamServer.fromPeer(super.jsonRpcInstance) : super.fromPeer();
 }
 
 @pragma('vm:prefer-inline')

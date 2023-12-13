@@ -149,7 +149,7 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
       literalMap(
         {
           for (final MapEntry(key: key, value: value) in extraArgs.entries)
-            key: value,
+            literalString(key, raw: true): value,
           for (final p in params)
             if (p.isOptional && isServerDefault)
               IterableIf(
