@@ -111,6 +111,15 @@ base mixin StreamBuilderMixin
                         method,
                         'cancel',
                         asRequest: true,
+                      ).property('onError').call(
+                        [closure2('_', '__', (_, __) => Block())],
+                        {
+                          'test': closure1(
+                            '_',
+                            (_) => JsonRpcInstance.isClosed.code,
+                          ),
+                        },
+                        [Types.stateError],
                       ),
                     ),
                     IterableIf(

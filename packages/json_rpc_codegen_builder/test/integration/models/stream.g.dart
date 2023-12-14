@@ -41,6 +41,12 @@ mixin StreamClientMixin on PeerBase {
           jsonRpcInstance.sendRequest(
             'simple#cancel',
             [$streamId],
+          ).onError<StateError>(
+            (
+              _,
+              __,
+            ) {},
+            test: (_) => jsonRpcInstance.isClosed,
           ),
         if (_$streamControllers.remove($streamId)
             case final StreamController $controller)
@@ -120,6 +126,12 @@ mixin StreamClientMixin on PeerBase {
           jsonRpcInstance.sendRequest(
             'positional#cancel',
             [$streamId],
+          ).onError<StateError>(
+            (
+              _,
+              __,
+            ) {},
+            test: (_) => jsonRpcInstance.isClosed,
           ),
         if (_$streamControllers.remove($streamId)
             case final StreamController $controller)
@@ -181,6 +193,12 @@ mixin StreamClientMixin on PeerBase {
           jsonRpcInstance.sendRequest(
             'named#cancel',
             [$streamId],
+          ).onError<StateError>(
+            (
+              _,
+              __,
+            ) {},
+            test: (_) => jsonRpcInstance.isClosed,
           ),
         if (_$streamControllers.remove($streamId)
             case final StreamController $controller)
@@ -336,17 +354,20 @@ mixin StreamServerMixin on PeerBase {
               ) =>
                   jsonRpcInstance.sendNotification(
                 'simple#error',
-                ($error is RpcException
-                        ? $error
-                        : RpcException(
-                            jsonRpc2ServerError,
-                            jsonRpc2GetErrorMessage($error),
-                            data: {
-                              'full': $error.toString(),
-                              'stack': Chain.forTrace($stackTrace).toString(),
-                            },
-                          ))
-                    .serialize('simple#${$streamId}')['error'],
+                <dynamic>[
+                  $streamId,
+                  ($error is RpcException
+                          ? $error
+                          : RpcException(
+                              jsonRpc2ServerError,
+                              jsonRpc2GetErrorMessage($error),
+                              data: {
+                                'full': $error.toString(),
+                                'stack': Chain.forTrace($stackTrace).toString(),
+                              },
+                            ))
+                      .serialize('simple#${$streamId}')['error'],
+                ],
               ),
               onDone: () {
                 jsonRpcInstance.sendNotification(
@@ -422,17 +443,20 @@ mixin StreamServerMixin on PeerBase {
               ) =>
                   jsonRpcInstance.sendNotification(
                 'positional#error',
-                ($error is RpcException
-                        ? $error
-                        : RpcException(
-                            jsonRpc2ServerError,
-                            jsonRpc2GetErrorMessage($error),
-                            data: {
-                              'full': $error.toString(),
-                              'stack': Chain.forTrace($stackTrace).toString(),
-                            },
-                          ))
-                    .serialize('positional#${$streamId}')['error'],
+                <dynamic>[
+                  $streamId,
+                  ($error is RpcException
+                          ? $error
+                          : RpcException(
+                              jsonRpc2ServerError,
+                              jsonRpc2GetErrorMessage($error),
+                              data: {
+                                'full': $error.toString(),
+                                'stack': Chain.forTrace($stackTrace).toString(),
+                              },
+                            ))
+                      .serialize('positional#${$streamId}')['error'],
+                ],
               ),
               onDone: () {
                 jsonRpcInstance.sendNotification(
@@ -512,17 +536,20 @@ mixin StreamServerMixin on PeerBase {
               ) =>
                   jsonRpcInstance.sendNotification(
                 'named#error',
-                ($error is RpcException
-                        ? $error
-                        : RpcException(
-                            jsonRpc2ServerError,
-                            jsonRpc2GetErrorMessage($error),
-                            data: {
-                              'full': $error.toString(),
-                              'stack': Chain.forTrace($stackTrace).toString(),
-                            },
-                          ))
-                    .serialize('named#${$streamId}')['error'],
+                <dynamic>[
+                  $streamId,
+                  ($error is RpcException
+                          ? $error
+                          : RpcException(
+                              jsonRpc2ServerError,
+                              jsonRpc2GetErrorMessage($error),
+                              data: {
+                                'full': $error.toString(),
+                                'stack': Chain.forTrace($stackTrace).toString(),
+                              },
+                            ))
+                      .serialize('named#${$streamId}')['error'],
+                ],
               ),
               onDone: () {
                 jsonRpcInstance.sendNotification(

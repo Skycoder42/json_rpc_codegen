@@ -198,32 +198,38 @@ base mixin StreamBuilderMixin
         r'$stackTrace',
         (errorRef, stackTraceRef) => JsonRpcInstance.sendNotification.call([
           literalString('${method.name}#error'),
-          errorRef
-              .isA(Types.jsonRpc2RpcException)
-              .conditional(
-                errorRef,
-                Types.jsonRpc2RpcException.newInstance(
-                  [
-                    JsonRpcInstance.serverError,
-                    JsonRpcInstance.getErrorMessage.call([errorRef]),
-                  ],
-                  {
-                    'data': literalMap({
-                      'full': errorRef.property('toString').call(const []),
-                      'stack': Types.stackTraceChain
-                          .newInstanceNamed('forTrace', [stackTraceRef])
-                          .property('toString')
-                          .call(const []),
-                    }),
-                  },
-                ),
-              )
-              .parenthesized
-              .property('serialize')
-              .call([
-            literalString('${method.name}#\${${_streamIdRef.symbol}}'),
-          ]).index(
-            literalString('error'),
+          literalList(
+            [
+              _streamIdRef,
+              errorRef
+                  .isA(Types.jsonRpc2RpcException)
+                  .conditional(
+                    errorRef,
+                    Types.jsonRpc2RpcException.newInstance(
+                      [
+                        JsonRpcInstance.serverError,
+                        JsonRpcInstance.getErrorMessage.call([errorRef]),
+                      ],
+                      {
+                        'data': literalMap({
+                          'full': errorRef.property('toString').call(const []),
+                          'stack': Types.stackTraceChain
+                              .newInstanceNamed('forTrace', [stackTraceRef])
+                              .property('toString')
+                              .call(const []),
+                        }),
+                      },
+                    ),
+                  )
+                  .parenthesized
+                  .property('serialize')
+                  .call([
+                literalString('${method.name}#\${${_streamIdRef.symbol}}'),
+              ]).index(
+                literalString('error'),
+              ),
+            ],
+            Types.dynamic,
           ),
         ]).code,
       );

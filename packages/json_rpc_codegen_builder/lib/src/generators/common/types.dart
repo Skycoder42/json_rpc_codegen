@@ -117,9 +117,9 @@ abstract base class Types {
 
   static final argumentError = _named('ArgumentError');
 
-  static final stackTrace = _named('StackTrace');
+  static final stateError = _named('StateError');
 
-  static final zone = _named('Zone');
+  static final stackTrace = _named('StackTrace');
 
   static final jsonRpc2Client = TypeReference(
     (b) => b..symbol = 'Client',
