@@ -16,6 +16,7 @@ jobs:
       workingDirectory: packages/json_rpc_codegen_builder
       buildRunner: true
       buildRunnerArgs: --delete-conflicting-outputs
+      removePubspecOverrides: false
       unitTestPaths: test/unit
       minCoverage: 0
       integrationTestPaths: test/integration
