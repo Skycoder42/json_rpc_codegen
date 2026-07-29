@@ -6,7 +6,11 @@ part of 'parameter_tests.dart';
 // JsonRpcGenerator
 // **************************************************************************
 
-// ignore_for_file: type=lint, unused_element
+// ignore_for_file: avoid_futureor_void, avoid_positional_boolean_parameters
+// ignore_for_file: cascade_invocations, cast_nullable_to_non_nullable
+// ignore_for_file: document_ignores, lines_longer_than_80_chars
+// ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
+// ignore_for_file: unreachable_from_main, unused_element
 
 mixin ParameterTestsClientMixin on ClientBase {
   void simplePositionalServer(bool a, num? b, [int? c, double? d, String? e]) {
@@ -25,9 +29,9 @@ mixin ParameterTestsClientMixin on ClientBase {
     jsonRpcInstance.sendNotification('simplePositionalServer', <dynamic>[
       a,
       b,
-      if (c != null) c,
-      if (d != null) d,
-      if (e != null) e,
+      ?c,
+      ?d,
+      ?e,
     ]);
   }
 
@@ -40,10 +44,11 @@ mixin ParameterTestsClientMixin on ClientBase {
   }) => jsonRpcInstance.sendNotification('simpleNamedServer', <String, dynamic>{
     'a': a,
     'b': b,
-    if (c != null) 'c': c,
-    if (d != null) 'd': d,
-    if (e != null) 'e': e,
+    'c': ?c,
+    'd': ?d,
+    'e': ?e,
   });
+
   void simplePositionalClient(
     bool a,
     num? b, [
@@ -57,6 +62,7 @@ mixin ParameterTestsClientMixin on ClientBase {
     d,
     e,
   ]);
+
   void simpleNamedClient({
     required bool a,
     required num? b,
@@ -70,6 +76,7 @@ mixin ParameterTestsClientMixin on ClientBase {
     'd': d,
     'e': e,
   });
+
   void containers(
     Iterable<String> names,
     List<int> bytes,
@@ -81,6 +88,7 @@ mixin ParameterTestsClientMixin on ClientBase {
     features,
     deep.map(($k, $v) => MapEntry($k, $v.toList(growable: false))),
   ]);
+
   void custom(User user, [Color? color, Permission? permission]) {
     if (color == null && (permission != null)) {
       throw ArgumentError(
@@ -90,22 +98,45 @@ mixin ParameterTestsClientMixin on ClientBase {
     }
     jsonRpcInstance.sendNotification('custom', <dynamic>[
       user,
-      if (color != null) color,
-      if (permission != null) permission.name,
+      ?color,
+      ?permission?.name,
     ]);
   }
+
+  void dotShorthandsServer(User user, [Color? color, Permission? permission]) {
+    if (color == null && (permission != null)) {
+      throw ArgumentError(
+        'Cannot set optional value to null if any of the following parameters (permission) are not null.',
+        'color',
+      );
+    }
+    jsonRpcInstance.sendNotification('dotShorthandsServer', <dynamic>[
+      user,
+      ?color,
+      ?permission?.name,
+    ]);
+  }
+
+  void dotShorthandsClient(
+    User user, [
+    Color color = const .new(255, 255, 255),
+    Permission permission = .readOnly,
+  ]) => jsonRpcInstance.sendNotification('dotShorthandsClient', <dynamic>[
+    user,
+    color,
+    permission.name,
+  ]);
 
   void customContainers({
     required Iterable<User> users,
     Map<Color, List<Permission>>? colorPermissions,
   }) => jsonRpcInstance.sendNotification('customContainers', <String, dynamic>{
     'users': users.toList(growable: false),
-    if (colorPermissions != null)
-      'colorPermissions': colorPermissions.map(
-        ($k, $v) =>
-            MapEntry($k, $v.map(($e) => $e.name).toList(growable: false)),
-      ),
+    'colorPermissions': ?colorPermissions?.map(
+      ($k, $v) => MapEntry($k, $v.map(($e) => $e.name).toList(growable: false)),
+    ),
   });
+
   void records(
     () empty,
     ((int, int), String, Color?, User, List<Permission>?) positional,
@@ -167,6 +198,18 @@ mixin ParameterTestsServerMixin on ServerBase {
   );
   @protected
   FutureOr<void> custom(User user, Color color, Permission permission);
+  @protected
+  FutureOr<void> dotShorthandsServer(
+    User user,
+    Color color,
+    Permission permission,
+  );
+  @protected
+  FutureOr<void> dotShorthandsClient(
+    User user,
+    Color color,
+    Permission permission,
+  );
   @protected
   FutureOr<void> customContainers(
     Iterable<User> users,
@@ -255,15 +298,37 @@ mixin ParameterTestsServerMixin on ServerBase {
     });
     jsonRpcInstance.registerMethod('custom', (Parameters $params) async {
       final $$user = User.fromJson(($params[0].value as Map<String, dynamic>));
-      final $$color = $params[1].$maybeOr(
+      final $$color = $params[1].$maybeOr<Color>(
         ($v) => Color.fromJson(($v.value as String)),
         const Color(255, 255, 255),
       );
-      final $$permission = $params[2].$maybeOr(
+      final $$permission = $params[2].$maybeOr<Permission>(
         ($v) => Permission.values.byName($v.asString),
         Permission.readOnly,
       );
       await custom($$user, $$color, $$permission);
+    });
+    jsonRpcInstance.registerMethod('dotShorthandsServer', (
+      Parameters $params,
+    ) async {
+      final $$user = User.fromJson(($params[0].value as Map<String, dynamic>));
+      final $$color = $params[1].$maybeOr<Color>(
+        ($v) => Color.fromJson(($v.value as String)),
+        const .new(255, 255, 255),
+      );
+      final $$permission = $params[2].$maybeOr<Permission>(
+        ($v) => Permission.values.byName($v.asString),
+        .readOnly,
+      );
+      await dotShorthandsServer($$user, $$color, $$permission);
+    });
+    jsonRpcInstance.registerMethod('dotShorthandsClient', (
+      Parameters $params,
+    ) async {
+      final $$user = User.fromJson(($params[0].value as Map<String, dynamic>));
+      final $$color = Color.fromJson(($params[1].value as String));
+      final $$permission = Permission.values.byName($params[2].asString);
+      await dotShorthandsClient($$user, $$color, $$permission);
     });
     jsonRpcInstance.registerMethod('customContainers', (
       Parameters $params,
@@ -271,19 +336,22 @@ mixin ParameterTestsServerMixin on ServerBase {
       final $$users = $params['users'].asList.map(
         (dynamic $e) => User.fromJson(($e as Map<String, dynamic>)),
       );
-      final $$colorPermissions = $params['colorPermissions'].$maybeOr(
-        ($v) => $v.asMap.map(
-          (dynamic $k, dynamic $v) => MapEntry(
-            Color.fromJson(($k as String)),
-            ($v as List)
-                .map((dynamic $e) => Permission.values.byName(($e as String)))
-                .toList(),
-          ),
-        ),
-        const {
-          Color(0, 0, 0): [Permission.readWrite],
-        },
-      );
+      final $$colorPermissions = $params['colorPermissions']
+          .$maybeOr<Map<Color, List<Permission>>>(
+            ($v) => $v.asMap.map(
+              (dynamic $k, dynamic $v) => MapEntry(
+                Color.fromJson(($k as String)),
+                ($v as List)
+                    .map(
+                      (dynamic $e) => Permission.values.byName(($e as String)),
+                    )
+                    .toList(),
+              ),
+            ),
+            const {
+              Color(0, 0, 0): [Permission.readWrite],
+            },
+          );
       await customContainers($$users, $$colorPermissions);
     });
     jsonRpcInstance.registerMethod('records', (Parameters $params) async {
@@ -340,9 +408,11 @@ extension _$JsonRpc2ParameterExtensions on Parameter {
   @pragma('vm:prefer-inline')
   T $maybeOr<T>(T Function(Parameter) getter, T defaultValue) =>
       exists ? getter(this) : defaultValue;
+
   @pragma('vm:prefer-inline')
   T? $nullOr<T>(T Function(Parameter) getter) =>
       value != null ? getter(this) : null;
+
   @pragma('vm:prefer-inline')
   T? $maybeNullOr<T>(T Function(Parameter) getter) =>
       exists && value != null ? getter(this) : null;

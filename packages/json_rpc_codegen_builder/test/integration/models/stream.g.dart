@@ -6,12 +6,16 @@ part of 'stream.dart';
 // JsonRpcGenerator
 // **************************************************************************
 
-// ignore_for_file: type=lint, unused_element
+// ignore_for_file: avoid_futureor_void, avoid_positional_boolean_parameters
+// ignore_for_file: cascade_invocations, cast_nullable_to_non_nullable
+// ignore_for_file: document_ignores, lines_longer_than_80_chars
+// ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
+// ignore_for_file: unreachable_from_main, unused_element
 
 mixin StreamClientMixin on PeerBase {
   var _$streamIdCounter = 0;
 
-  final _$streamControllers = <int, StreamController>{};
+  final _$streamControllers = <int, StreamController<dynamic>>{};
 
   Stream<int> simple() {
     final $streamId = _$streamIdCounter++;
@@ -24,9 +28,8 @@ mixin StreamClientMixin on PeerBase {
         } catch ($error, $stackTrace) {
           final $controller = _$streamControllers.remove($streamId);
           if ($controller != null) {
-            $controller
-              ..addError($error, $stackTrace)
-              ..close();
+            $controller.addError($error, $stackTrace);
+            await $controller.close();
           } else {
             rethrow;
           }
@@ -37,11 +40,10 @@ mixin StreamClientMixin on PeerBase {
           jsonRpcInstance
               .sendRequest('simple#cancel', [$streamId])
               .onError<StateError>(
-                (_, __) {},
+                (_, _) {},
                 test: (_) => jsonRpcInstance.isClosed,
               ),
-        if (_$streamControllers.remove($streamId)
-            case final StreamController $controller)
+        if (_$streamControllers.remove($streamId) case final $controller?)
           $controller.close(),
       ]),
       onPause: () =>
@@ -86,17 +88,16 @@ mixin StreamClientMixin on PeerBase {
             $streamId,
             variant,
             user,
-            if (levels != null) levels,
-            if (permission != null) permission.name,
-            if (reference != null) reference.toString(),
-            if (color != null) color,
+            ?levels,
+            ?permission?.name,
+            ?reference?.toString(),
+            ?color,
           ]);
         } catch ($error, $stackTrace) {
           final $controller = _$streamControllers.remove($streamId);
           if ($controller != null) {
-            $controller
-              ..addError($error, $stackTrace)
-              ..close();
+            $controller.addError($error, $stackTrace);
+            await $controller.close();
           } else {
             rethrow;
           }
@@ -107,11 +108,10 @@ mixin StreamClientMixin on PeerBase {
           jsonRpcInstance
               .sendRequest('positional#cancel', [$streamId])
               .onError<StateError>(
-                (_, __) {},
+                (_, _) {},
                 test: (_) => jsonRpcInstance.isClosed,
               ),
-        if (_$streamControllers.remove($streamId)
-            case final StreamController $controller)
+        if (_$streamControllers.remove($streamId) case final $controller?)
           $controller.close(),
       ]),
       onPause: () =>
@@ -134,24 +134,21 @@ mixin StreamClientMixin on PeerBase {
             StreamController<(User, Permission)>(
               onListen: () async {
                 try {
-                  await jsonRpcInstance.sendRequest(
-                    'named#listen',
-                    <String, dynamic>{
-                      r'$streamId': $streamId,
-                      'variant': variant,
-                      'user': user,
-                      if (levels != null) 'levels': levels,
-                      if (permission != null) 'permission': permission.name,
-                      if (reference != null) 'reference': reference.toString(),
-                      if (color != null) 'color': color,
-                    },
-                  );
+                  await jsonRpcInstance
+                      .sendRequest('named#listen', <String, dynamic>{
+                        r'$streamId': $streamId,
+                        'variant': variant,
+                        'user': user,
+                        'levels': ?levels,
+                        'permission': ?permission?.name,
+                        'reference': ?reference?.toString(),
+                        'color': ?color,
+                      });
                 } catch ($error, $stackTrace) {
                   final $controller = _$streamControllers.remove($streamId);
                   if ($controller != null) {
-                    $controller
-                      ..addError($error, $stackTrace)
-                      ..close();
+                    $controller.addError($error, $stackTrace);
+                    await $controller.close();
                   } else {
                     rethrow;
                   }
@@ -162,11 +159,11 @@ mixin StreamClientMixin on PeerBase {
                   jsonRpcInstance
                       .sendRequest('named#cancel', [$streamId])
                       .onError<StateError>(
-                        (_, __) {},
+                        (_, _) {},
                         test: (_) => jsonRpcInstance.isClosed,
                       ),
                 if (_$streamControllers.remove($streamId)
-                    case final StreamController $controller)
+                    case final $controller?)
                   $controller.close(),
               ]),
               onPause: () =>
@@ -254,16 +251,18 @@ mixin StreamClientMixin on PeerBase {
       (Parameters $params) =>
           _$streamControllers.remove($params[0].asInt)?.close(),
     );
-    jsonRpcInstance.done.then((_) {
-      for (final $controller in _$streamControllers.values) {
-        unawaited($controller.close());
-      }
-      _$streamControllers.clear();
-    });
+    unawaited(
+      jsonRpcInstance.done.then((_) {
+        for (final $controller in _$streamControllers.values) {
+          unawaited($controller.close());
+        }
+        _$streamControllers.clear();
+      }),
+    );
   }
 }
 mixin StreamServerMixin on PeerBase {
-  final _$streamSubscriptions = <int, StreamSubscription>{};
+  final _$streamSubscriptions = <int, StreamSubscription<dynamic>>{};
 
   @protected
   Stream<int> simple();
@@ -321,7 +320,7 @@ mixin StreamServerMixin on PeerBase {
                 ]),
             onDone: () {
               jsonRpcInstance.sendNotification('simple#done', [$streamId]);
-              _$streamSubscriptions.remove($streamId)?.cancel();
+              unawaited(_$streamSubscriptions.remove($streamId)?.cancel());
             },
             cancelOnError: false,
           );
@@ -354,16 +353,16 @@ mixin StreamServerMixin on PeerBase {
           final $$user = User.fromJson(
             ($params[2].value as Map<String, dynamic>),
           );
-          final $$levels = $params[3].$maybeOr(
+          final $$levels = $params[3].$maybeOr<List<int>>(
             ($v) => $v.asList.map((dynamic $e) => ($e as int)).toList(),
             const [5, 75],
           );
-          final $$permission = $params[4].$maybeOr(
+          final $$permission = $params[4].$maybeOr<Permission>(
             ($v) => Permission.values.byName($v.asString),
             Permission.readOnly,
           );
           final $$reference = $params[5].$maybeNullOr(($v) => $v.asUri);
-          final $$color = $params[6].$maybeOr(
+          final $$color = $params[6].$maybeOr<Color>(
             ($v) => Color.fromJson(($v.value as String)),
             const Color(255, 255, 255),
           );
@@ -396,7 +395,7 @@ mixin StreamServerMixin on PeerBase {
                 ]),
             onDone: () {
               jsonRpcInstance.sendNotification('positional#done', [$streamId]);
-              _$streamSubscriptions.remove($streamId)?.cancel();
+              unawaited(_$streamSubscriptions.remove($streamId)?.cancel());
             },
             cancelOnError: false,
           );
@@ -429,18 +428,18 @@ mixin StreamServerMixin on PeerBase {
           final $$user = User.fromJson(
             ($params['user'].value as Map<String, dynamic>),
           );
-          final $$levels = $params['levels'].$maybeOr(
+          final $$levels = $params['levels'].$maybeOr<List<int>>(
             ($v) => $v.asList.map((dynamic $e) => ($e as int)).toList(),
             const [5, 75],
           );
-          final $$permission = $params['permission'].$maybeOr(
+          final $$permission = $params['permission'].$maybeOr<Permission>(
             ($v) => Permission.values.byName($v.asString),
             Permission.readOnly,
           );
           final $$reference = $params['reference'].$maybeNullOr(
             ($v) => $v.asUri,
           );
-          final $$color = $params['color'].$maybeOr(
+          final $$color = $params['color'].$maybeOr<Color>(
             ($v) => Color.fromJson(($v.value as String)),
             const Color(255, 255, 255),
           );
@@ -473,7 +472,7 @@ mixin StreamServerMixin on PeerBase {
                 ]),
             onDone: () {
               jsonRpcInstance.sendNotification('named#done', [$streamId]);
-              _$streamSubscriptions.remove($streamId)?.cancel();
+              unawaited(_$streamSubscriptions.remove($streamId)?.cancel());
             },
             cancelOnError: false,
           );
@@ -493,24 +492,28 @@ mixin StreamServerMixin on PeerBase {
       'named#resume',
       (Parameters $params) => _$streamSubscriptions[$params[0].asInt]?.resume(),
     );
-    jsonRpcInstance.done.then((_) {
-      for (final $subscription in _$streamSubscriptions.values) {
-        unawaited($subscription.cancel());
-      }
-      _$streamSubscriptions.clear();
-    });
+    unawaited(
+      jsonRpcInstance.done.then((_) {
+        for (final $subscription in _$streamSubscriptions.values) {
+          unawaited($subscription.cancel());
+        }
+        _$streamSubscriptions.clear();
+      }),
+    );
   }
 }
 
 class StreamClient extends PeerBase with StreamClientMixin {
   StreamClient(
     super.channel, {
+    super.idGenerator,
     super.onUnhandledError,
     super.strictProtocolChecks,
   }) : super();
 
   StreamClient.withoutJson(
     super.channel, {
+    super.idGenerator,
     super.onUnhandledError,
     super.strictProtocolChecks,
   }) : super.withoutJson();
@@ -523,12 +526,14 @@ abstract class StreamServer extends PeerBase with StreamServerMixin {
     super.channel, {
     super.onUnhandledError,
     super.strictProtocolChecks,
+    super.idGenerator,
   }) : super();
 
   StreamServer.withoutJson(
     super.channel, {
     super.onUnhandledError,
     super.strictProtocolChecks,
+    super.idGenerator,
   }) : super.withoutJson();
 
   StreamServer.fromPeer(super.jsonRpcInstance) : super.fromPeer();
@@ -549,9 +554,11 @@ extension _$JsonRpc2ParameterExtensions on Parameter {
   @pragma('vm:prefer-inline')
   T $maybeOr<T>(T Function(Parameter) getter, T defaultValue) =>
       exists ? getter(this) : defaultValue;
+
   @pragma('vm:prefer-inline')
   T? $nullOr<T>(T Function(Parameter) getter) =>
       value != null ? getter(this) : null;
+
   @pragma('vm:prefer-inline')
   T? $maybeNullOr<T>(T Function(Parameter) getter) =>
       exists && value != null ? getter(this) : null;

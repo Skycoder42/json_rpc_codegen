@@ -1,6 +1,4 @@
 import 'package:code_builder/code_builder.dart';
-// ignore: implementation_imports
-import 'package:code_builder/src/visitors.dart';
 import 'package:meta/meta.dart';
 
 import '../extensions/code_builder_extensions.dart';
@@ -14,7 +12,6 @@ class _CatchInfo {
   _CatchInfo(this.on, this.error, this.stackTrace, this.body);
 }
 
-/// @nodoc
 @internal
 class TryCatch implements Code, Spec {
   final Iterable<Spec> _try;
@@ -92,6 +89,5 @@ class TryCatch implements Code, Spec {
   }
 }
 
-/// @nodoc
 @internal
 TryCatch try$(Iterable<Code> body) => TryCatch._(body, const [], null);

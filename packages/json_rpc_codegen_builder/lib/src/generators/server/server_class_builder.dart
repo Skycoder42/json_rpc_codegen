@@ -8,13 +8,11 @@ import '../common/types.dart';
 import '../proxy_spec.dart';
 import 'stream_builder_mixin.dart';
 
-/// @nodoc
 @internal
 final class ServerClassBuilder extends ProxySpec
     with BaseConstructorBuilderMixin {
   final ClassElement _class;
 
-  /// @nodoc
   const ServerClassBuilder(this._class);
 
   @override
@@ -24,7 +22,7 @@ final class ServerClassBuilder extends ProxySpec
       (b) => b
         ..name = '${_class.publicName}Server'
         ..abstract = true
-        ..extend = hasStreams ? Types.peerBase : Types.serverBase
+        ..extend = hasStreams ? Types.$PeerBase : Types.$ServerBase
         ..mixins.add(
           TypeReference((b) => b..symbol = '${_class.publicName}ServerMixin'),
         )
@@ -42,6 +40,13 @@ final class ServerClassBuilder extends ProxySpec
                 ..named = true
                 ..toSuper = true,
             ),
+            if (hasStreams)
+              Parameter(
+                (b) => b
+                  ..name = 'idGenerator'
+                  ..named = true
+                  ..toSuper = true,
+              ),
           ]),
         ),
     );

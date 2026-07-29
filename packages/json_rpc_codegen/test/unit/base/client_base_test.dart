@@ -61,7 +61,7 @@ void main() {
       verify(mockClient.close());
     });
 
-    test('withBatch wraps client.withBatch', () async {
+    test('withBatch wraps client.withBatch', () {
       void callback() {}
 
       sut.withBatch(callback);

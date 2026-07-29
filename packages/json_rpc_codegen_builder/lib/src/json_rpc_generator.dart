@@ -1,9 +1,10 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
+import 'package:dart_test_tools/code_gen.dart';
 import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 import 'package:meta/meta.dart';
-import 'package:source_gen/source_gen.dart';
+import 'package:source_gen/source_gen.dart' hide LibraryBuilder;
 
 import 'generators/client/client_class_builder.dart';
 import 'generators/client/client_mixin_builder.dart';
@@ -13,13 +14,11 @@ import 'generators/server/server_class_builder.dart';
 import 'generators/server/server_mixin_builder.dart';
 import 'readers/json_rpc_reader.dart';
 
-/// @nodoc
 @internal
-class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc> {
-  /// @nodoc
+class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc>
+    with DartGeneratorMixin {
   final BuilderOptions builderOptions;
 
-  /// @nodoc
   const JsonRpcGenerator(this.builderOptions);
 
   @override
@@ -52,41 +51,51 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc> {
     }
 
     final jsonRpc = JsonRpcReader(annotation);
-    final buffer = StringBuffer();
-    final emitter = _createEmitter();
+
+    final library = LibraryBuilder();
     if (jsonRpc.client) {
-      ClientMixinBuilder(element).accept(emitter, buffer);
+      library.body.add(ClientMixinBuilder(element));
     }
     if (jsonRpc.server) {
-      ServerMixinBuilder(element).accept(emitter, buffer);
+      library.body.add(ServerMixinBuilder(element));
     }
     if (jsonRpc.client && !jsonRpc.mixinsOnly) {
-      ClientClassBuilder(element).accept(emitter, buffer);
+      library.body.add(ClientClassBuilder(element));
     }
     if (jsonRpc.server && !jsonRpc.mixinsOnly) {
-      ServerClassBuilder(element).accept(emitter, buffer);
+      library.body.add(ServerClassBuilder(element));
     }
 
-    return buffer.toString();
+    return createDartCode(scoped: false, library.build());
   }
 
-  DartEmitter _createEmitter() {
-    final emitter = DartEmitter(
-      orderDirectives: true,
-      useNullSafetySyntax: true,
-    );
-    return emitter;
-  }
+  void _buildLibraryPrefix(StringBuffer buffer) => buffer.write(
+    createDartCode(
+      scoped: false,
+      Library(
+        (b) => b
+          ..ignoreForFile.add('avoid_futureor_void')
+          ..ignoreForFile.add('avoid_positional_boolean_parameters')
+          ..ignoreForFile.add('cascade_invocations')
+          ..ignoreForFile.add('cast_nullable_to_non_nullable')
+          ..ignoreForFile.add('document_ignores')
+          ..ignoreForFile.add('lines_longer_than_80_chars')
+          ..ignoreForFile.add('prefer_expression_function_bodies')
+          ..ignoreForFile.add('unnecessary_parenthesis')
+          ..ignoreForFile.add('unreachable_from_main')
+          ..ignoreForFile.add('unused_element'),
+      ),
+    ),
+  );
 
-  void _buildLibraryPrefix(StringBuffer buffer) => Library(
-    (b) => b
-      ..ignoreForFile.add('type=lint')
-      ..ignoreForFile.add('unused_element'),
-  ).accept<StringSink>(_createEmitter(), buffer);
-
-  void _buildLibrarySuffix(StringBuffer buffer) => Library(
-    (b) => b
-      ..body.addAll(SerializationMixin.buildGlobals())
-      ..body.addAll(ParameterBuilderMixin.buildGlobals()),
-  ).accept<StringSink>(_createEmitter(), buffer);
+  void _buildLibrarySuffix(StringBuffer buffer) => buffer.write(
+    createDartCode(
+      scoped: false,
+      Library(
+        (b) => b
+          ..body.addAll(SerializationMixin.buildGlobals())
+          ..body.addAll(ParameterBuilderMixin.buildGlobals()),
+      ),
+    ),
+  );
 }

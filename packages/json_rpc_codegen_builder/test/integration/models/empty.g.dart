@@ -6,7 +6,11 @@ part of 'empty.dart';
 // JsonRpcGenerator
 // **************************************************************************
 
-// ignore_for_file: type=lint, unused_element
+// ignore_for_file: avoid_futureor_void, avoid_positional_boolean_parameters
+// ignore_for_file: cascade_invocations, cast_nullable_to_non_nullable
+// ignore_for_file: document_ignores, lines_longer_than_80_chars
+// ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
+// ignore_for_file: unreachable_from_main, unused_element
 
 mixin TestEmpty1ClientMixin on ClientBase {}
 mixin TestEmpty1ServerMixin on ServerBase {
@@ -19,9 +23,10 @@ mixin TestEmpty1ServerMixin on ServerBase {
 }
 
 class TestEmpty1Client extends ClientBase with TestEmpty1ClientMixin {
-  TestEmpty1Client(super.channel) : super();
+  TestEmpty1Client(super.channel, {super.idGenerator}) : super();
 
-  TestEmpty1Client.withoutJson(super.channel) : super.withoutJson();
+  TestEmpty1Client.withoutJson(super.channel, {super.idGenerator})
+    : super.withoutJson();
 
   TestEmpty1Client.fromClient(super.jsonRpcInstance) : super.fromClient();
 }
@@ -89,9 +94,10 @@ mixin TestEmpty6ServerMixin on ServerBase {
 mixin TestEmpty7ClientMixin on ClientBase {}
 
 class TestEmpty7Client extends ClientBase with TestEmpty7ClientMixin {
-  TestEmpty7Client(super.channel) : super();
+  TestEmpty7Client(super.channel, {super.idGenerator}) : super();
 
-  TestEmpty7Client.withoutJson(super.channel) : super.withoutJson();
+  TestEmpty7Client.withoutJson(super.channel, {super.idGenerator})
+    : super.withoutJson();
 
   TestEmpty7Client.fromClient(super.jsonRpcInstance) : super.fromClient();
 }
@@ -109,9 +115,10 @@ mixin TestEmpty9ServerMixin on ServerBase {
 }
 
 class TestEmpty9Client extends ClientBase with TestEmpty9ClientMixin {
-  TestEmpty9Client(super.channel) : super();
+  TestEmpty9Client(super.channel, {super.idGenerator}) : super();
 
-  TestEmpty9Client.withoutJson(super.channel) : super.withoutJson();
+  TestEmpty9Client.withoutJson(super.channel, {super.idGenerator})
+    : super.withoutJson();
 
   TestEmpty9Client.fromClient(super.jsonRpcInstance) : super.fromClient();
 }
@@ -156,9 +163,11 @@ extension _$JsonRpc2ParameterExtensions on Parameter {
   @pragma('vm:prefer-inline')
   T $maybeOr<T>(T Function(Parameter) getter, T defaultValue) =>
       exists ? getter(this) : defaultValue;
+
   @pragma('vm:prefer-inline')
   T? $nullOr<T>(T Function(Parameter) getter) =>
       value != null ? getter(this) : null;
+
   @pragma('vm:prefer-inline')
   T? $maybeNullOr<T>(T Function(Parameter) getter) =>
       exists && value != null ? getter(this) : null;

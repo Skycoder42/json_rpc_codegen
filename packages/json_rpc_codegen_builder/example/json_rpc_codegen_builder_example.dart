@@ -1,4 +1,4 @@
-// ignore_for_file: unreachable_from_main
+// ignore_for_file: unreachable_from_main for testing
 
 import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 
@@ -19,25 +19,24 @@ class User {
 }
 
 @jsonRpc
-// ignore: unused_element
+// ignore: unused_element for code generation
 abstract class _SampleApi {
   void hello(String name, [int times = 5, double? interval, int delay = 100]);
 
   @clientDefaults
   void notify({required int id, List<double> measures = const [1, 2]});
 
-  String echo(String message);
+  Future<String> echo(String message);
 
-  User? createUser(Map<String, Set<Permission>?> permissions);
+  Future<User?> createUser(Map<String, Set<Permission>?> permissions);
 
-  List<List<User>?> userMatrix([Permission? permission]);
+  Future<List<List<User>?>> userMatrix([Permission? permission]);
 
-  Map<String, List<Permission>> permissions();
+  Future<Map<String, List<Permission>>> permissions();
 
-  // ignore: prefer_void_to_null
-  Null setHomepage({required Uri url, DateTime? timestamp});
+  Future<void> setHomepage({required Uri url, DateTime? timestamp});
 
-  Uri findForDates(Iterable<DateTime> times);
+  Future<Uri> findForDates(Iterable<DateTime> times);
 
   @clientDefaults
   void log(
@@ -46,16 +45,17 @@ abstract class _SampleApi {
     User user = const User('admin', 'admin'),
   ]);
 
-  bool validate({
-    User user = const User('admin', 'admin'),
+  Future<bool> validate({
+    User user = const .new('admin', 'admin'),
     required User? authorizeFor,
-    Permission permission = Permission.administrate,
+    Permission permission = .administrate,
     List<Uri>? resources,
   });
 
-  Map merge(Set keys, Iterable values);
+  // ignore: strict_raw_type to test type defaults
+  Future<Map> merge(Set keys, Iterable values);
 
-  (int, List<User>?, Permission, (int, int)) flip(
+  Future<(int, List<User>?, Permission, ({int x, int y}))> flip(
     ({int am, List<User>? ul, Permission pm, (int, int) pt}) record,
     () control,
   );
@@ -68,7 +68,7 @@ abstract class _SampleApi {
   });
 
   @clientDefaults
-  double getProgress(int id, [Stage stage = Stage.all]);
+  Future<double> getProgress(int id, [Stage stage = .all]);
 
   Stream<User> streamUsers(
     Permission permission, [

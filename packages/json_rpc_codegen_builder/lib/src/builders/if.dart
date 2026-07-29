@@ -1,6 +1,4 @@
 import 'package:code_builder/code_builder.dart';
-// ignore: implementation_imports
-import 'package:code_builder/src/visitors.dart';
 import 'package:meta/meta.dart';
 
 import '../extensions/code_builder_extensions.dart';
@@ -67,7 +65,6 @@ class IfThen implements Code {
   }
 }
 
-/// @nodoc
 @internal
 IfThen $if(Expression condition, Iterable<Code> body) =>
     IfThen._([_IfThenInfo(condition, body)], null);

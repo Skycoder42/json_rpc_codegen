@@ -6,22 +6,25 @@ part of 'simple.dart';
 // JsonRpcGenerator
 // **************************************************************************
 
-// ignore_for_file: type=lint, unused_element
+// ignore_for_file: avoid_futureor_void, avoid_positional_boolean_parameters
+// ignore_for_file: cascade_invocations, cast_nullable_to_non_nullable
+// ignore_for_file: document_ignores, lines_longer_than_80_chars
+// ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
+// ignore_for_file: unreachable_from_main, unused_element
 
 mixin SimpleClientMixin on ClientBase {
   void notify(String message, [int level = 10]) =>
       jsonRpcInstance.sendNotification('notify', <dynamic>[message, level]);
+
   Future<double> request({
     required int id,
     Category? category,
     String? user,
   }) async {
-    final dynamic $result = await jsonRpcInstance
-        .sendRequest('request', <String, dynamic>{
-          'id': id,
-          if (category != null) 'category': category.name,
-          if (user != null) 'user': user,
-        });
+    final $result = await jsonRpcInstance.sendRequest(
+      'request',
+      <String, dynamic>{'id': id, 'category': ?category?.name, 'user': ?user},
+    );
     return ($result as double);
   }
 }
@@ -52,9 +55,10 @@ mixin SimpleServerMixin on ServerBase {
 }
 
 class SimpleClient extends ClientBase with SimpleClientMixin {
-  SimpleClient(super.channel) : super();
+  SimpleClient(super.channel, {super.idGenerator}) : super();
 
-  SimpleClient.withoutJson(super.channel) : super.withoutJson();
+  SimpleClient.withoutJson(super.channel, {super.idGenerator})
+    : super.withoutJson();
 
   SimpleClient.fromClient(super.jsonRpcInstance) : super.fromClient();
 }
@@ -90,9 +94,11 @@ extension _$JsonRpc2ParameterExtensions on Parameter {
   @pragma('vm:prefer-inline')
   T $maybeOr<T>(T Function(Parameter) getter, T defaultValue) =>
       exists ? getter(this) : defaultValue;
+
   @pragma('vm:prefer-inline')
   T? $nullOr<T>(T Function(Parameter) getter) =>
       value != null ? getter(this) : null;
+
   @pragma('vm:prefer-inline')
   T? $maybeNullOr<T>(T Function(Parameter) getter) =>
       exists && value != null ? getter(this) : null;

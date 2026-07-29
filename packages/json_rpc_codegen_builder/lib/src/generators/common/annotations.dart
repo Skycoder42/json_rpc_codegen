@@ -1,27 +1,17 @@
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 
-/// @nodoc
 @internal
 abstract base class Annotations {
   Annotations._();
 
-  /// @nodoc
-  static const Reference override = Reference('override');
+  static const override = Reference('override');
 
-  /// @nodoc
-  static const Reference protected = Reference('protected');
+  static const protected = Reference('protected');
 
-  /// @nodoc
-  static const Reference visibleForOverriding = Reference(
-    'visibleForOverriding',
-  );
+  static const visibleForOverriding = Reference('visibleForOverriding');
 
-  /// @nodoc
-  static const Reference mustCallSuper = Reference('mustCallSuper');
+  static const mustCallSuper = Reference('mustCallSuper');
 
-  /// @nodoc
-  static const Reference pragmaPreferInline = Reference(
-    "pragma('vm:prefer-inline')",
-  );
+  static const pragmaPreferInline = Reference("pragma('vm:prefer-inline')");
 }

@@ -2,6 +2,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:collection/collection.dart';
+import 'package:dart_test_tools/code_gen.dart';
 import 'package:meta/meta.dart';
 
 import '../../builders/for_in.dart';
@@ -39,52 +40,52 @@ base mixin StreamBuilderMixin
         ..modifier = FieldModifier.final$
         ..assignment = literalMap(
           const {},
-          Types.$int,
-          Types.streamSubscription(),
+          CoreTypes.$int,
+          Types.$StreamSubscription(CoreTypes.$dynamic),
         ).code,
     );
   }
 
-  Code buildStreamRegistrations(MethodElement method) => Block.of([
-    buildRegisterMethodWithParams(
-      '${method.name}#listen',
-      async: false,
-      (params) => Block.of(_buildListenInvocation(method, params)),
-    ),
-    _buildSubscriptionRegistration(method, 'cancel', remove: true),
-    _buildSubscriptionRegistration(method, 'pause'),
-    _buildSubscriptionRegistration(method, 'resume'),
-  ]);
+  Code buildStreamRegistrations(MethodElement method, DartType streamType) =>
+      Block.of([
+        buildRegisterMethodWithParams(
+          '${method.name}#listen',
+          async: false,
+          (params) =>
+              Block.of(_buildListenInvocation(method, streamType, params)),
+        ),
+        _buildSubscriptionRegistration(method, 'cancel', remove: true),
+        _buildSubscriptionRegistration(method, 'pause'),
+        _buildSubscriptionRegistration(method, 'resume'),
+      ]);
 
   Iterable<Code> buildStreamCleanupMethod(ClassElement clazz) sync* {
     if (!hasStreams(clazz)) {
       return;
     }
 
-    yield JsonRpcInstance.ref.property('done').property('then').call([
-      closure1(
-        '_',
-        (_) => Block.of([
-          ForIn(
-            _subscriptionRef.symbol!,
-            _subscriptionsMapRef.property('values'),
-            Globals.unawaitedRef.call([
-              _subscriptionRef.property('cancel').call(const []),
-            ]).statement,
-          ),
-          _subscriptionsMapRef.property('clear').call(const []).statement,
-        ]),
-      ),
+    yield Globals.unawaitedRef.call([
+      JsonRpcInstance.ref.property('done').property('then').call([
+        closure1(
+          '_',
+          (_) => Block.of([
+            ForIn(
+              _subscriptionRef.symbol!,
+              _subscriptionsMapRef.property('values'),
+              Globals.unawaitedRef.call([
+                _subscriptionRef.property('cancel').call(const []),
+              ]).statement,
+            ),
+            _subscriptionsMapRef.property('clear').call(const []).statement,
+          ]),
+        ),
+      ]),
     ]).statement;
   }
 
-  DartType _streamType(MethodElement method) => getReturnType(
-    method,
-    (method.returnType as InterfaceType).typeArguments.single,
-  );
-
   Iterable<Code> _buildListenInvocation(
     MethodElement method,
+    DartType streamType,
     Reference params,
   ) sync* {
     final parameterMode = validateParameters(method);
@@ -104,7 +105,7 @@ base mixin StreamBuilderMixin
             _streamIdRef,
             closure1(
               '_',
-              (p1) => Types.jsonRpc2RpcException
+              (p1) => Types.$RpcException
                   .newInstance([
                     JsonRpcInstance.serverError,
                     literalString(
@@ -118,7 +119,12 @@ base mixin StreamBuilderMixin
           {
             'ifAbsent': closure0(
               () => Block.of(
-                _buildStreamInvocation(method, parameterMode, params),
+                _buildStreamInvocation(
+                  method,
+                  streamType,
+                  parameterMode,
+                  params,
+                ),
               ),
             ),
           },
@@ -128,22 +134,23 @@ base mixin StreamBuilderMixin
 
   Iterable<Code> _buildStreamInvocation(
     MethodElement method,
+    DartType streamType,
     ParameterMode parameterMode,
     Reference params,
   ) sync* {
     if (parameterMode.hasPositional) {
-      yield* method.parameters.mapIndexed(
+      yield* method.formalParameters.mapIndexed(
         (i, e) => buildPositional(params, i + 1, e),
       );
     }
     if (parameterMode.hasNamed) {
-      yield* method.parameters.map((e) => buildNamed(params, e));
+      yield* method.formalParameters.map((e) => buildNamed(params, e));
     }
-    yield refer(method.name)
-        .call([for (final p in method.parameters) paramRefFor(p)])
+    yield refer(method.name!)
+        .call([for (final p in method.formalParameters) paramRefFor(p)])
         .property('listen')
         .call(
-          [_buildOnData(method)],
+          [_buildOnData(method, streamType)],
           {
             'onError': _buildOnError(method),
             'onDone': _buildOnDone(method),
@@ -184,31 +191,32 @@ base mixin StreamBuilderMixin
     }
   }
 
-  Expression _buildOnData(MethodElement method) => closure1(
-    r'$data',
-    (dataRef) => JsonRpcInstance.sendNotification.call([
-      literalString('${method.name}#data'),
-      literalList([
-        _streamIdRef,
-        toJson(_streamType(method), dataRef),
-      ], Types.dynamic),
-    ]).code,
-  );
+  Expression _buildOnData(MethodElement method, DartType streamType) =>
+      closure1(
+        r'$data',
+        (dataRef) => JsonRpcInstance.sendNotification.call([
+          literalString('${method.name}#data'),
+          literalList([
+            _streamIdRef,
+            toJson(streamType, dataRef),
+          ], CoreTypes.$dynamic),
+        ]).code,
+      );
 
   Expression _buildOnError(MethodElement method) => closure2(
-    type1: Types.object,
+    type1: CoreTypes.$Object,
     r'$error',
-    type2: Types.stackTrace,
+    type2: CoreTypes.$StackTrace,
     r'$stackTrace',
     (errorRef, stackTraceRef) => JsonRpcInstance.sendNotification.call([
       literalString('${method.name}#error'),
       literalList([
         _streamIdRef,
         errorRef
-            .isA(Types.jsonRpc2RpcException)
+            .isA(Types.$RpcException)
             .conditional(
               errorRef,
-              Types.jsonRpc2RpcException.newInstance(
+              Types.$RpcException.newInstance(
                 [
                   JsonRpcInstance.serverError,
                   JsonRpcInstance.getErrorMessage.call([errorRef]),
@@ -216,7 +224,7 @@ base mixin StreamBuilderMixin
                 {
                   'data': literalMap({
                     'full': errorRef.property('toString').call(const []),
-                    'stack': Types.stackTraceChain
+                    'stack': Types.$Chain
                         .newInstanceNamed('forTrace', [stackTraceRef])
                         .property('toString')
                         .call(const []),
@@ -228,7 +236,7 @@ base mixin StreamBuilderMixin
             .property('serialize')
             .call([literalString('${method.name}#\${${_streamIdRef.symbol}}')])
             .index(literalString('error')),
-      ], Types.dynamic),
+      ], CoreTypes.$dynamic),
     ]).code,
   );
 
@@ -238,12 +246,13 @@ base mixin StreamBuilderMixin
         literalString('${method.name}#done'),
         literalList([_streamIdRef]),
       ]).statement,
-      _subscriptionsMapRef
-          .property('remove')
-          .call([_streamIdRef])
-          .nullSafeProperty('cancel')
-          .call(const [])
-          .statement,
+      Globals.unawaitedRef.call([
+        _subscriptionsMapRef
+            .property('remove')
+            .call([_streamIdRef])
+            .nullSafeProperty('cancel')
+            .call(const []),
+      ]).statement,
     ]),
   );
 }

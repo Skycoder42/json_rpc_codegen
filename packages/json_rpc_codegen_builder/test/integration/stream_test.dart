@@ -1,4 +1,5 @@
-// ignore_for_file: invalid_use_of_protected_member, unnecessary_lambdas
+// ignore_for_file: invalid_use_of_protected_member for testing
+// ignore_for_file: unnecessary_lambdas for testing
 
 import 'dart:async';
 
@@ -66,7 +67,7 @@ void main() {
   late TestStreamServer sutServer;
   late StreamClient sutClient;
 
-  setUp(() async {
+  setUp(() {
     final upstreamController = StreamController<String>.broadcast();
     addTearDown(upstreamController.close);
     upstreamController.stream.listen((e) => printOnFailure('>>> $e'));
@@ -85,10 +86,10 @@ void main() {
       downstreamController.sink,
     );
 
-    // ignore: unawaited_futures
+    // ignore: discarded_futures for testing
     sutServer = TestStreamServer(serverChannel)..listen();
     addTearDown(sutServer.close);
-    // ignore: unawaited_futures
+    // ignore: discarded_futures for testing
     sutClient = StreamClient(clientChannel)..listen();
     addTearDown(sutClient.close);
   });
@@ -122,14 +123,14 @@ void main() {
     });
 
     group('complex', () {
-      final mockOnListen = MockCallable0();
-      final mockOnCancel = MockCallable0<Future>();
-      final mockOnPause = MockCallable0();
-      final mockOnResume = MockCallable0();
+      final mockOnListen = MockCallable0<void>();
+      final mockOnCancel = MockCallable0<Future<void>>();
+      final mockOnPause = MockCallable0<void>();
+      final mockOnResume = MockCallable0<void>();
 
       late StreamController<int> serverController;
 
-      setUp(() async {
+      setUp(() {
         reset(mockOnListen);
         reset(mockOnCancel);
         reset(mockOnPause);
@@ -160,13 +161,13 @@ void main() {
         final sub = sutClient.simple().listen((_) {});
         addTearDown(sub.cancel);
 
-        await Future.delayed(const Duration(milliseconds: 1));
+        await pumpEventQueue();
 
         verify(() => mockOnListen.call()).called(1);
         verifyAllClean();
       });
 
-      test('forwards data events', () async {
+      test('forwards data events', () {
         expect(sutClient.simple(), emitsInOrder([42, 99, emitsDone]));
 
         serverController
@@ -222,7 +223,7 @@ void main() {
           ),
         ],
         dataToString: (fixture) => fixture.$1.toString(),
-        (fixture) async {
+        (fixture) {
           expect(
             sutClient.simple(),
             emitsInOrder([emitsError(fixture.$3), emitsDone]),
@@ -234,28 +235,28 @@ void main() {
       );
 
       test('can be paused, resumed and canceled', () async {
-        final mockOnData = MockCallable1();
+        final mockOnData = MockCallable1<void, dynamic>();
         final sub = sutClient.simple().listen(mockOnData.call);
         addTearDown(sub.cancel);
 
         serverController.add(1);
-        await Future.delayed(const Duration(milliseconds: 1));
+        await pumpEventQueue();
 
         verifyInOrder([() => mockOnListen.call(), () => mockOnData.call(1)]);
         verifyAllClean([mockOnData]);
 
         sub.pause();
-        await Future.delayed(const Duration(milliseconds: 1));
+        await pumpEventQueue();
         serverController.add(2);
-        await Future.delayed(const Duration(milliseconds: 1));
+        await pumpEventQueue();
 
         verifyInOrder([() => mockOnPause.call()]);
         verifyAllClean([mockOnData]);
 
         sub.resume();
-        await Future.delayed(const Duration(milliseconds: 1));
+        await pumpEventQueue();
         serverController.add(3);
-        await Future.delayed(const Duration(milliseconds: 1));
+        await pumpEventQueue();
 
         verifyInOrder([
           () => mockOnResume.call(),
@@ -266,7 +267,7 @@ void main() {
 
         await sub.cancel();
         serverController.add(4);
-        await Future.delayed(const Duration(milliseconds: 1));
+        await pumpEventQueue();
 
         verifyInOrder([() => mockOnCancel.call()]);
         verifyAllClean([mockOnData]);

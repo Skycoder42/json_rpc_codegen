@@ -1,4 +1,4 @@
-// ignore_for_file: unused_element
+// ignore_for_file: unused_element for testing
 
 import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 
@@ -10,26 +10,26 @@ abstract class _TestEmpty1 {}
 @jsonRpcMixins
 abstract class _TestEmpty2 {}
 
-@JsonRpc(client: false, server: false, mixinsOnly: false)
+@JsonRpc(client: false, server: false)
 abstract class _TestEmpty3 {}
 
 @JsonRpc(client: false, server: false, mixinsOnly: true)
 abstract class _TestEmpty4 {}
 
-@JsonRpc(client: false, server: true, mixinsOnly: false)
+@JsonRpc(client: false)
 abstract class _TestEmpty5 {}
 
-@JsonRpc(client: false, server: true, mixinsOnly: true)
+@JsonRpc(client: false, mixinsOnly: true)
 abstract class _TestEmpty6 {}
 
-@JsonRpc(client: true, server: false, mixinsOnly: false)
+@JsonRpc(server: false)
 abstract class _TestEmpty7 {}
 
-@JsonRpc(client: true, server: false, mixinsOnly: true)
+@JsonRpc(server: false, mixinsOnly: true)
 abstract class _TestEmpty8 {}
 
-@JsonRpc(client: true, server: true, mixinsOnly: false)
+@JsonRpc()
 abstract class _TestEmpty9 {}
 
-@JsonRpc(client: true, server: true, mixinsOnly: true)
+@JsonRpc(mixinsOnly: true)
 abstract class _TestEmpty10 {}

@@ -1,5 +1,5 @@
 import 'package:code_builder/code_builder.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports for writing custom code builders
 import 'package:code_builder/src/specs/code.dart';
 import 'package:meta/meta.dart';
 
@@ -18,7 +18,6 @@ class ForIn implements Code {
     }
 
     context.write('for (');
-    // ignore: unnecessary_cast
     (declareFinal(_variable) as Spec).accept(visitor, context);
     context.write(' in ');
     _iterable.accept(visitor, context);

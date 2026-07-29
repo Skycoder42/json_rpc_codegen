@@ -5,45 +5,46 @@ import 'common.dart';
 part 'return_tests.g.dart';
 
 @jsonRpcMixins
-// ignore: unused_element
+// ignore: unused_element for testing
 abstract class _ReturnTests {
-  bool boolRet();
+  Future<bool> boolRet();
 
-  num? numRet();
+  Future<num?> numRet();
 
-  int intRet();
+  Future<int> intRet();
 
-  double? doubleRet();
+  Future<double?> doubleRet();
 
-  String stringRet();
+  Future<String> stringRet();
 
-  DateTime dateTimeRet();
+  Future<DateTime> dateTimeRet();
 
-  Uri uriRet();
+  Future<Uri> uriRet();
 
-  dynamic dynamicRet();
+  Future<dynamic> dynamicRet();
 
-  List<int> listRet();
+  Future<List<int>> listRet();
 
-  Iterable<bool> iterableRet();
+  Future<Iterable<bool>> iterableRet();
 
-  Set<String> setRet();
+  Future<Set<String>> setRet();
 
-  Map<String, double> mapRet();
+  Future<Map<String, double>> mapRet();
 
-  Map<List<String>, Iterable<Map<dynamic, List<num>>>> deepRet();
+  Future<Map<List<String>, Iterable<Map<dynamic, List<num>>>>> deepRet();
 
-  User userRet();
+  Future<User> userRet();
 
-  Color colorRet();
+  Future<Color> colorRet();
 
-  Permission permissionRet();
+  Future<Permission> permissionRet();
 
-  Iterable<User> usersRet();
+  Future<Iterable<User>> usersRet();
 
-  Map<Color, List<Permission>> colorPermissionsRet();
+  Future<Map<Color, List<Permission>>> colorPermissionsRet();
 
-  (int?, Permission, Iterable<User?>, ({int x, int y})) posRecordRet();
+  Future<(int?, Permission, Iterable<User?>, ({int x, int y}))> posRecordRet();
 
-  ({double r, Color c, Map<String, String?>? d, (int, int) p}) namedRecordRet();
+  Future<({double r, Color c, Map<String, String?>? d, (int, int) p})>
+  namedRecordRet();
 }

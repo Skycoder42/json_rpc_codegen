@@ -2,76 +2,94 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:collection/collection.dart';
+import 'package:dart_test_tools/code_gen.dart';
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
 import '../proxy_spec.dart';
-import 'types.dart';
 
-/// @nodoc
 @internal
 enum ParameterMode {
-  /// @nodoc
   none(false, false),
-
-  /// @nodoc
   positional(true, false),
-
-  /// @nodoc
   named(false, true);
 
-  /// @nodoc
   final bool hasPositional;
-
-  /// @nodoc
   final bool hasNamed;
 
+  // ignore: avoid_positional_boolean_parameters for enum
   const ParameterMode(this.hasPositional, this.hasNamed);
 }
 
-/// @nodoc
+@internal
+enum ReturnKind { notification, request, stream }
+
 @internal
 base mixin MethodMapperMixin on ProxySpec {
-  /// @nodoc
   @protected
-  DartType getReturnType(MethodElement method, [DartType? returnType]) {
+  ({DartType type, ReturnKind kind}) getReturnType(
+    MethodElement method, [
+    DartType? returnType,
+  ]) {
     final actualReturnType = returnType ?? method.returnType;
-    if (actualReturnType.isDartAsyncFuture ||
-        actualReturnType.isDartAsyncFutureOr) {
-      final futureType =
-          (actualReturnType as InterfaceType).typeArguments.single;
+
+    if (actualReturnType is VoidType) {
+      return (type: actualReturnType, kind: .notification);
+    }
+
+    if (actualReturnType case InterfaceType(
+      isDartAsyncFutureOr: true,
+      typeArguments: [final futureType],
+    )) {
       throw InvalidGenerationSourceError(
-        'The return type of RPC methods must be not be a Future or FutureOr!',
+        'The return type of RPC methods must be a Future or void!',
         element: method,
         todo:
             'Change return type to '
-            '${futureType.getDisplayString(withNullability: true)}.',
+            'Future<${futureType.getDisplayString()}>.',
       );
     }
 
-    if (actualReturnType.isDartCoreFunction) {
+    if (actualReturnType case InterfaceType(
+      isDartAsyncStream: true,
+      typeArguments: [final streamType],
+    )) {
+      return (type: streamType, kind: .stream);
+    }
+
+    if (!actualReturnType.isDartAsyncFuture) {
       throw InvalidGenerationSourceError(
-        'The return type of RPC methods cannot be a function!',
+        'The return type of RPC methods must be a Future or void!',
         element: method,
+        todo:
+            'Change return type to '
+            'Future<${actualReturnType.getDisplayString()}>.',
       );
     }
 
-    if (actualReturnType.isDartCoreType || actualReturnType.isDartCoreSymbol) {
+    final futureType = (actualReturnType as InterfaceType).typeArguments.single;
+
+    if (futureType.isDartCoreType ||
+        futureType.isDartCoreSymbol ||
+        futureType.isDartCoreFunction ||
+        futureType.isDartCoreNull ||
+        futureType.isDartAsyncFuture ||
+        futureType.isDartAsyncStream ||
+        futureType.isDartAsyncFutureOr) {
       throw InvalidGenerationSourceError(
         'The return type of RPC methods cannot be a '
-        '${actualReturnType.getDisplayString(withNullability: false)}',
+        '${futureType.getDisplayString()}',
         element: method,
       );
     }
 
-    return actualReturnType;
+    return (type: futureType, kind: .request);
   }
 
-  /// @nodoc
   @protected
   ParameterMode validateParameters(MethodElement method) {
-    final hasPositional = method.parameters.any((e) => e.isPositional);
-    final hasNamed = method.parameters.any((e) => e.isNamed);
+    final hasPositional = method.formalParameters.any((e) => e.isPositional);
+    final hasNamed = method.formalParameters.any((e) => e.isNamed);
 
     if (hasPositional && hasNamed) {
       throw InvalidGenerationSourceError(
@@ -81,22 +99,22 @@ base mixin MethodMapperMixin on ProxySpec {
         todo: 'Make all parameters positional or named',
       );
     } else if (hasPositional) {
-      return ParameterMode.positional;
+      return .positional;
     } else if (hasNamed) {
-      return ParameterMode.named;
+      return .named;
     } else {
-      return ParameterMode.none;
+      return .none;
     }
   }
 
-  /// @nodoc
   @protected
   Method mapMethod(
     MethodElement method, {
     required void Function(MethodBuilder b) buildMethod,
-    required void Function(ParameterElement param, ParameterBuilder b)
+    required void Function(FormalParameterElement param, ParameterBuilder b)
     buildParam,
-    bool Function(ParameterElement param) checkRequired = _defaultCheckRequired,
+    bool Function(FormalParameterElement param) checkRequired =
+        _defaultCheckRequired,
   }) => Method((b) {
     if (method.typeParameters.isNotEmpty) {
       throw InvalidGenerationSourceError(
@@ -108,14 +126,14 @@ base mixin MethodMapperMixin on ProxySpec {
 
     b
       ..name = method.name
-      ..returns = Types.fromDartType(method.returnType)
+      ..returns = method.returnType.toReference()
       ..requiredParameters.addAll(
-        method.parameters
+        method.formalParameters
             .where(checkRequired)
             .map((e) => _buildParameter(e, buildParam)),
       )
       ..optionalParameters.addAll(
-        method.parameters
+        method.formalParameters
             .whereNot(checkRequired)
             .map((e) => _buildParameter(e, buildParam)),
       );
@@ -123,12 +141,12 @@ base mixin MethodMapperMixin on ProxySpec {
   });
 
   Parameter _buildParameter(
-    ParameterElement parameter,
-    void Function(ParameterElement param, ParameterBuilder b) buildParam,
+    FormalParameterElement parameter,
+    void Function(FormalParameterElement param, ParameterBuilder b) buildParam,
   ) => Parameter((b) {
     b
-      ..name = parameter.name
-      ..type = Types.fromDartType(parameter.type)
+      ..name = parameter.name!
+      ..type = parameter.type.toReference()
       ..named = parameter.isNamed
       ..required = parameter.isRequiredNamed
       ..covariant = parameter.isCovariant;
@@ -136,6 +154,6 @@ base mixin MethodMapperMixin on ProxySpec {
     buildParam(parameter, b);
   });
 
-  static bool _defaultCheckRequired(ParameterElement param) =>
+  static bool _defaultCheckRequired(FormalParameterElement param) =>
       param.isRequiredPositional;
 }

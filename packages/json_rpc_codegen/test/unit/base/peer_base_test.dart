@@ -40,7 +40,7 @@ void main() {
         clearInteractions(mockPeer);
       });
 
-      test('onUnhandledError wraps peer.onUnhandledError', () async {
+      test('onUnhandledError wraps peer.onUnhandledError', () {
         void errorHandler(dynamic e, dynamic s) {}
 
         when(mockPeer.onUnhandledError).thenReturn(errorHandler);
@@ -90,7 +90,7 @@ void main() {
         verify(mockPeer.close());
       });
 
-      test('withBatch wraps client.withBatch', () async {
+      test('withBatch wraps client.withBatch', () {
         void callback() {}
 
         sut.withBatch(callback);
@@ -105,8 +105,8 @@ void main() {
         when(mockParameters.method).thenReturn(testMethodName);
 
         expect(
-          // ignore: invalid_use_of_visible_for_overriding_member
-          () async => sut.onUnknownMethod(mockParameters),
+          // ignore: invalid_use_of_visible_for_overriding_member for testing
+          () => sut.onUnknownMethod(mockParameters),
           throwsA(
             isA<RpcException>()
                 .having((m) => m.code, 'code', METHOD_NOT_FOUND)
@@ -116,10 +116,10 @@ void main() {
       });
 
       test('registerMethods calls peer.registerFallback', () {
-        // ignore: invalid_use_of_visible_for_overriding_member
+        // ignore: invalid_use_of_visible_for_overriding_member for testing
         sut.registerMethods();
 
-        // ignore: invalid_use_of_visible_for_overriding_member
+        // ignore: invalid_use_of_visible_for_overriding_member for testing
         verify(mockPeer.registerFallback(sut.onUnknownMethod));
       });
     });

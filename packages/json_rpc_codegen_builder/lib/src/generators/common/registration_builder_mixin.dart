@@ -1,4 +1,5 @@
 import 'package:code_builder/code_builder.dart';
+import 'package:dart_test_tools/code_gen.dart';
 import 'package:meta/meta.dart';
 
 import 'annotations.dart';
@@ -11,7 +12,7 @@ base mixin RegistrationBuilderMixin on ClosureBuilderMixin {
   Method buildRegisterMethods(Iterable<Code> methods) => Method(
     (b) => b
       ..name = 'registerMethods'
-      ..returns = Types.$void
+      ..returns = CoreTypes.$void
       ..annotations.add(Annotations.override)
       ..annotations.add(Annotations.visibleForOverriding)
       ..annotations.add(Annotations.mustCallSuper)
@@ -29,8 +30,8 @@ base mixin RegistrationBuilderMixin on ClosureBuilderMixin {
     literalString(methodName),
     closure1(
       r'$params',
-      type1: Types.jsonRpc2Parameters,
-      modifier: async ? MethodModifier.async : null,
+      type1: Types.$Parameters,
+      modifier: async ? .async : null,
       buildBody,
     ),
   ]).statement;
@@ -41,6 +42,6 @@ base mixin RegistrationBuilderMixin on ClosureBuilderMixin {
     bool async = true,
   }) => JsonRpcInstance.registerMethod.call([
     literalString(methodName),
-    closure0(modifier: async ? MethodModifier.async : null, buildBody),
+    closure0(modifier: async ? .async : null, buildBody),
   ]).statement;
 }

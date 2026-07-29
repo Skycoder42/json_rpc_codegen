@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_positional_boolean_parameters for testing
+
 import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 
 import 'common.dart';
@@ -5,7 +7,7 @@ import 'common.dart';
 part 'parameter_tests.g.dart';
 
 @jsonRpcMixins
-// ignore: unused_element
+// ignore: unused_element for testing
 abstract class _ParameterTests {
   // test all supported parameter types
   void simplePositionalServer(
@@ -53,6 +55,19 @@ abstract class _ParameterTests {
     User user, [
     Color color = const Color(255, 255, 255),
     Permission permission = Permission.readOnly,
+  ]);
+
+  void dotShorthandsServer(
+    User user, [
+    Color color = const .new(255, 255, 255),
+    Permission permission = .readOnly,
+  ]);
+
+  @clientDefaults
+  void dotShorthandsClient(
+    User user, [
+    Color color = const .new(255, 255, 255),
+    Permission permission = .readOnly,
   ]);
 
   void customContainers({

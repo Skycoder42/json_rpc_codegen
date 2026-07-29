@@ -5,7 +5,7 @@ import 'common.dart';
 part 'stream.g.dart';
 
 @jsonRpc
-// ignore: unused_element
+// ignore: unused_element for testing
 abstract class _Stream {
   Stream<int> simple();
 

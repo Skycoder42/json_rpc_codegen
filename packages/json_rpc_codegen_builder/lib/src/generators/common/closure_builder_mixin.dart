@@ -3,10 +3,8 @@ import 'package:meta/meta.dart';
 
 import '../proxy_spec.dart';
 
-/// @nodoc
 @internal
 base mixin ClosureBuilderMixin on ProxySpec {
-  /// @nodoc
   Expression closure0(Code Function() buildBody, {MethodModifier? modifier}) =>
       Method(
         (b) => b
@@ -14,7 +12,6 @@ base mixin ClosureBuilderMixin on ProxySpec {
           ..body = buildBody(),
       ).closure;
 
-  /// @nodoc
   Expression closure1(
     String param1,
     Code Function(Reference p1) buildBody, {
@@ -33,7 +30,6 @@ base mixin ClosureBuilderMixin on ProxySpec {
       ..body = buildBody(refer(param1)),
   ).closure;
 
-  /// @nodoc
   Expression closure2(
     String param1,
     String param2,

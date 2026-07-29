@@ -24,4 +24,4 @@ class ClientDefaults {
 }
 
 /// Configures the class or method to apply default values on the client side.
-const clientDefaults = ServerDefaults();
+const clientDefaults = ClientDefaults();

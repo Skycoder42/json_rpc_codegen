@@ -1,11 +1,24 @@
 builders:
   json_rpc_codegen_builder:
-    import: "package:json_rpc_codegen_builder/json_rpc_codegen_builder.dart"
-    builder_factories: ["jsonRpcCodegenBuilder"]
-    build_extensions: { ".dart": ["json_rpc_codegen.g.part"] }
+    import: package:json_rpc_codegen_builder/json_rpc_codegen_builder.dart
+    builder_factories:
+      - jsonRpcCodegenBuilder
+    build_extensions:
+      .dart:
+        - json_rpc_codegen.g.part
     auto_apply: dependents
     build_to: cache
-    applies_builders: ["source_gen|combining_builder"]
+    applies_builders:
+      - source_gen|combining_builder
+    defaults:
+      options:
+        run_only_if_triggered: true
+
+triggers:
+  json_rpc_codegen_builder:json_rpc_codegen_builder:
+    - annotation JsonRpc
+    - annotation jsonRpc
+    - annotation jsonRpcMixins
 
 targets:
   $default:

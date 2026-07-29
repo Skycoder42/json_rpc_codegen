@@ -1,13 +1,13 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:code_builder/code_builder.dart';
+import 'package:dart_test_tools/code_gen.dart';
 import 'package:meta/meta.dart';
 
 import '../../builders/if.dart';
-import '../../builders/iterable_if.dart';
+import '../../extensions/code_builder_extensions.dart';
 import '../../readers/defaults_reader.dart';
 import '../common/method_mapper_mixin.dart';
 import '../common/serialization_mixin.dart';
-import '../common/types.dart';
 
 @internal
 base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
@@ -28,15 +28,19 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
       literalString('${method.name}$invocationSuffix'),
       if (parameterMode.hasPositional)
         _buildPositionalParameters(
-          method.parameters,
+          method.formalParameters,
           isServerDefault,
-          extraArgs,
+          extraArgs.values,
           validations,
         )
       else if (parameterMode.hasNamed)
-        _buildNamedParameters(method.parameters, isServerDefault, extraArgs)
-      else
-        literalList(extraArgs.values, Types.dynamic),
+        _buildNamedParameters(
+          method.formalParameters,
+          isServerDefault,
+          extraArgs,
+        )
+      else if (extraArgs.isNotEmpty)
+        literalList(extraArgs.values, CoreTypes.$dynamic),
     ]);
 
     if (validations.isEmpty && buildReturn == null) {
@@ -53,54 +57,47 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
   }
 
   Expression _buildPositionalParameters(
-    List<ParameterElement> params,
+    List<FormalParameterElement> params,
     bool isServerDefault,
-    Map<String, Reference> extraArgs,
+    Iterable<Reference> extraArgs,
     List<Code> validations,
   ) {
     if (!isServerDefault) {
       return literalList([
-        ...extraArgs.values,
-        for (final p in params) toJson(p.type, refer(p.name)),
-      ], Types.dynamic);
+        ...extraArgs,
+        for (final p in params) toJson(p.type, refer(p.name!)),
+      ], CoreTypes.$dynamic);
     }
 
-    final lastRequiredIndex =
-        params.indexed
-            .toList()
-            .reversed
-            .skipWhile((r) => r.$2.isOptional)
-            .map((r) => r.$1)
-            .firstOrNull ??
-        -1;
+    final lastRequiredIndex = params.lastIndexWhere((p) => p.isRequired);
 
     final paramExpressions = <Expression>[];
     Expression? validateRest;
     final restNames = <String>[];
     for (final (index, param) in params.indexed.toList().reversed) {
       if (index <= lastRequiredIndex) {
-        paramExpressions.add(toJson(param.type, refer(param.name)));
+        paramExpressions.add(toJson(param.type, refer(param.name!)));
         continue;
       }
 
       if (validateRest == null) {
-        validateRest = refer(param.name).notEqualTo(literalNull);
-        restNames.add(param.name);
+        validateRest = refer(param.name!).notEqualTo(literalNull);
+        restNames.add(param.name!);
       } else {
         validations.add(
           $if(
             refer(
-              param.name,
+              param.name!,
             ).equalTo(literalNull).and(validateRest.parenthesized),
             [
-              Types.argumentError
+              CoreTypes.$ArgumentError
                   .newInstance([
                     literalString(
                       'Cannot set optional value to null if any of the '
                       'following parameters (${restNames.join(', ')}) are not '
                       'null.',
                     ),
-                    literalString(param.name),
+                    literalString(param.name!),
                   ])
                   .thrown
                   .statement,
@@ -108,47 +105,41 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
           ),
         );
         validateRest = refer(
-          param.name,
+          param.name!,
         ).notEqualTo(literalNull).or(validateRest);
-        restNames.add(param.name);
+        restNames.add(param.name!);
       }
 
       paramExpressions.add(
-        IterableIf(
-          refer(param.name).notEqualTo(literalNull),
-          toJson(param.type, refer(param.name), isNull: false),
-        ),
+        toJson(param.type, refer(param.name!), isNull: true).collectionNonNull,
       );
     }
 
     return literalList([
-      ...extraArgs.values,
+      ...extraArgs,
       ...paramExpressions.reversed,
-    ], Types.dynamic);
+    ], CoreTypes.$dynamic);
   }
 
   Expression _buildNamedParameters(
-    Iterable<ParameterElement> params,
+    Iterable<FormalParameterElement> params,
     bool isServerDefault,
     Map<String, Reference> extraArgs,
   ) => literalMap(
     {
-      for (final MapEntry(key: key, value: value) in extraArgs.entries)
+      for (final MapEntry(:key, :value) in extraArgs.entries)
         literalString(key, raw: true): value,
       for (final p in params)
         if (p.isOptional && isServerDefault)
-          IterableIf(
-            refer(p.name).notEqualTo(literalNull),
-            literalString(p.name),
-          ): toJson(
+          literalString(p.name!): toJson(
             p.type,
-            refer(p.name),
-            isNull: false,
-          )
+            refer(p.name!),
+            isNull: true,
+          ).collectionNonNull
         else
-          literalString(p.name): toJson(p.type, refer(p.name)),
+          literalString(p.name!): toJson(p.type, refer(p.name!)),
     },
-    Types.string,
-    Types.dynamic,
+    CoreTypes.$String,
+    CoreTypes.$dynamic,
   );
 }

@@ -8,13 +8,11 @@ import '../common/types.dart';
 import '../proxy_spec.dart';
 import 'stream_builder_mixin.dart';
 
-/// @nodoc
 @internal
 final class ClientClassBuilder extends ProxySpec
     with BaseConstructorBuilderMixin {
   final ClassElement _class;
 
-  /// @nodoc
   const ClientClassBuilder(this._class);
 
   @override
@@ -23,30 +21,33 @@ final class ClientClassBuilder extends ProxySpec
     return Class(
       (b) => b
         ..name = '${_class.publicName}Client'
-        ..extend = hasStreams ? Types.peerBase : Types.clientBase
+        ..extend = hasStreams ? Types.$PeerBase : Types.$ClientBase
         ..mixins.add(
           TypeReference((b) => b..symbol = '${_class.publicName}ClientMixin'),
         )
         ..constructors.addAll(
-          buildConstructors(
-            hasStreams ? 'fromPeer' : 'fromClient',
-            hasStreams
-                ? [
-                    Parameter(
-                      (b) => b
-                        ..name = 'onUnhandledError'
-                        ..named = true
-                        ..toSuper = true,
-                    ),
-                    Parameter(
-                      (b) => b
-                        ..name = 'strictProtocolChecks'
-                        ..named = true
-                        ..toSuper = true,
-                    ),
-                  ]
-                : const [],
-          ),
+          buildConstructors(hasStreams ? 'fromPeer' : 'fromClient', [
+            Parameter(
+              (b) => b
+                ..name = 'idGenerator'
+                ..named = true
+                ..toSuper = true,
+            ),
+            if (hasStreams)
+              Parameter(
+                (b) => b
+                  ..name = 'onUnhandledError'
+                  ..named = true
+                  ..toSuper = true,
+              ),
+            if (hasStreams)
+              Parameter(
+                (b) => b
+                  ..name = 'strictProtocolChecks'
+                  ..named = true
+                  ..toSuper = true,
+              ),
+          ]),
         ),
     );
   }

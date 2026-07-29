@@ -1,6 +1,7 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
+import 'package:dart_test_tools/code_gen.dart';
 import 'package:meta/meta.dart';
 import 'package:source_helper/source_helper.dart';
 
@@ -51,14 +52,14 @@ base mixin StreamBuilderMixin
         ..modifier = FieldModifier.final$
         ..assignment = literalMap(
           const {},
-          Types.$int,
-          Types.streamController(),
+          CoreTypes.$int,
+          Types.$StreamController(CoreTypes.$dynamic),
         ).code,
     );
   }
 
-  Code buildStreamBody(MethodElement method) =>
-      Block.of(_buildStreamBodyImpl(method));
+  Code buildStreamBody(MethodElement method, DartType streamType) =>
+      Block.of(_buildStreamBodyImpl(method, streamType));
 
   Method? buildStreamListeners(ClassElement clazz) {
     if (!hasStreams(clazz)) {
@@ -73,9 +74,10 @@ base mixin StreamBuilderMixin
     );
   }
 
-  Iterable<Code> _buildStreamBodyImpl(MethodElement method) sync* {
-    final streamType = Types.fromDartType(_streamType(method));
-
+  Iterable<Code> _buildStreamBodyImpl(
+    MethodElement method,
+    DartType streamType,
+  ) sync* {
     late final Expression invocation;
     yield buildMethodInvocation(
       JsonRpcInstance.sendRequest,
@@ -96,61 +98,56 @@ base mixin StreamBuilderMixin
     yield _controllerMapRef
         .index(_streamIdRef)
         .assign(
-          Types.streamController(streamType).newInstance(const [], {
-            'onListen': _buildOnListen(method, invocation),
-            'onCancel': closure0(
-              () => Types.future().property('wait').call([
-                literalList([
-                  IterableIf(
-                    JsonRpcInstance.isClosed.negate(),
-                    _buildStreamNotification(
-                      method,
-                      'cancel',
-                      asRequest: true,
-                    ).property('onError').call(
-                      [closure2('_', '__', (_, __) => Block())],
-                      {
-                        'test': closure1(
-                          '_',
-                          (_) => JsonRpcInstance.isClosed.code,
-                        ),
-                      },
-                      [Types.stateError],
-                    ),
-                  ),
-                  IterableIf(
-                    _controllerMapRef
-                        .property('remove')
-                        .call(const [_streamIdRef])
-                        .$case(
-                          declareFinal(
-                            type: Types.streamController(),
-                            _controllerRef.symbol!,
+          Types.$StreamController(streamType.toReference()).newInstance(
+            const [],
+            {
+              'onListen': _buildOnListen(method, invocation),
+              'onCancel': closure0(
+                () => CoreTypes.$Future().property('wait').call([
+                  literalList([
+                    IterableIf(
+                      JsonRpcInstance.isClosed.negate(),
+                      _buildStreamNotification(
+                        method,
+                        'cancel',
+                        asRequest: true,
+                      ).property('onError').call(
+                        [closure2('_', '_', (_, _) => Block())],
+                        {
+                          'test': closure1(
+                            '_',
+                            (_) => JsonRpcInstance.isClosed.code,
                           ),
-                        ),
-                    _controllerRef.property('close').call(const []),
-                  ),
-                ]),
-              ]).code,
-            ),
-            'onPause': closure0(
-              () => _buildStreamNotification(method, 'pause').code,
-            ),
-            'onResume': closure0(
-              () => _buildStreamNotification(method, 'resume').code,
-            ),
-          }),
+                        },
+                        [CoreTypes.$StateError],
+                      ),
+                    ),
+                    IterableIf(
+                      _controllerMapRef
+                          .property('remove')
+                          .call(const [_streamIdRef])
+                          .$case(
+                            declareFinal(_controllerRef.symbol!).patternNonNull,
+                          ),
+                      _controllerRef.property('close').call(const []),
+                    ),
+                  ]),
+                ]).code,
+              ),
+              'onPause': closure0(
+                () => _buildStreamNotification(method, 'pause').code,
+              ),
+              'onResume': closure0(
+                () => _buildStreamNotification(method, 'resume').code,
+              ),
+            },
+          ),
         )
         .parenthesized
         .property('stream')
         .returned
         .statement;
   }
-
-  DartType _streamType(MethodElement method) => getReturnType(
-    method,
-    (method.returnType as InterfaceType).typeArguments.single,
-  );
 
   Expression _buildOnListen(MethodElement method, Expression invocation) =>
       closure0(
@@ -167,12 +164,11 @@ base mixin StreamBuilderMixin
                 )
                 .statement,
             $if(_controllerRef.notEqualTo(literalNull), [
-              _controllerRef
-                  .cascade('addError')
-                  .call(const [_errorRef, _stackTraceRef])
-                  .cascade('close')
-                  .call(const [])
-                  .statement,
+              _controllerRef.property('addError').call(const [
+                _errorRef,
+                _stackTraceRef,
+              ]).statement,
+              _controllerRef.property('close').call(const []).awaited.statement,
             ]).$else([const Reference('rethrow').statement]),
           ],
         ),
@@ -192,8 +188,7 @@ base mixin StreamBuilderMixin
           ]);
 
   Code _buildStreamListeners(MethodElement method) {
-    final streamType = _streamType(method);
-
+    final streamType = getReturnType(method).type;
     return Block.of([
       _buildAddMethod(method, streamType),
       _buildErrorMethod(method, streamType),
@@ -201,33 +196,31 @@ base mixin StreamBuilderMixin
     ]);
   }
 
-  Code _buildAddMethod(MethodElement method, DartType streamType) =>
-      buildRegisterMethodWithParams(
-        '${method.name}#data',
-        async: false,
-        (params) => _controllerMapRef
-            .index(params.index(literalNum(0)).property('asInt'))
-            .asA(
-              Types.streamController(
-                Types.fromDartType(streamType),
-              ).asNullable(true),
-            )
-            .nullSafeProperty('add')
-            .call([
-              fromJson(
-                streamType,
-                streamType.isNullableType
-                    ? params
-                          .index(literalNum(1))
-                          .property(ParameterBuilderMixin.nullOrName)
-                          .call([
-                            closure1(r'$v', (p1) => p1.property('value').code),
-                          ])
-                    : params.index(literalNum(1)).property('value'),
-              ),
-            ])
-            .code,
-      );
+  Code _buildAddMethod(
+    MethodElement method,
+    DartType streamType,
+  ) => buildRegisterMethodWithParams(
+    '${method.name}#data',
+    async: false,
+    (params) => _controllerMapRef
+        .index(params.index(literalNum(0)).property('asInt'))
+        .asA(Types.$StreamController(streamType.toReference()).asNullable(true))
+        .nullSafeProperty('add')
+        .call([
+          fromJson(
+            streamType,
+            streamType.isNullableType
+                ? params
+                      .index(literalNum(1))
+                      .property(ParameterBuilderMixin.nullOrName)
+                      .call([
+                        closure1(r'$v', (p1) => p1.property('value').code),
+                      ])
+                : params.index(literalNum(1)).property('value'),
+          ),
+        ])
+        .code,
+  );
 
   Code _buildErrorMethod(MethodElement method, DartType streamType) =>
       buildRegisterMethodWithParams(
@@ -239,22 +232,29 @@ base mixin StreamBuilderMixin
                 params
                     .index(literalNum(1))
                     .property('asMap')
-                    .asA(Types.map(Types.string, Types.dynamic)),
+                    .asA(
+                      CoreTypes.$Map(
+                        keyType: CoreTypes.$String,
+                        valueType: CoreTypes.$dynamic,
+                      ),
+                    ),
               )
               .statement,
           _controllerMapRef
               .index(params.index(literalNum(0)).property('asInt'))
               .nullSafeProperty('addError')
               .call([
-                Types.jsonRpc2RpcException.newInstance(
+                Types.$RpcException.newInstance(
                   [
-                    _errorRef.index(literalString('code')).asA(Types.$int),
-                    _errorRef.index(literalString('message')).asA(Types.string),
+                    _errorRef.index(literalString('code')).asA(CoreTypes.$int),
+                    _errorRef
+                        .index(literalString('message'))
+                        .asA(CoreTypes.$String),
                   ],
                   {
                     'data': _errorRef
                         .index(literalString('data'))
-                        .asA(Types.object.asNullable(true)),
+                        .asA(CoreTypes.$Object.asNullable(true)),
                   },
                 ),
               ])
@@ -274,20 +274,21 @@ base mixin StreamBuilderMixin
             .code,
       );
 
-  Code _buildCleanupMethod() =>
-      JsonRpcInstance.ref.property('done').property('then').call([
-        closure1(
-          '_',
-          (_) => Block.of([
-            ForIn(
-              _controllerRef.symbol!,
-              _controllerMapRef.property('values'),
-              Globals.unawaitedRef.call([
-                _controllerRef.property('close').call(const []),
-              ]).statement,
-            ),
-            _controllerMapRef.property('clear').call(const []).statement,
-          ]),
-        ),
-      ]).statement;
+  Code _buildCleanupMethod() => Globals.unawaitedRef.call([
+    JsonRpcInstance.ref.property('done').property('then').call([
+      closure1(
+        '_',
+        (_) => Block.of([
+          ForIn(
+            _controllerRef.symbol!,
+            _controllerMapRef.property('values'),
+            Globals.unawaitedRef.call([
+              _controllerRef.property('close').call(const []),
+            ]).statement,
+          ),
+          _controllerMapRef.property('clear').call(const []).statement,
+        ]),
+      ),
+    ]),
+  ]).statement;
 }

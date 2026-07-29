@@ -1,6 +1,5 @@
-// ignore_for_file: invalid_use_of_protected_member
-
-import 'dart:async';
+// ignore_for_file: avoid_futureor_void for tests
+// ignore_for_file: invalid_use_of_protected_member for tests
 
 import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 import 'package:mocktail/mocktail.dart';
@@ -28,7 +27,7 @@ void main() {
   late _TestSimpleServer sutServer;
   late SimpleClient sutClient;
 
-  setUp(() async {
+  setUp(() {
     final upstreamController = StreamController<String>.broadcast();
     addTearDown(upstreamController.close);
     upstreamController.stream.listen(printOnFailure);
@@ -47,10 +46,10 @@ void main() {
       downstreamController.sink,
     );
 
-    // ignore: unawaited_futures
+    // ignore: discarded_futures for setup
     sutServer = _TestSimpleServer(serverChannel)..listen();
     addTearDown(sutServer.close);
-    // ignore: unawaited_futures
+    // ignore: discarded_futures for setup
     sutClient = SimpleClient(clientChannel)..listen();
     addTearDown(sutClient.close);
   });
@@ -62,7 +61,7 @@ void main() {
     test('sends message and level', () async {
       sutClient.notify(testMessage, testLevel);
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      await pumpEventQueue();
 
       verify(() => sutServer.mock.notify(testMessage, testLevel));
     });
@@ -70,7 +69,7 @@ void main() {
     test('sends client defaults', () async {
       sutClient.notify(testMessage);
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      await pumpEventQueue();
 
       verify(() => sutServer.mock.notify(testMessage, 10));
     });

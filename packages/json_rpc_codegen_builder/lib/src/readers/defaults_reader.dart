@@ -3,31 +3,34 @@ import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
-/// @nodoc
 @internal
 abstract base class DefaultsReader {
-  static const _clientTypeChecker = TypeChecker.fromRuntime(ClientDefaults);
-  static const _serverTypeChecker = TypeChecker.fromRuntime(ServerDefaults);
+  static const _clientTypeChecker = TypeChecker.typeNamed(
+    ClientDefaults,
+    inPackage: 'json_rpc_codegen',
+  );
+  static const _serverTypeChecker = TypeChecker.typeNamed(
+    ServerDefaults,
+    inPackage: 'json_rpc_codegen',
+  );
 
   DefaultsReader._();
 
-  /// @nodoc
   static bool isServerDefault(MethodElement method) {
     final methodIsClient = _isClient(method);
     if (methodIsClient != null) {
-      return methodIsClient;
+      return !methodIsClient;
     }
 
-    final clazz = method.enclosingElement as ClassElement;
+    final clazz = method.enclosingElement! as ClassElement;
     final classIsClient = _isClient(clazz);
     if (classIsClient != null) {
-      return classIsClient;
+      return !classIsClient;
     }
 
     return true;
   }
 
-  /// @nodoc
   static bool isClientDefault(MethodElement method) => !isServerDefault(method);
 
   static bool? _isClient(Element element) {
