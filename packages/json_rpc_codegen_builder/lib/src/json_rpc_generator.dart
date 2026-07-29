@@ -79,14 +79,14 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc> {
   }
 
   void _buildLibraryPrefix(StringBuffer buffer) => Library(
-        (b) => b
-          ..ignoreForFile.add('type=lint')
-          ..ignoreForFile.add('unused_element'),
-      ).accept<StringSink>(_createEmitter(), buffer);
+    (b) => b
+      ..ignoreForFile.add('type=lint')
+      ..ignoreForFile.add('unused_element'),
+  ).accept<StringSink>(_createEmitter(), buffer);
 
   void _buildLibrarySuffix(StringBuffer buffer) => Library(
-        (b) => b
-          ..body.addAll(SerializationMixin.buildGlobals())
-          ..body.addAll(ParameterBuilderMixin.buildGlobals()),
-      ).accept<StringSink>(_createEmitter(), buffer);
+    (b) => b
+      ..body.addAll(SerializationMixin.buildGlobals())
+      ..body.addAll(ParameterBuilderMixin.buildGlobals()),
+  ).accept<StringSink>(_createEmitter(), buffer);
 }

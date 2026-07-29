@@ -42,8 +42,7 @@ class TestStreamServer extends StreamServer {
     Permission permission,
     Uri? reference,
     Color color,
-  ) =>
-      mock.positional(variant, user, levels, permission, reference, color);
+  ) => mock.positional(variant, user, levels, permission, reference, color);
 
   @override
   Stream<(User, Permission)> named(
@@ -53,8 +52,7 @@ class TestStreamServer extends StreamServer {
     Permission permission,
     Uri? reference,
     Color color,
-  ) =>
-      mock.named(variant, user, levels, permission, reference, color);
+  ) => mock.named(variant, user, levels, permission, reference, color);
 }
 
 void main() {
@@ -97,12 +95,10 @@ void main() {
 
   group('stream', () {
     test('forwards a simple, single event', () async {
-      const testValue = (
-        User('a', 'b'),
-        Permission.writeOnly,
-      );
-      when(() => sutServer.mock.named(any(), any(), any(), any(), any(), any()))
-          .thenStream(Stream.value(testValue));
+      const testValue = (User('a', 'b'), Permission.writeOnly);
+      when(
+        () => sutServer.mock.named(any(), any(), any(), any(), any(), any()),
+      ).thenStream(Stream.value(testValue));
 
       await expectLater(
         sutClient.named(
@@ -110,10 +106,7 @@ void main() {
           user: testValue.$1,
           permission: Permission.readWrite,
         ),
-        emitsInOrder([
-          isRecord(testValue.$1, testValue.$2),
-          emitsDone,
-        ]),
+        emitsInOrder([isRecord(testValue.$1, testValue.$2), emitsDone]),
       );
 
       verify(
@@ -174,10 +167,7 @@ void main() {
       });
 
       test('forwards data events', () async {
-        expect(
-          sutClient.simple(),
-          emitsInOrder([42, 99, emitsDone]),
-        );
+        expect(sutClient.simple(), emitsInOrder([42, 99, emitsDone]));
 
         serverController
           ..add(42)
@@ -195,10 +185,10 @@ void main() {
                 .having((m) => m.code, 'code', error_code.SERVER_ERROR)
                 .having((m) => m.message, 'message', 'error1')
                 .having((m) => m.data, 'data', {
-              'full': 'Exception: error1',
-              'stack': isEmpty,
-              'request': startsWith('simple#'),
-            })
+                  'full': 'Exception: error1',
+                  'stack': isEmpty,
+                  'request': startsWith('simple#'),
+                }),
           ),
           (
             Exception('error2'),
@@ -207,10 +197,10 @@ void main() {
                 .having((m) => m.code, 'code', error_code.SERVER_ERROR)
                 .having((m) => m.message, 'message', 'error2')
                 .having((m) => m.data, 'data', {
-              'full': 'Exception: error2',
-              'stack': isNotEmpty,
-              'request': startsWith('simple#'),
-            }),
+                  'full': 'Exception: error2',
+                  'stack': isNotEmpty,
+                  'request': startsWith('simple#'),
+                }),
           ),
           (
             RpcException(123, 'error3'),
@@ -219,8 +209,8 @@ void main() {
                 .having((m) => m.code, 'code', 123)
                 .having((m) => m.message, 'message', 'error3')
                 .having((m) => m.data, 'data', {
-              'request': startsWith('simple#'),
-            }),
+                  'request': startsWith('simple#'),
+                }),
           ),
           (
             RpcException(123, 'error4', data: 'extra'),
@@ -251,10 +241,7 @@ void main() {
         serverController.add(1);
         await Future.delayed(const Duration(milliseconds: 1));
 
-        verifyInOrder([
-          () => mockOnListen.call(),
-          () => mockOnData.call(1),
-        ]);
+        verifyInOrder([() => mockOnListen.call(), () => mockOnData.call(1)]);
         verifyAllClean([mockOnData]);
 
         sub.pause();
@@ -262,9 +249,7 @@ void main() {
         serverController.add(2);
         await Future.delayed(const Duration(milliseconds: 1));
 
-        verifyInOrder([
-          () => mockOnPause.call(),
-        ]);
+        verifyInOrder([() => mockOnPause.call()]);
         verifyAllClean([mockOnData]);
 
         sub.resume();
@@ -283,9 +268,7 @@ void main() {
         serverController.add(4);
         await Future.delayed(const Duration(milliseconds: 1));
 
-        verifyInOrder([
-          () => mockOnCancel.call(),
-        ]);
+        verifyInOrder([() => mockOnCancel.call()]);
         verifyAllClean([mockOnData]);
       });
     });

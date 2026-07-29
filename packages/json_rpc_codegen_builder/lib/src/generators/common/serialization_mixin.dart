@@ -47,19 +47,17 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
             .property('byName')
             .call([_maybeCast(ref, Types.string, noCast)]),
       );
-    } else if (type
-        case InterfaceType(
-          element: ClassElement(
-            name: 'Uri' || 'DateTime',
-          )
-        )) {
+    } else if (type case InterfaceType(
+      element: ClassElement(name: 'Uri' || 'DateTime'),
+    )) {
       return _ifNotNull(
         type,
         isNull ?? type.isNullableType,
         value,
-        (ref) => Types.fromDartType(type, isNull: false)
-            .property('parse')
-            .call([_maybeCast(value, Types.string, noCast)]),
+        (ref) => Types.fromDartType(
+          type,
+          isNull: false,
+        ).property('parse').call([_maybeCast(value, Types.string, noCast)]),
       );
     } else if (_isPrimitiveType(type)) {
       return _maybeCast(value, Types.fromDartType(type), noCast);
@@ -81,10 +79,10 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
         type,
         isNull ?? type.isNullableType,
         value,
-        (ref) => Types.fromDartType(type, isNull: false).newInstanceNamed(
-          'fromJson',
-          [ref.asA(Types.fromDartType(jsonType))],
-        ),
+        (ref) => Types.fromDartType(
+          type,
+          isNull: false,
+        ).newInstanceNamed('fromJson', [ref.asA(Types.fromDartType(jsonType))]),
       );
     }
   }
@@ -104,12 +102,9 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
       return value
           .autoProperty('toString', isNull ?? type.isNullableType)
           .call(const []);
-    } else if (type
-        case InterfaceType(
-          element: ClassElement(
-            name: 'DateTime',
-          )
-        )) {
+    } else if (type case InterfaceType(
+      element: ClassElement(name: 'DateTime'),
+    )) {
       return value
           .autoProperty('toIso8601String', isNull ?? type.isNullableType)
           .call(const []);
@@ -134,14 +129,15 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     );
 
     if (listType is! DynamicType) {
-      iterable =
-          iterable.autoProperty('map', isNull ?? type.isNullableType).call([
-        closure1(
-          r'$e',
-          type1: Types.dynamic,
-          (p1) => fromJson(listType, p1).code,
-        ),
-      ]);
+      iterable = iterable
+          .autoProperty('map', isNull ?? type.isNullableType)
+          .call([
+            closure1(
+              r'$e',
+              type1: Types.dynamic,
+              (p1) => fromJson(listType, p1).code,
+            ),
+          ]);
     }
 
     if (type.isDartCoreList) {
@@ -161,9 +157,10 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     final convertExpression = toJson(listType, elementParamRef);
     if (identical(convertExpression, elementParamRef)) {
       return !type.isDartCoreList
-          ? value
-              .autoProperty('toList', isNull ?? type.isNullableType)
-              .call(const [], const {'growable': literalFalse})
+          ? value.autoProperty('toList', isNull ?? type.isNullableType).call(
+              const [],
+              const {'growable': literalFalse},
+            )
           : value;
     }
 
@@ -276,16 +273,10 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
           Types.list().asNullable(isNull ?? type.isNullableType),
           noCast,
         ),
-        (ref) => literalRecord(
-          [
-            for (final (index, field) in recordType.positionalFields.indexed)
-              fromJson(
-                field.type,
-                ref.index(literalNum(index)),
-              ),
-          ],
-          const {},
-        ),
+        (ref) => literalRecord([
+          for (final (index, field) in recordType.positionalFields.indexed)
+            fromJson(field.type, ref.index(literalNum(index))),
+        ], const {}),
       );
     }
   }
@@ -318,16 +309,10 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
         type,
         isNull ?? type.isNullableType,
         value,
-        (ref) => literalList(
-          {
-            for (final (index, field) in recordType.positionalFields.indexed)
-              toJson(
-                field.type,
-                ref.property('\$${index + 1}'),
-              ),
-          },
-          Types.dynamic,
-        ),
+        (ref) => literalList({
+          for (final (index, field) in recordType.positionalFields.indexed)
+            toJson(field.type, ref.property('\$${index + 1}')),
+        }, Types.dynamic),
       );
     }
   }
@@ -343,8 +328,9 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
   DartType? _fromJsonType(DartType type) {
     final element = type.element;
     if (element case ClassElement()) {
-      final fromJsonConstructor =
-          element.constructors.firstWhere((c) => c.name == 'fromJson');
+      final fromJsonConstructor = element.constructors.firstWhere(
+        (c) => c.name == 'fromJson',
+      );
       final jsonArg = fromJsonConstructor.parameters.firstOrNull;
       return jsonArg?.type;
     } else {
@@ -352,11 +338,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     }
   }
 
-  Expression _maybeCast(
-    Expression ref,
-    Reference type,
-    bool noCast,
-  ) =>
+  Expression _maybeCast(Expression ref, Reference type, bool noCast) =>
       noCast ? ref : ref.asA(type);
 
   Expression _ifNotNull(
@@ -449,10 +431,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
         )
         ..body = valueParamRef
             .equalTo(literalNull)
-            .conditional(
-              literalNull,
-              convertParamRef.call([valueParamRef]),
-            )
+            .conditional(literalNull, convertParamRef.call([valueParamRef]))
             .code,
     );
   }

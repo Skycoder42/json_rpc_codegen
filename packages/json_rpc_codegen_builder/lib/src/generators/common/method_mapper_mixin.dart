@@ -43,7 +43,8 @@ base mixin MethodMapperMixin on ProxySpec {
       throw InvalidGenerationSourceError(
         'The return type of RPC methods must be not be a Future or FutureOr!',
         element: method,
-        todo: 'Change return type to '
+        todo:
+            'Change return type to '
             '${futureType.getDisplayString(withNullability: true)}.',
       );
     }
@@ -94,50 +95,46 @@ base mixin MethodMapperMixin on ProxySpec {
     MethodElement method, {
     required void Function(MethodBuilder b) buildMethod,
     required void Function(ParameterElement param, ParameterBuilder b)
-        buildParam,
+    buildParam,
     bool Function(ParameterElement param) checkRequired = _defaultCheckRequired,
-  }) =>
-      Method((b) {
-        if (method.typeParameters.isNotEmpty) {
-          throw InvalidGenerationSourceError(
-            'An RPC method cannot have generic type parameters!',
-            element: method,
-            todo: 'Remove all generic parameters',
-          );
-        }
+  }) => Method((b) {
+    if (method.typeParameters.isNotEmpty) {
+      throw InvalidGenerationSourceError(
+        'An RPC method cannot have generic type parameters!',
+        element: method,
+        todo: 'Remove all generic parameters',
+      );
+    }
 
-        b
-          ..name = method.name
-          ..returns = Types.fromDartType(method.returnType)
-          ..requiredParameters.addAll(
-            method.parameters
-                .where(checkRequired)
-                .map((e) => _buildParameter(e, buildParam)),
-          )
-          ..optionalParameters.addAll(
-            method.parameters
-                .whereNot(checkRequired)
-                .map((e) => _buildParameter(e, buildParam)),
-          );
-        buildMethod(b);
-      });
+    b
+      ..name = method.name
+      ..returns = Types.fromDartType(method.returnType)
+      ..requiredParameters.addAll(
+        method.parameters
+            .where(checkRequired)
+            .map((e) => _buildParameter(e, buildParam)),
+      )
+      ..optionalParameters.addAll(
+        method.parameters
+            .whereNot(checkRequired)
+            .map((e) => _buildParameter(e, buildParam)),
+      );
+    buildMethod(b);
+  });
 
   Parameter _buildParameter(
     ParameterElement parameter,
     void Function(ParameterElement param, ParameterBuilder b) buildParam,
-  ) =>
-      Parameter(
-        (b) {
-          b
-            ..name = parameter.name
-            ..type = Types.fromDartType(parameter.type)
-            ..named = parameter.isNamed
-            ..required = parameter.isRequiredNamed
-            ..covariant = parameter.isCovariant;
+  ) => Parameter((b) {
+    b
+      ..name = parameter.name
+      ..type = Types.fromDartType(parameter.type)
+      ..named = parameter.isNamed
+      ..required = parameter.isRequiredNamed
+      ..covariant = parameter.isCovariant;
 
-          buildParam(parameter, b);
-        },
-      );
+    buildParam(parameter, b);
+  });
 
   static bool _defaultCheckRequired(ParameterElement param) =>
       param.isRequiredPositional;

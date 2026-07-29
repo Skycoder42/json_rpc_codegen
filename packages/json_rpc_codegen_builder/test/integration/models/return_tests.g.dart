@@ -102,14 +102,9 @@ mixin ReturnTestsClientMixin on ClientBase {
       'mapRet',
       <dynamic>[],
     );
-    return ($result as Map).map((
-      dynamic $k,
-      dynamic $v,
-    ) =>
-        MapEntry(
-          ($k as String),
-          ($v as double),
-        ));
+    return ($result as Map).map(
+      (dynamic $k, dynamic $v) => MapEntry(($k as String), ($v as double)),
+    );
   }
 
   Future<Map<List<String>, Iterable<Map<dynamic, List<num>>>>> deepRet() async {
@@ -117,21 +112,19 @@ mixin ReturnTestsClientMixin on ClientBase {
       'deepRet',
       <dynamic>[],
     );
-    return ($result as Map).map((
-      dynamic $k,
-      dynamic $v,
-    ) =>
-        MapEntry(
-          ($k as List).map((dynamic $e) => ($e as String)).toList(),
-          ($v as List).map((dynamic $e) => ($e as Map).map((
-                dynamic $k,
-                dynamic $v,
-              ) =>
-                  MapEntry(
-                    $k,
-                    ($v as List).map((dynamic $e) => ($e as num)).toList(),
-                  ))),
-        ));
+    return ($result as Map).map(
+      (dynamic $k, dynamic $v) => MapEntry(
+        ($k as List).map((dynamic $e) => ($e as String)).toList(),
+        ($v as List).map(
+          (dynamic $e) => ($e as Map).map(
+            (dynamic $k, dynamic $v) => MapEntry(
+              $k,
+              ($v as List).map((dynamic $e) => ($e as num)).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<User> userRet() async {
@@ -163,8 +156,9 @@ mixin ReturnTestsClientMixin on ClientBase {
       'usersRet',
       <dynamic>[],
     );
-    return ($result as List)
-        .map((dynamic $e) => User.fromJson(($e as Map<String, dynamic>)));
+    return ($result as List).map(
+      (dynamic $e) => User.fromJson(($e as Map<String, dynamic>)),
+    );
   }
 
   Future<Map<Color, List<Permission>>> colorPermissionsRet() async {
@@ -172,20 +166,18 @@ mixin ReturnTestsClientMixin on ClientBase {
       'colorPermissionsRet',
       <dynamic>[],
     );
-    return ($result as Map).map((
-      dynamic $k,
-      dynamic $v,
-    ) =>
-        MapEntry(
-          Color.fromJson(($k as String)),
-          ($v as List)
-              .map((dynamic $e) => Permission.values.byName(($e as String)))
-              .toList(),
-        ));
+    return ($result as Map).map(
+      (dynamic $k, dynamic $v) => MapEntry(
+        Color.fromJson(($k as String)),
+        ($v as List)
+            .map((dynamic $e) => Permission.values.byName(($e as String)))
+            .toList(),
+      ),
+    );
   }
 
   Future<(int?, Permission, Iterable<User?>, ({int x, int y}))>
-      posRecordRet() async {
+  posRecordRet() async {
     final dynamic $result = await jsonRpcInstance.sendRequest(
       'posRecordRet',
       <dynamic>[],
@@ -195,20 +187,22 @@ mixin ReturnTestsClientMixin on ClientBase {
       ($v) => (
         ($v[0] as int?),
         Permission.values.byName(($v[1] as String)),
-        ($v[2] as List).map((dynamic $e) => _$maybeMap(
-              $e,
-              ($v) => User.fromJson(($v as Map<String, dynamic>)),
-            )),
+        ($v[2] as List).map(
+          (dynamic $e) => _$maybeMap(
+            $e,
+            ($v) => User.fromJson(($v as Map<String, dynamic>)),
+          ),
+        ),
         _$map(
           ($v[3] as Map),
           ($v) => (x: ($v['x'] as int), y: ($v['y'] as int)),
-        )
+        ),
       ),
     );
   }
 
   Future<({Color c, Map<String, String?>? d, (int, int) p, double r})>
-      namedRecordRet() async {
+  namedRecordRet() async {
     final dynamic $result = await jsonRpcInstance.sendRequest(
       'namedRecordRet',
       <dynamic>[],
@@ -217,19 +211,11 @@ mixin ReturnTestsClientMixin on ClientBase {
       ($result as Map),
       ($v) => (
         c: Color.fromJson(($v['c'] as String)),
-        d: ($v['d'] as Map?)?.map((
-          dynamic $k,
-          dynamic $v,
-        ) =>
-            MapEntry(
-              ($k as String),
-              ($v as String?),
-            )),
-        p: _$map(
-          ($v['p'] as List),
-          ($v) => (($v[0] as int), ($v[1] as int)),
+        d: ($v['d'] as Map?)?.map(
+          (dynamic $k, dynamic $v) => MapEntry(($k as String), ($v as String?)),
         ),
-        r: ($v['r'] as double)
+        p: _$map(($v['p'] as List), ($v) => (($v[0] as int), ($v[1] as int))),
+        r: ($v['r'] as double),
       ),
     );
   }
@@ -273,188 +259,108 @@ mixin ReturnTestsServerMixin on ServerBase {
   FutureOr<Map<Color, List<Permission>>> colorPermissionsRet();
   @protected
   FutureOr<(int?, Permission, Iterable<User?>, ({int x, int y}))>
-      posRecordRet();
+  posRecordRet();
   @protected
   FutureOr<({Color c, Map<String, String?>? d, (int, int) p, double r})>
-      namedRecordRet();
+  namedRecordRet();
   @override
   @visibleForOverriding
   @mustCallSuper
   void registerMethods() {
     super.registerMethods();
-    jsonRpcInstance.registerMethod(
-      'boolRet',
-      () async {
-        return (await boolRet());
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'numRet',
-      () async {
-        return (await numRet());
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'intRet',
-      () async {
-        return (await intRet());
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'doubleRet',
-      () async {
-        return (await doubleRet());
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'stringRet',
-      () async {
-        return (await stringRet());
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'dateTimeRet',
-      () async {
-        return (await dateTimeRet()).toIso8601String();
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'uriRet',
-      () async {
-        return (await uriRet()).toString();
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'dynamicRet',
-      () async {
-        return (await dynamicRet());
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'listRet',
-      () async {
-        return (await listRet());
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'iterableRet',
-      () async {
-        return (await iterableRet()).toList(growable: false);
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'setRet',
-      () async {
-        return (await setRet()).toList(growable: false);
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'mapRet',
-      () async {
-        return (await mapRet());
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'deepRet',
-      () async {
-        return (await deepRet()).map((
-          $k,
-          $v,
-        ) =>
-            MapEntry(
-              $k,
-              $v.toList(growable: false),
-            ));
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'userRet',
-      () async {
-        return (await userRet());
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'colorRet',
-      () async {
-        return (await colorRet());
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'permissionRet',
-      () async {
-        return (await permissionRet()).name;
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'usersRet',
-      () async {
-        return (await usersRet()).toList(growable: false);
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'colorPermissionsRet',
-      () async {
-        return (await colorPermissionsRet()).map((
-          $k,
-          $v,
-        ) =>
-            MapEntry(
-              $k,
-              $v.map(($e) => $e.name).toList(growable: false),
-            ));
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'posRecordRet',
-      () async {
-        final $result = await posRecordRet();
-        return <dynamic>[
-          $result.$1,
-          $result.$2.name,
-          $result.$3.toList(growable: false),
-          <String, dynamic>{
-            'x': $result.$4.x,
-            'y': $result.$4.y,
-          },
-        ];
-      },
-    );
-    jsonRpcInstance.registerMethod(
-      'namedRecordRet',
-      () async {
-        final $result = await namedRecordRet();
-        return <String, dynamic>{
-          'c': $result.c,
-          'd': $result.d,
-          'p': <dynamic>[
-            $result.p.$1,
-            $result.p.$2,
-          ],
-          'r': $result.r,
-        };
-      },
-    );
+    jsonRpcInstance.registerMethod('boolRet', () async {
+      return (await boolRet());
+    });
+    jsonRpcInstance.registerMethod('numRet', () async {
+      return (await numRet());
+    });
+    jsonRpcInstance.registerMethod('intRet', () async {
+      return (await intRet());
+    });
+    jsonRpcInstance.registerMethod('doubleRet', () async {
+      return (await doubleRet());
+    });
+    jsonRpcInstance.registerMethod('stringRet', () async {
+      return (await stringRet());
+    });
+    jsonRpcInstance.registerMethod('dateTimeRet', () async {
+      return (await dateTimeRet()).toIso8601String();
+    });
+    jsonRpcInstance.registerMethod('uriRet', () async {
+      return (await uriRet()).toString();
+    });
+    jsonRpcInstance.registerMethod('dynamicRet', () async {
+      return (await dynamicRet());
+    });
+    jsonRpcInstance.registerMethod('listRet', () async {
+      return (await listRet());
+    });
+    jsonRpcInstance.registerMethod('iterableRet', () async {
+      return (await iterableRet()).toList(growable: false);
+    });
+    jsonRpcInstance.registerMethod('setRet', () async {
+      return (await setRet()).toList(growable: false);
+    });
+    jsonRpcInstance.registerMethod('mapRet', () async {
+      return (await mapRet());
+    });
+    jsonRpcInstance.registerMethod('deepRet', () async {
+      return (await deepRet()).map(
+        ($k, $v) => MapEntry($k, $v.toList(growable: false)),
+      );
+    });
+    jsonRpcInstance.registerMethod('userRet', () async {
+      return (await userRet());
+    });
+    jsonRpcInstance.registerMethod('colorRet', () async {
+      return (await colorRet());
+    });
+    jsonRpcInstance.registerMethod('permissionRet', () async {
+      return (await permissionRet()).name;
+    });
+    jsonRpcInstance.registerMethod('usersRet', () async {
+      return (await usersRet()).toList(growable: false);
+    });
+    jsonRpcInstance.registerMethod('colorPermissionsRet', () async {
+      return (await colorPermissionsRet()).map(
+        ($k, $v) =>
+            MapEntry($k, $v.map(($e) => $e.name).toList(growable: false)),
+      );
+    });
+    jsonRpcInstance.registerMethod('posRecordRet', () async {
+      final $result = await posRecordRet();
+      return <dynamic>[
+        $result.$1,
+        $result.$2.name,
+        $result.$3.toList(growable: false),
+        <String, dynamic>{'x': $result.$4.x, 'y': $result.$4.y},
+      ];
+    });
+    jsonRpcInstance.registerMethod('namedRecordRet', () async {
+      final $result = await namedRecordRet();
+      return <String, dynamic>{
+        'c': $result.c,
+        'd': $result.d,
+        'p': <dynamic>[$result.p.$1, $result.p.$2],
+        'r': $result.r,
+      };
+    });
   }
 }
 @pragma('vm:prefer-inline')
 TConverted _$map<TConverted extends Object, TJson extends Object>(
   TJson $value,
   TConverted Function(TJson) $convert,
-) =>
-    $convert($value);
+) => $convert($value);
 @pragma('vm:prefer-inline')
 TConverted? _$maybeMap<TConverted extends Object, TJson extends Object>(
   TJson? $value,
   TConverted Function(TJson) $convert,
-) =>
-    $value == null ? null : $convert($value);
+) => $value == null ? null : $convert($value);
 
 extension _$JsonRpc2ParameterExtensions on Parameter {
   @pragma('vm:prefer-inline')
-  T $maybeOr<T>(
-    T Function(Parameter) getter,
-    T defaultValue,
-  ) =>
+  T $maybeOr<T>(T Function(Parameter) getter, T defaultValue) =>
       exists ? getter(this) : defaultValue;
   @pragma('vm:prefer-inline')
   T? $nullOr<T>(T Function(Parameter) getter) =>

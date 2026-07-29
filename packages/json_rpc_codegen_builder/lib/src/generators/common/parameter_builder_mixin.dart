@@ -34,35 +34,27 @@ base mixin ParameterBuilderMixin
     Reference paramsRef,
     int position,
     ParameterElement param,
-  ) =>
-      _buildParameter(
-        paramsRef.index(literalNum(position)),
-        param,
-      );
+  ) => _buildParameter(paramsRef.index(literalNum(position)), param);
 
   /// @nodoc
-  Code buildNamed(
-    Reference paramsRef,
-    ParameterElement param,
-  ) =>
-      _buildParameter(
-        paramsRef.index(literalString(param.name)),
-        param,
-      );
+  Code buildNamed(Reference paramsRef, ParameterElement param) =>
+      _buildParameter(paramsRef.index(literalString(param.name)), param);
 
   Code _buildParameter(Expression paramRef, ParameterElement param) =>
-      declareFinal('\$\$${param.name}')
-          .assign(_buildConversion(paramRef, param))
-          .statement;
+      declareFinal(
+        '\$\$${param.name}',
+      ).assign(_buildConversion(paramRef, param)).statement;
 
   Expression _buildConversion(Expression paramRef, ParameterElement param) {
     final paramType = param.type;
     if (paramType.isDartCoreInt) {
       return _accessPrimitive(paramRef, param, 'asInt');
     } else if (paramType.isDartCoreDouble) {
-      return _accessPrimitive(paramRef, param, 'asNum')
-          .autoProperty('toDouble', paramType.isNullableType)
-          .call(const []);
+      return _accessPrimitive(
+        paramRef,
+        param,
+        'asNum',
+      ).autoProperty('toDouble', paramType.isNullableType).call(const []);
     } else if (paramType.isDartCoreNum) {
       return _accessPrimitive(paramRef, param, 'asNum');
     } else if (paramType.isDartCoreBool) {
@@ -95,7 +87,7 @@ base mixin ParameterBuilderMixin
     } else if (paramType is RecordType) {
       switch ((
         paramType.positionalFields.isNotEmpty,
-        paramType.namedFields.isNotEmpty
+        paramType.namedFields.isNotEmpty,
       )) {
         case (false, false):
         case (true, false):
@@ -115,19 +107,13 @@ base mixin ParameterBuilderMixin
         case (true, true):
           SerializationMixin.throwInvalidRecord(paramType);
       }
-    } else if (paramType
-        case InterfaceType(
-          element: ClassElement(
-            name: 'Uri',
-          )
-        )) {
+    } else if (paramType case InterfaceType(
+      element: ClassElement(name: 'Uri'),
+    )) {
       return _accessPrimitive(paramRef, param, 'asUri');
-    } else if (paramType
-        case InterfaceType(
-          element: ClassElement(
-            name: 'DateTime',
-          )
-        )) {
+    } else if (paramType case InterfaceType(
+      element: ClassElement(name: 'DateTime'),
+    )) {
       return _accessPrimitive(paramRef, param, 'asDateTime');
     } else if (paramType is DynamicType) {
       return _accessPrimitive(paramRef, param, 'value');
@@ -162,9 +148,7 @@ base mixin ParameterBuilderMixin
     } else {
       if (param.isOptional && isServerDefault) {
         _ensureHasDefault(param);
-        return paramRef.property('${getter}Or').call([
-          _getDefault(param),
-        ]);
+        return paramRef.property('${getter}Or').call([_getDefault(param)]);
       } else {
         return paramRef.property(getter);
       }
@@ -181,10 +165,7 @@ base mixin ParameterBuilderMixin
       param.enclosingElement! as MethodElement,
     );
 
-    final closure = closure1(
-      r'$v',
-      (p1) => fromJson(p1.property(getter)).code,
-    );
+    final closure = closure1(r'$v', (p1) => fromJson(p1.property(getter)).code);
 
     if (param.type.isNullableType && param.type is! DynamicType) {
       if (param.isOptional && isServerDefault) {

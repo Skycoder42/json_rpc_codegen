@@ -52,17 +52,15 @@ base mixin BaseConstructorBuilderMixin on ProxySpec {
   }
 
   Constructor _fromInstance(String name) => Constructor(
-        (b) => b
-          ..name = name
-          ..requiredParameters.add(
-            Parameter(
-              (b) => b
-                ..name = JsonRpcInstance.ref.symbol!
-                ..toSuper = true,
-            ),
-          )
-          ..initializers.add(
-            refer('super').property(name).call(const []).code,
-          ),
-      );
+    (b) => b
+      ..name = name
+      ..requiredParameters.add(
+        Parameter(
+          (b) => b
+            ..name = JsonRpcInstance.ref.symbol!
+            ..toSuper = true,
+        ),
+      )
+      ..initializers.add(refer('super').property(name).call(const []).code),
+  );
 }

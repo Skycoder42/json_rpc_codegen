@@ -7,15 +7,13 @@ class User {
 
   const User(this.firstName, this.lastName);
 
-  factory User.fromJson(Map<String, dynamic> json) => User(
-        json['firstName'] as String,
-        json['lastName'] as String,
-      );
+  factory User.fromJson(Map<String, dynamic> json) =>
+      User(json['firstName'] as String, json['lastName'] as String);
 
   Map<String, dynamic> toJson() => {
-        'firstName': firstName,
-        'lastName': lastName,
-      };
+    'firstName': firstName,
+    'lastName': lastName,
+  };
 
   @override
   String toString() => '<$firstName $lastName>';
@@ -68,8 +66,4 @@ class Color {
       v.toRadixString(16).padLeft(2, '0').toUpperCase();
 }
 
-enum Permission {
-  readOnly,
-  writeOnly,
-  readWrite,
-}
+enum Permission { readOnly, writeOnly, readWrite }

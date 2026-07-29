@@ -32,37 +32,37 @@ final class ServerMixinBuilder extends ProxySpec
 
   @override
   Mixin build() => Mixin(
-        (b) => b
-          ..name = '${_class.publicName}ServerMixin'
-          ..on = StreamBuilderMixin.hasStreams(_class)
-              ? Types.peerBase
-              : Types.serverBase
-          ..fields.addAll(buildStreamFields(_class))
-          ..methods.addAll(
-            _class.methods.map(
-              (method) => mapMethod(
-                method,
-                buildMethod: (b) {
-                  b.annotations.add(Annotations.protected);
-                  if (!method.returnType.isDartAsyncStream) {
-                    b.returns = Types.futureOr(b.returns);
-                  }
-                },
-                buildParam: (_, builder) => builder
-                  ..named = false
-                  ..required = false,
-                checkRequired: (_) => true,
-              ),
-            ),
-          )
-          ..methods.add(
-            buildRegisterMethods(
-              _class.methods
-                  .map(_buildRegisterMethod)
-                  .followedBy(buildStreamCleanupMethod(_class)),
-            ),
+    (b) => b
+      ..name = '${_class.publicName}ServerMixin'
+      ..on = StreamBuilderMixin.hasStreams(_class)
+          ? Types.peerBase
+          : Types.serverBase
+      ..fields.addAll(buildStreamFields(_class))
+      ..methods.addAll(
+        _class.methods.map(
+          (method) => mapMethod(
+            method,
+            buildMethod: (b) {
+              b.annotations.add(Annotations.protected);
+              if (!method.returnType.isDartAsyncStream) {
+                b.returns = Types.futureOr(b.returns);
+              }
+            },
+            buildParam: (_, builder) => builder
+              ..named = false
+              ..required = false,
+            checkRequired: (_) => true,
           ),
-      );
+        ),
+      )
+      ..methods.add(
+        buildRegisterMethods(
+          _class.methods
+              .map(_buildRegisterMethod)
+              .followedBy(buildStreamCleanupMethod(_class)),
+        ),
+      ),
+  );
 
   Code _buildRegisterMethod(MethodElement method) {
     if (method.returnType.isDartAsyncStream) {
@@ -79,8 +79,9 @@ final class ServerMixinBuilder extends ProxySpec
             method.name,
             (params) => Block.of([
               if (parameterMode.hasPositional)
-                ...method.parameters
-                    .mapIndexed((i, e) => buildPositional(params, i, e)),
+                ...method.parameters.mapIndexed(
+                  (i, e) => buildPositional(params, i, e),
+                ),
               if (parameterMode.hasNamed)
                 ...method.parameters.map((e) => buildNamed(params, e)),
               ..._buildInvocation(method),
@@ -88,12 +89,10 @@ final class ServerMixinBuilder extends ProxySpec
           );
   }
 
-  Iterable<Code> _buildInvocation(
-    MethodElement method,
-  ) sync* {
-    final invocation = refer(method.name).call([
-      for (final p in method.parameters) paramRefFor(p),
-    ]);
+  Iterable<Code> _buildInvocation(MethodElement method) sync* {
+    final invocation = refer(
+      method.name,
+    ).call([for (final p in method.parameters) paramRefFor(p)]);
 
     if (method.returnType is VoidType || method.returnType.isDartCoreNull) {
       yield invocation.awaited.statement;
@@ -103,9 +102,9 @@ final class ServerMixinBuilder extends ProxySpec
     final returnType = getReturnType(method);
     if (returnType is RecordType) {
       const resultRef = Reference(r'$result');
-      yield declareFinal(resultRef.symbol!)
-          .assign(invocation.awaited)
-          .statement;
+      yield declareFinal(
+        resultRef.symbol!,
+      ).assign(invocation.awaited).statement;
       yield toJson(returnType, resultRef).returned.statement;
     } else {
       yield toJson(

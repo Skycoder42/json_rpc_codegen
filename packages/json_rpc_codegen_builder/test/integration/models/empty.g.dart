@@ -145,21 +145,16 @@ mixin TestEmpty10ServerMixin on ServerBase {
 TConverted _$map<TConverted extends Object, TJson extends Object>(
   TJson $value,
   TConverted Function(TJson) $convert,
-) =>
-    $convert($value);
+) => $convert($value);
 @pragma('vm:prefer-inline')
 TConverted? _$maybeMap<TConverted extends Object, TJson extends Object>(
   TJson? $value,
   TConverted Function(TJson) $convert,
-) =>
-    $value == null ? null : $convert($value);
+) => $value == null ? null : $convert($value);
 
 extension _$JsonRpc2ParameterExtensions on Parameter {
   @pragma('vm:prefer-inline')
-  T $maybeOr<T>(
-    T Function(Parameter) getter,
-    T defaultValue,
-  ) =>
+  T $maybeOr<T>(T Function(Parameter) getter, T defaultValue) =>
       exists ? getter(this) : defaultValue;
   @pragma('vm:prefer-inline')
   T? $nullOr<T>(T Function(Parameter) getter) =>

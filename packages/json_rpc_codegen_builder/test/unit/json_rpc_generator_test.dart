@@ -37,8 +37,11 @@ abstract class _TestEmpty {}
                 allOf(
                   hasLength(1),
                   contains(
-                    isA<MethodElement>()
-                        .having((m) => m.name, 'name', 'registerMethods'),
+                    isA<MethodElement>().having(
+                      (m) => m.name,
+                      'name',
+                      'registerMethods',
+                    ),
                   ),
                 ),
               )
@@ -53,12 +56,22 @@ abstract class _TestEmpty {}
               .having((m) => m.methods, 'methods', isEmpty)
               .having((m) => m.fields, 'fields', isEmpty)
               .having((m) => m.constructors, 'constructors', [
-            isA<ConstructorElement>().having((m) => m.name, 'name', isEmpty),
-            isA<ConstructorElement>()
-                .having((m) => m.name, 'name', 'withoutJson'),
-            isA<ConstructorElement>()
-                .having((m) => m.name, 'name', 'fromClient'),
-          ]),
+                isA<ConstructorElement>().having(
+                  (m) => m.name,
+                  'name',
+                  isEmpty,
+                ),
+                isA<ConstructorElement>().having(
+                  (m) => m.name,
+                  'name',
+                  'withoutJson',
+                ),
+                isA<ConstructorElement>().having(
+                  (m) => m.name,
+                  'name',
+                  'fromClient',
+                ),
+              ]),
         ),
       );
       expect(
@@ -69,12 +82,22 @@ abstract class _TestEmpty {}
               .having((m) => m.methods, 'methods', isEmpty)
               .having((m) => m.fields, 'fields', isEmpty)
               .having((m) => m.constructors, 'constructors', [
-            isA<ConstructorElement>().having((m) => m.name, 'name', isEmpty),
-            isA<ConstructorElement>()
-                .having((m) => m.name, 'name', 'withoutJson'),
-            isA<ConstructorElement>()
-                .having((m) => m.name, 'name', 'fromServer'),
-          ]),
+                isA<ConstructorElement>().having(
+                  (m) => m.name,
+                  'name',
+                  isEmpty,
+                ),
+                isA<ConstructorElement>().having(
+                  (m) => m.name,
+                  'name',
+                  'withoutJson',
+                ),
+                isA<ConstructorElement>().having(
+                  (m) => m.name,
+                  'name',
+                  'fromServer',
+                ),
+              ]),
         ),
       );
     },

@@ -13,13 +13,15 @@ abstract base class Annotations {
   static const Reference protected = Reference('protected');
 
   /// @nodoc
-  static const Reference visibleForOverriding =
-      Reference('visibleForOverriding');
+  static const Reference visibleForOverriding = Reference(
+    'visibleForOverriding',
+  );
 
   /// @nodoc
   static const Reference mustCallSuper = Reference('mustCallSuper');
 
   /// @nodoc
-  static const Reference pragmaPreferInline =
-      Reference("pragma('vm:prefer-inline')");
+  static const Reference pragmaPreferInline = Reference(
+    "pragma('vm:prefer-inline')",
+  );
 }

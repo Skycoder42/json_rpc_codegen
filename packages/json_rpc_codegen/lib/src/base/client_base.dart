@@ -14,7 +14,7 @@ abstract class ClientBase {
 
   /// See [Client.withoutJson]
   ClientBase.withoutJson(StreamChannel channel)
-      : jsonRpcInstance = Client.withoutJson(channel);
+    : jsonRpcInstance = Client.withoutJson(channel);
   // coverage:ignore-end
 
   /// Creates a new instance from an existing client

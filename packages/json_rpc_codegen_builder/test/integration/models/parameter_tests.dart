@@ -70,7 +70,8 @@ abstract class _ParameterTests {
       String name,
       Color color,
       User? user,
-      Iterable<Permission?> permissions
-    }) named,
+      Iterable<Permission?> permissions,
+    })
+    named,
   );
 }

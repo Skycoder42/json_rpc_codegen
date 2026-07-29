@@ -7,10 +7,7 @@ import '../proxy_spec.dart';
 @internal
 base mixin ClosureBuilderMixin on ProxySpec {
   /// @nodoc
-  Expression closure0(
-    Code Function() buildBody, {
-    MethodModifier? modifier,
-  }) =>
+  Expression closure0(Code Function() buildBody, {MethodModifier? modifier}) =>
       Method(
         (b) => b
           ..modifier = modifier
@@ -23,19 +20,18 @@ base mixin ClosureBuilderMixin on ProxySpec {
     Code Function(Reference p1) buildBody, {
     MethodModifier? modifier,
     TypeReference? type1,
-  }) =>
-      Method(
-        (b) => b
-          ..requiredParameters.add(
-            Parameter(
-              (b) => b
-                ..name = param1
-                ..type = type1,
-            ),
-          )
-          ..modifier = modifier
-          ..body = buildBody(refer(param1)),
-      ).closure;
+  }) => Method(
+    (b) => b
+      ..requiredParameters.add(
+        Parameter(
+          (b) => b
+            ..name = param1
+            ..type = type1,
+        ),
+      )
+      ..modifier = modifier
+      ..body = buildBody(refer(param1)),
+  ).closure;
 
   /// @nodoc
   Expression closure2(
@@ -45,22 +41,21 @@ base mixin ClosureBuilderMixin on ProxySpec {
     MethodModifier? modifier,
     TypeReference? type1,
     TypeReference? type2,
-  }) =>
-      Method(
-        (b) => b
-          ..requiredParameters.addAll([
-            Parameter(
-              (b) => b
-                ..name = param1
-                ..type = type1,
-            ),
-            Parameter(
-              (b) => b
-                ..name = param2
-                ..type = type2,
-            ),
-          ])
-          ..modifier = modifier
-          ..body = buildBody(refer(param1), refer(param2)),
-      ).closure;
+  }) => Method(
+    (b) => b
+      ..requiredParameters.addAll([
+        Parameter(
+          (b) => b
+            ..name = param1
+            ..type = type1,
+        ),
+        Parameter(
+          (b) => b
+            ..name = param2
+            ..type = type2,
+        ),
+      ])
+      ..modifier = modifier
+      ..body = buildBody(refer(param1), refer(param2)),
+  ).closure;
 }

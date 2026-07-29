@@ -20,10 +20,10 @@ abstract class PeerBase implements ClientBase, ServerBase {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
   }) : jsonRpcInstance = Peer(
-          channel,
-          onUnhandledError: onUnhandledError,
-          strictProtocolChecks: strictProtocolChecks,
-        ) {
+         channel,
+         onUnhandledError: onUnhandledError,
+         strictProtocolChecks: strictProtocolChecks,
+       ) {
     registerMethods();
   }
 
@@ -33,10 +33,10 @@ abstract class PeerBase implements ClientBase, ServerBase {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
   }) : jsonRpcInstance = Peer.withoutJson(
-          channel,
-          onUnhandledError: onUnhandledError,
-          strictProtocolChecks: strictProtocolChecks,
-        ) {
+         channel,
+         onUnhandledError: onUnhandledError,
+         strictProtocolChecks: strictProtocolChecks,
+       ) {
     registerMethods();
   }
   // coverage:ignore-end

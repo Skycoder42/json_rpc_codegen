@@ -16,10 +16,10 @@ abstract class ServerBase {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
   }) : jsonRpcInstance = Server(
-          channel,
-          onUnhandledError: onUnhandledError,
-          strictProtocolChecks: strictProtocolChecks,
-        ) {
+         channel,
+         onUnhandledError: onUnhandledError,
+         strictProtocolChecks: strictProtocolChecks,
+       ) {
     registerMethods();
   }
 
@@ -29,10 +29,10 @@ abstract class ServerBase {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
   }) : jsonRpcInstance = Server.withoutJson(
-          channel,
-          onUnhandledError: onUnhandledError,
-          strictProtocolChecks: strictProtocolChecks,
-        ) {
+         channel,
+         onUnhandledError: onUnhandledError,
+         strictProtocolChecks: strictProtocolChecks,
+       ) {
     registerMethods();
   }
   // coverage:ignore-end

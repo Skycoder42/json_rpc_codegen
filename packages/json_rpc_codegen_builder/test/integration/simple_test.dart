@@ -83,8 +83,9 @@ void main() {
     const testResult = 4.22;
 
     test('sends request to server and returns the server result', () async {
-      when(() => sutServer.mock.request(any(), any(), any()))
-          .thenReturn(testResult);
+      when(
+        () => sutServer.mock.request(any(), any(), any()),
+      ).thenReturn(testResult);
 
       await expectLater(
         sutClient.request(id: testId, category: testCategory, user: testUser),
@@ -95,8 +96,9 @@ void main() {
     });
 
     test('passes server defaults to callback', () async {
-      when(() => sutServer.mock.request(any(), any(), any()))
-          .thenReturn(testResult);
+      when(
+        () => sutServer.mock.request(any(), any(), any()),
+      ).thenReturn(testResult);
 
       await expectLater(sutClient.request(id: testId), completion(testResult));
 

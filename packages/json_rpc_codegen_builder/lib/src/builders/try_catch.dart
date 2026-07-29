@@ -32,11 +32,10 @@ class TryCatch implements Code, Spec {
     if (on == null && error == null) {
       throw ArgumentError('Either on or error must be set!');
     }
-    return TryCatch._(
-      _try,
-      [..._catch, _CatchInfo(on, error, stackTrace, body)],
-      _finally,
-    );
+    return TryCatch._(_try, [
+      ..._catch,
+      _CatchInfo(on, error, stackTrace, body),
+    ], _finally);
   }
 
   TryCatch finally$(Iterable<Code> body) {
@@ -95,8 +94,4 @@ class TryCatch implements Code, Spec {
 
 /// @nodoc
 @internal
-TryCatch try$(Iterable<Code> body) => TryCatch._(
-      body,
-      const [],
-      null,
-    );
+TryCatch try$(Iterable<Code> body) => TryCatch._(body, const [], null);

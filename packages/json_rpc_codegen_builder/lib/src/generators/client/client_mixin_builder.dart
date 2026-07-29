@@ -38,19 +38,19 @@ final class ClientMixinBuilder extends ProxySpec
   /// @nodoc
   @override
   Mixin build() => Mixin(
-        (b) => b
-          ..name = '${_class.publicName}ClientMixin'
-          ..on = StreamBuilderMixin.hasStreams(_class)
-              ? Types.peerBase
-              : Types.clientBase
-          ..fields.addAll(buildStreamFields(_class))
-          ..methods.addAll(
-            [
-              ..._class.methods.map(_buildMethod),
-              buildStreamListeners(_class),
-            ].whereNotNull(),
-          ),
-      );
+    (b) => b
+      ..name = '${_class.publicName}ClientMixin'
+      ..on = StreamBuilderMixin.hasStreams(_class)
+          ? Types.peerBase
+          : Types.clientBase
+      ..fields.addAll(buildStreamFields(_class))
+      ..methods.addAll(
+        [
+          ..._class.methods.map(_buildMethod),
+          buildStreamListeners(_class),
+        ].whereNotNull(),
+      ),
+  );
 
   Method _buildMethod(MethodElement method) {
     final returnType = getReturnType(method);
@@ -64,12 +64,12 @@ final class ClientMixinBuilder extends ProxySpec
   }
 
   Method _buildNotificationMethod(MethodElement method) => mapMethod(
-        method,
-        buildMethod: (b) => b
-          ..returns = Types.$void
-          ..body = _buildNotificationBody(method),
-        buildParam: (p, b) => _buildParam(method, p, b),
-      );
+    method,
+    buildMethod: (b) => b
+      ..returns = Types.$void
+      ..body = _buildNotificationBody(method),
+    buildParam: (p, b) => _buildParam(method, p, b),
+  );
 
   Method _buildRequestMethod(MethodElement method, DartType returnType) =>
       mapMethod(
@@ -82,10 +82,10 @@ final class ClientMixinBuilder extends ProxySpec
       );
 
   Method _buildStreamMethod(MethodElement method) => mapMethod(
-        method,
-        buildMethod: (b) => b..body = buildStreamBody(method),
-        buildParam: (p, b) => _buildParam(method, p, b),
-      );
+    method,
+    buildMethod: (b) => b..body = buildStreamBody(method),
+    buildParam: (p, b) => _buildParam(method, p, b),
+  );
 
   void _buildParam(
     MethodElement method,
@@ -105,7 +105,8 @@ final class ClientMixinBuilder extends ProxySpec
           'An RPC method parameter that uses client defaults must either be '
           'nullable or have an explicit default value set.',
           element: parameter,
-          todo: 'Change the type to ${parameter.type}? '
+          todo:
+              'Change the type to ${parameter.type}? '
               'or specify a default value',
         );
       }
@@ -115,10 +116,10 @@ final class ClientMixinBuilder extends ProxySpec
   }
 
   Code _buildNotificationBody(MethodElement method) => buildMethodInvocation(
-        JsonRpcInstance.sendNotification,
-        method,
-        isAsync: false,
-      );
+    JsonRpcInstance.sendNotification,
+    method,
+    isAsync: false,
+  );
 
   Code _buildRequestBody(MethodElement method, DartType returnType) =>
       buildMethodInvocation(
@@ -129,9 +130,10 @@ final class ClientMixinBuilder extends ProxySpec
             ? null
             : (invocation) sync* {
                 const resultVarRef = Reference(r'$result');
-                yield declareFinal(resultVarRef.symbol!, type: Types.dynamic)
-                    .assign(invocation.awaited)
-                    .statement;
+                yield declareFinal(
+                  resultVarRef.symbol!,
+                  type: Types.dynamic,
+                ).assign(invocation.awaited).statement;
                 yield fromJson(returnType, resultVarRef).returned.statement;
               },
       );

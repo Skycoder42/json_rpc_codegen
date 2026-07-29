@@ -9,27 +9,22 @@ import 'package:source_helper/source_helper.dart';
 abstract base class Types {
   Types._();
 
-  static Reference fromDartType(
-    ast_type.DartType dartType, {
-    bool? isNull,
-  }) {
+  static Reference fromDartType(ast_type.DartType dartType, {bool? isNull}) {
     if (dartType is ast_type.VoidType || dartType.isDartCoreNull) {
       return $void;
     } else if (dartType is ast_type.RecordType) {
       return _fromRecord(dartType);
     } else {
-      return TypeReference(
-        (b) {
-          b
-            ..symbol = dartType.element!.name
-            ..isNullable =
-                isNull ?? dartType.nullabilitySuffix != NullabilitySuffix.none;
+      return TypeReference((b) {
+        b
+          ..symbol = dartType.element!.name
+          ..isNullable =
+              isNull ?? dartType.nullabilitySuffix != NullabilitySuffix.none;
 
-          if (dartType is ast_type.InterfaceType) {
-            b.types.addAll(dartType.typeArguments.map(fromDartType));
-          }
-        },
-      );
+        if (dartType is ast_type.InterfaceType) {
+          b.types.addAll(dartType.typeArguments.map(fromDartType));
+        }
+      });
     }
   }
 
@@ -45,61 +40,46 @@ abstract base class Types {
       );
 
   static TypeReference list([Reference? type]) => TypeReference(
-        (b) => b
-          ..symbol = 'List'
-          ..types.addAll([
-            if (type != null) type,
-          ]),
-      );
+    (b) => b
+      ..symbol = 'List'
+      ..types.addAll([if (type != null) type]),
+  );
 
   static TypeReference map([Reference? key, Reference? value]) => TypeReference(
-        (b) => b
-          ..symbol = 'Map'
-          ..types.addAll([
-            if (key != null) key,
-            if (value != null) value,
-          ]),
-      );
+    (b) => b
+      ..symbol = 'Map'
+      ..types.addAll([if (key != null) key, if (value != null) value]),
+  );
 
   static TypeReference future([Reference? type]) => TypeReference(
-        (b) => b
-          ..symbol = 'Future'
-          ..types.addAll([
-            if (type != null) type,
-          ]),
-      );
+    (b) => b
+      ..symbol = 'Future'
+      ..types.addAll([if (type != null) type]),
+  );
 
   static TypeReference futureOr([Reference? type]) => TypeReference(
-        (b) => b
-          ..symbol = 'FutureOr'
-          ..types.addAll([
-            if (type != null) type,
-          ]),
-      );
+    (b) => b
+      ..symbol = 'FutureOr'
+      ..types.addAll([if (type != null) type]),
+  );
 
   static TypeReference streamChannel([Reference? type]) => TypeReference(
-        (b) => b
-          ..symbol = 'StreamChannel'
-          ..types.addAll([
-            if (type != null) type,
-          ]),
-      );
+    (b) => b
+      ..symbol = 'StreamChannel'
+      ..types.addAll([if (type != null) type]),
+  );
 
   static TypeReference streamController([Reference? type]) => TypeReference(
-        (b) => b
-          ..symbol = 'StreamController'
-          ..types.addAll([
-            if (type != null) type,
-          ]),
-      );
+    (b) => b
+      ..symbol = 'StreamController'
+      ..types.addAll([if (type != null) type]),
+  );
 
   static TypeReference streamSubscription([Reference? type]) => TypeReference(
-        (b) => b
-          ..symbol = 'StreamSubscription'
-          ..types.addAll([
-            if (type != null) type,
-          ]),
-      );
+    (b) => b
+      ..symbol = 'StreamSubscription'
+      ..types.addAll([if (type != null) type]),
+  );
 
   static final dynamic = _named('dynamic');
 
@@ -121,13 +101,9 @@ abstract base class Types {
 
   static final stackTrace = _named('StackTrace');
 
-  static final jsonRpc2Client = TypeReference(
-    (b) => b..symbol = 'Client',
-  );
+  static final jsonRpc2Client = TypeReference((b) => b..symbol = 'Client');
 
-  static final jsonRpc2Server = TypeReference(
-    (b) => b..symbol = 'Server',
-  );
+  static final jsonRpc2Server = TypeReference((b) => b..symbol = 'Server');
 
   static final jsonRpc2Parameters = TypeReference(
     (b) => b..symbol = 'Parameters',
@@ -145,36 +121,26 @@ abstract base class Types {
     (b) => b..symbol = 'ErrorCallback',
   );
 
-  static final stackTraceChain = TypeReference(
-    (b) => b..symbol = 'Chain',
-  );
+  static final stackTraceChain = TypeReference((b) => b..symbol = 'Chain');
 
-  static final clientBase = TypeReference(
-    (b) => b..symbol = 'ClientBase',
-  );
+  static final clientBase = TypeReference((b) => b..symbol = 'ClientBase');
 
-  static final serverBase = TypeReference(
-    (b) => b..symbol = 'ServerBase',
-  );
+  static final serverBase = TypeReference((b) => b..symbol = 'ServerBase');
 
-  static final peerBase = TypeReference(
-    (b) => b..symbol = 'PeerBase',
-  );
+  static final peerBase = TypeReference((b) => b..symbol = 'PeerBase');
 
-  static TypeReference _named(String name) => TypeReference(
-        (b) => b..symbol = name,
-      );
+  static TypeReference _named(String name) =>
+      TypeReference((b) => b..symbol = name);
 
   static RecordType _fromRecord(ast_type.RecordType record) => RecordType(
-        (b) => b
-          ..isNullable = record.isNullableType
-          ..positionalFieldTypes.addAll([
-            for (final field in record.positionalFields)
-              fromDartType(field.type),
-          ])
-          ..namedFieldTypes.addAll({
-            for (final field in record.namedFields)
-              field.name: fromDartType(field.type),
-          }),
-      );
+    (b) => b
+      ..isNullable = record.isNullableType
+      ..positionalFieldTypes.addAll([
+        for (final field in record.positionalFields) fromDartType(field.type),
+      ])
+      ..namedFieldTypes.addAll({
+        for (final field in record.namedFields)
+          field.name: fromDartType(field.type),
+      }),
+  );
 }

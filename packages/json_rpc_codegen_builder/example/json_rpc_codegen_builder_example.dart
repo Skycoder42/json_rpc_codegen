@@ -4,11 +4,7 @@ import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 
 part 'json_rpc_codegen_builder_example.g.dart';
 
-enum Permission {
-  read,
-  write,
-  administrate,
-}
+enum Permission { read, write, administrate }
 
 enum Stage { all, pre, post }
 
@@ -25,18 +21,10 @@ class User {
 @jsonRpc
 // ignore: unused_element
 abstract class _SampleApi {
-  void hello(
-    String name, [
-    int times = 5,
-    double? interval,
-    int delay = 100,
-  ]);
+  void hello(String name, [int times = 5, double? interval, int delay = 100]);
 
   @clientDefaults
-  void notify({
-    required int id,
-    List<double> measures = const [1, 2],
-  });
+  void notify({required int id, List<double> measures = const [1, 2]});
 
   String echo(String message);
 

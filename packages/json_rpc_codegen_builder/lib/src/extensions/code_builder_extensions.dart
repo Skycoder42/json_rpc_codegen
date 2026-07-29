@@ -10,20 +10,11 @@ extension ExpressionX on Expression {
   Expression autoProperty(String name, bool isNullable) =>
       isNullable ? nullSafeProperty(name) : property(name);
 
-  Expression get postfixIncrement => CodeExpression(
-        Block.of([
-          code,
-          const Code('++'),
-        ]),
-      );
+  Expression get postfixIncrement =>
+      CodeExpression(Block.of([code, const Code('++')]));
 
-  Expression $case(Expression pattern) => CodeExpression(
-        Block.of([
-          code,
-          const Code(' case '),
-          pattern.code,
-        ]),
-      );
+  Expression $case(Expression pattern) =>
+      CodeExpression(Block.of([code, const Code(' case '), pattern.code]));
 }
 
 /// @nodoc
@@ -31,17 +22,17 @@ extension ExpressionX on Expression {
 extension TypeReferenceX on TypeReference {
   /// @nodoc
   TypeReference asNullable(bool isNullable) => TypeReference(
-        (b) => b
-          ..replace(this)
-          ..isNullable = isNullable,
-      );
+    (b) => b
+      ..replace(this)
+      ..isNullable = isNullable,
+  );
 
   /// @nodoc
   TypeReference boundTo(TypeReference type) => TypeReference(
-        (b) => b
-          ..replace(this)
-          ..bound = type,
-      );
+    (b) => b
+      ..replace(this)
+      ..bound = type,
+  );
 }
 
 /// @nodoc
@@ -49,6 +40,6 @@ extension TypeReferenceX on TypeReference {
 extension SpecIterableX on Iterable<Spec> {
   /// @nodoc
   void acceptAll<R>(SpecVisitor<R> visitor, [R? context]) => forEach((element) {
-        element.accept<R>(visitor, context);
-      });
+    element.accept<R>(visitor, context);
+  });
 }
