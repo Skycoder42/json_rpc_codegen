@@ -25,5 +25,11 @@ class JsonRpc {
 /// Build annotation for JSON-RPC enabled interfaces
 const jsonRpc = JsonRpc();
 
+/// Build annotation for JSON-RPC enabled interfaces to generate the client only
+const jsonRpcClient = JsonRpc(server: false);
+
+/// Build annotation for JSON-RPC enabled interfaces to generate the server only
+const jsonRpcServer = JsonRpc(client: false);
+
 /// Build annotation for JSON-RPC enabled interfaces (mixins only)
 const jsonRpcMixins = JsonRpc(mixinsOnly: true);

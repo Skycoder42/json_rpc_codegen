@@ -1,16 +1,24 @@
-// ignore_for_file: invalid_use_of_protected_member for testing
-// ignore_for_file: unnecessary_lambdas for testing
-
 import 'dart:async';
 
-import 'package:dart_test_tools/test.dart';
+import 'package:dart_test_tools/test.dart' hide MockCallable0, MockCallable1;
 import 'package:json_rpc_2/error_code.dart' as error_code;
 import 'package:json_rpc_codegen/json_rpc_codegen.dart';
-import 'package:mocktail/mocktail.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
+import '../helpers.dart';
 import 'models/common.dart';
 import 'models/stream.dart';
+
+@GenerateNiceMocks([
+  // ignore: strict_raw_type for mocking
+  MockSpec<Callable0>(),
+  // ignore: strict_raw_type for mocking
+  MockSpec<Callable1>(),
+  MockSpec<StreamServer>(),
+])
+import 'stream_test.mocks.dart';
 
 abstract interface class Callable0<TReturn> {
   TReturn call();
@@ -20,15 +28,8 @@ abstract interface class Callable1<TReturn, TArg1> {
   TReturn call(TArg1 arg1);
 }
 
-class MockCallable0<TReturn> extends Mock implements Callable0<TReturn> {}
-
-class MockCallable1<TReturn, TArg1> extends Mock
-    implements Callable1<TReturn, TArg1> {}
-
-class MockStreamTestsServer extends Mock implements StreamServer {}
-
 class TestStreamServer extends StreamServer {
-  final mock = MockStreamTestsServer();
+  final mock = MockStreamServer();
 
   TestStreamServer(super.channel) : super();
 
@@ -57,15 +58,12 @@ class TestStreamServer extends StreamServer {
 }
 
 void main() {
-  setUpAll(() {
-    registerFallbackValue(const User('', ''));
-    registerFallbackValue(Permission.readOnly);
-    registerFallbackValue(const Color(0, 0, 0));
-    registerFallbackValue(StackTrace.empty);
-  });
-
   late TestStreamServer sutServer;
   late StreamClient sutClient;
+
+  setUpAll(() {
+    provideDummyBuilder<Future<void>>((_, _) => .value());
+  });
 
   setUp(() {
     final upstreamController = StreamController<String>.broadcast();
@@ -98,7 +96,7 @@ void main() {
     test('forwards a simple, single event', () async {
       const testValue = (User('a', 'b'), Permission.writeOnly);
       when(
-        () => sutServer.mock.named(any(), any(), any(), any(), any(), any()),
+        sutServer.mock.named(any, any, any, any, any, any),
       ).thenStream(Stream.value(testValue));
 
       await expectLater(
@@ -111,7 +109,7 @@ void main() {
       );
 
       verify(
-        () => sutServer.mock.named(
+        sutServer.mock.named(
           'variant',
           testValue.$1,
           const [5, 75],
@@ -136,7 +134,7 @@ void main() {
         reset(mockOnPause);
         reset(mockOnResume);
 
-        when(() => mockOnCancel.call()).thenReturnAsync(null);
+        when(mockOnCancel.call()).thenReturnAsync(null);
 
         serverController = StreamController<int>(
           onListen: mockOnListen.call,
@@ -146,7 +144,7 @@ void main() {
         );
         addTearDown(serverController.close);
 
-        when(() => sutServer.mock.simple()).thenStream(serverController.stream);
+        when(sutServer.mock.simple()).thenStream(serverController.stream);
       });
 
       void verifyAllClean([Iterable<Mock> mocks = const []]) {
@@ -163,7 +161,7 @@ void main() {
 
         await pumpEventQueue();
 
-        verify(() => mockOnListen.call()).called(1);
+        verify(mockOnListen.call()).called(1);
         verifyAllClean();
       });
 
@@ -242,7 +240,7 @@ void main() {
         serverController.add(1);
         await pumpEventQueue();
 
-        verifyInOrder([() => mockOnListen.call(), () => mockOnData.call(1)]);
+        verifyInOrder([mockOnListen.call(), mockOnData.call(1)]);
         verifyAllClean([mockOnData]);
 
         sub.pause();
@@ -250,7 +248,7 @@ void main() {
         serverController.add(2);
         await pumpEventQueue();
 
-        verifyInOrder([() => mockOnPause.call()]);
+        verifyInOrder([mockOnPause.call()]);
         verifyAllClean([mockOnData]);
 
         sub.resume();
@@ -259,9 +257,9 @@ void main() {
         await pumpEventQueue();
 
         verifyInOrder([
-          () => mockOnResume.call(),
-          () => mockOnData.call(2),
-          () => mockOnData.call(3),
+          mockOnResume.call(),
+          mockOnData.call(2),
+          mockOnData.call(3),
         ]);
         verifyAllClean([mockOnData]);
 
@@ -269,7 +267,7 @@ void main() {
         serverController.add(4);
         await pumpEventQueue();
 
-        verifyInOrder([() => mockOnCancel.call()]);
+        verifyInOrder([mockOnCancel.call()]);
         verifyAllClean([mockOnData]);
       });
     });

@@ -18,6 +18,8 @@ triggers:
   json_rpc_codegen_builder:json_rpc_codegen_builder:
     - annotation JsonRpc
     - annotation jsonRpc
+    - annotation jsonRpcClient
+    - annotation jsonRpcServer
     - annotation jsonRpcMixins
 
 targets:
