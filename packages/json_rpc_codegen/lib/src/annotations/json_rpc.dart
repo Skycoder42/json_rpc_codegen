@@ -3,7 +3,7 @@
 import 'package:meta/meta_meta.dart';
 
 /// Build annotation for JSON-RPC enabled interfaces
-@Target({TargetKind.classType})
+@Target({.classType})
 class JsonRpc {
   /// Build the code for an JSON-RPC client
   final bool client;

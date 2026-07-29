@@ -1,5 +1,5 @@
 import 'package:json_rpc_2/error_code.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports used by the code generator
 import 'package:json_rpc_2/src/utils.dart' show getErrorMessage;
 
 export 'dart:async'

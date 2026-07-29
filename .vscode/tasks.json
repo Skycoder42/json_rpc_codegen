@@ -4,11 +4,11 @@
 		{
 			"type": "dart",
 			"command": "dart",
-			"cwd": "packages/json_rpc_codegen_builder",
 			"args": [
 				"run",
 				"build_runner",
-				"watch"
+				"watch",
+				"--workspace",
 			],
 			"problemMatcher": [
 				"$dart-build_runner"
@@ -18,7 +18,6 @@
 				"isDefault": true
 			},
 			"label": "dart: dart run build_runner watch",
-			"detail": "packages/json_rpc_codegen_builder",
 			"runOptions": {
 				"runOn": "folderOpen"
 			}

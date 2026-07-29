@@ -1,15 +1,14 @@
-// ignore_for_file: unnecessary_lambdas
-
-import 'package:dart_test_tools/test.dart';
 import 'package:json_rpc_2/error_code.dart';
 import 'package:json_rpc_2/json_rpc_2.dart';
 import 'package:json_rpc_codegen/src/base/server_base.dart';
-import 'package:mocktail/mocktail.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
-class MockServer extends Mock implements Server {}
+import '../helpers.dart';
 
-class MockParameters extends Mock implements Parameters {}
+@GenerateNiceMocks([MockSpec<Server>(), MockSpec<Parameters>()])
+import 'server_base_test.mocks.dart';
 
 class _TestServerBase extends ServerBase {
   _TestServerBase(super.jsonRpcInstance) : super.fromServer();
@@ -32,8 +31,8 @@ void main() {
     });
 
     test('constructor calls registerMethods', () {
-      // ignore: invalid_use_of_visible_for_overriding_member
-      verify(() => mockServer.registerFallback(sut.onUnknownMethod));
+      // ignore: invalid_use_of_visible_for_overriding_member for testing
+      verify(mockServer.registerFallback(sut.onUnknownMethod));
     });
 
     group('methods', () {
@@ -44,58 +43,58 @@ void main() {
       test('onUnhandledError wraps server.onUnhandledError', () async {
         void errorHandler(dynamic e, dynamic s) {}
 
-        when(() => mockServer.onUnhandledError).thenReturn(errorHandler);
+        when(mockServer.onUnhandledError).thenReturn(errorHandler);
 
         expect(sut.onUnhandledError, errorHandler);
 
-        verify(() => mockServer.onUnhandledError);
+        verify(mockServer.onUnhandledError);
       });
 
       test('strictProtocolChecks wraps server.strictProtocolChecks', () {
-        when(() => mockServer.strictProtocolChecks).thenReturn(true);
+        when(mockServer.strictProtocolChecks).thenReturn(true);
 
         expect(sut.strictProtocolChecks, isTrue);
 
-        verify(() => mockServer.strictProtocolChecks);
+        verify(mockServer.strictProtocolChecks);
       });
 
       test('done wraps server.done', () async {
-        when(() => mockServer.done).thenReturnAsync(null);
+        when(mockServer.done).thenReturnAsync(null);
 
         await expectLater(sut.done, completes);
 
-        verify(() => mockServer.done);
+        verify(mockServer.done);
       });
 
       test('isClosed wraps server.isClosed', () {
-        when(() => mockServer.isClosed).thenReturn(true);
+        when(mockServer.isClosed).thenReturn(true);
 
         expect(sut.isClosed, isTrue);
 
-        verify(() => mockServer.isClosed);
+        verify(mockServer.isClosed);
       });
 
       test('listen wraps server.listen', () async {
-        when(() => mockServer.listen()).thenReturnAsync(null);
+        when(mockServer.listen()).thenReturnAsync(null);
 
         await expectLater(sut.listen(), completes);
 
-        verify(() => mockServer.listen());
+        verify(mockServer.listen());
       });
 
       test('close wraps server.close', () async {
-        when(() => mockServer.close()).thenReturnAsync(null);
+        when(mockServer.close()).thenReturnAsync(null);
 
         await expectLater(sut.close(), completes);
 
-        verify(() => mockServer.close());
+        verify(mockServer.close());
       });
 
       test('onUnknownMethod throws by default', () {
         const testMethodName = 'test-method';
         final mockParameters = MockParameters();
 
-        when(() => mockParameters.method).thenReturn(testMethodName);
+        when(mockParameters.method).thenReturn(testMethodName);
 
         expect(
           // ignore: invalid_use_of_visible_for_overriding_member
@@ -113,7 +112,7 @@ void main() {
         sut.registerMethods();
 
         // ignore: invalid_use_of_visible_for_overriding_member
-        verify(() => mockServer.registerFallback(sut.onUnknownMethod));
+        verify(mockServer.registerFallback(sut.onUnknownMethod));
       });
     });
   });

@@ -25,7 +25,7 @@ abstract class ServerBase {
 
   /// See [Server.withoutJson].
   ServerBase.withoutJson(
-    StreamChannel channel, {
+    StreamChannel<dynamic> channel, {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
   }) : jsonRpcInstance = Server.withoutJson(

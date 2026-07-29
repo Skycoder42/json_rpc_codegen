@@ -27,3 +27,7 @@ doc/api/
 .flutter-plugins-dependencies
 
 custom_lint.log
+
+# Generated files
+*.g.dart
+*.mocks.dart

@@ -19,23 +19,27 @@ abstract class PeerBase implements ClientBase, ServerBase {
     StreamChannel<String> channel, {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
+    Object Function()? idGenerator,
   }) : jsonRpcInstance = Peer(
          channel,
          onUnhandledError: onUnhandledError,
          strictProtocolChecks: strictProtocolChecks,
+         idGenerator: idGenerator,
        ) {
     registerMethods();
   }
 
   /// See [Peer.withoutJson].
   PeerBase.withoutJson(
-    StreamChannel channel, {
+    StreamChannel<dynamic> channel, {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
+    Object Function()? idGenerator,
   }) : jsonRpcInstance = Peer.withoutJson(
          channel,
          onUnhandledError: onUnhandledError,
          strictProtocolChecks: strictProtocolChecks,
+         idGenerator: idGenerator,
        ) {
     registerMethods();
   }

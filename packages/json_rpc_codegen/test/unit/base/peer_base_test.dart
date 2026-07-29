@@ -1,15 +1,14 @@
-// ignore_for_file: unnecessary_lambdas
-
-import 'package:dart_test_tools/test.dart';
 import 'package:json_rpc_2/error_code.dart';
 import 'package:json_rpc_2/json_rpc_2.dart';
 import 'package:json_rpc_codegen/src/base/peer_base.dart';
-import 'package:mocktail/mocktail.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
-class MockPeer extends Mock implements Peer {}
+import '../helpers.dart';
 
-class MockParameters extends Mock implements Parameters {}
+@GenerateNiceMocks([MockSpec<Peer>(), MockSpec<Parameters>()])
+import 'peer_base_test.mocks.dart';
 
 class _TestPeerBase extends PeerBase {
   _TestPeerBase(super.jsonRpcInstance) : super.fromPeer();
@@ -32,8 +31,8 @@ void main() {
     });
 
     test('constructor calls registerMethods', () {
-      // ignore: invalid_use_of_visible_for_overriding_member
-      verify(() => mockPeer.registerFallback(sut.onUnknownMethod));
+      // ignore: invalid_use_of_visible_for_overriding_member for testing
+      verify(mockPeer.registerFallback(sut.onUnknownMethod));
     });
 
     group('methods', () {
@@ -44,51 +43,51 @@ void main() {
       test('onUnhandledError wraps peer.onUnhandledError', () async {
         void errorHandler(dynamic e, dynamic s) {}
 
-        when(() => mockPeer.onUnhandledError).thenReturn(errorHandler);
+        when(mockPeer.onUnhandledError).thenReturn(errorHandler);
 
         expect(sut.onUnhandledError, errorHandler);
 
-        verify(() => mockPeer.onUnhandledError);
+        verify(mockPeer.onUnhandledError);
       });
 
       test('strictProtocolChecks wraps peer.strictProtocolChecks', () {
-        when(() => mockPeer.strictProtocolChecks).thenReturn(true);
+        when(mockPeer.strictProtocolChecks).thenReturn(true);
 
         expect(sut.strictProtocolChecks, isTrue);
 
-        verify(() => mockPeer.strictProtocolChecks);
+        verify(mockPeer.strictProtocolChecks);
       });
 
       test('done wraps peer.done', () async {
-        when(() => mockPeer.done).thenReturnAsync(null);
+        when(mockPeer.done).thenReturnAsync(null);
 
         await expectLater(sut.done, completes);
 
-        verify(() => mockPeer.done);
+        verify(mockPeer.done);
       });
 
       test('isClosed wraps peer.isClosed', () {
-        when(() => mockPeer.isClosed).thenReturn(true);
+        when(mockPeer.isClosed).thenReturn(true);
 
         expect(sut.isClosed, isTrue);
 
-        verify(() => mockPeer.isClosed);
+        verify(mockPeer.isClosed);
       });
 
       test('listen wraps peer.listen', () async {
-        when(() => mockPeer.listen()).thenReturnAsync(null);
+        when(mockPeer.listen()).thenReturnAsync(null);
 
         await expectLater(sut.listen(), completes);
 
-        verify(() => mockPeer.listen());
+        verify(mockPeer.listen());
       });
 
       test('close wraps peer.close', () async {
-        when(() => mockPeer.close()).thenReturnAsync(null);
+        when(mockPeer.close()).thenReturnAsync(null);
 
         await expectLater(sut.close(), completes);
 
-        verify(() => mockPeer.close());
+        verify(mockPeer.close());
       });
 
       test('withBatch wraps client.withBatch', () async {
@@ -96,14 +95,14 @@ void main() {
 
         sut.withBatch(callback);
 
-        verify(() => mockPeer.withBatch(callback));
+        verify(mockPeer.withBatch(callback));
       });
 
       test('onUnknownMethod throws by default', () {
         const testMethodName = 'test-method';
         final mockParameters = MockParameters();
 
-        when(() => mockParameters.method).thenReturn(testMethodName);
+        when(mockParameters.method).thenReturn(testMethodName);
 
         expect(
           // ignore: invalid_use_of_visible_for_overriding_member
@@ -121,7 +120,7 @@ void main() {
         sut.registerMethods();
 
         // ignore: invalid_use_of_visible_for_overriding_member
-        verify(() => mockPeer.registerFallback(sut.onUnknownMethod));
+        verify(mockPeer.registerFallback(sut.onUnknownMethod));
       });
     });
   });
