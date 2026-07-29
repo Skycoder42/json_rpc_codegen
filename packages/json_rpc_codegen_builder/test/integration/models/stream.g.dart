@@ -9,14 +9,16 @@ part of 'stream.dart';
 // ignore_for_file: avoid_futureor_void, avoid_positional_boolean_parameters
 // ignore_for_file: cascade_invocations, cast_nullable_to_non_nullable
 // ignore_for_file: document_ignores, lines_longer_than_80_chars
+// ignore_for_file: no_literal_bool_comparisons
 // ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
 // ignore_for_file: unreachable_from_main, unused_element
 
-mixin StreamClientMixin on PeerBase {
+mixin StreamClientMixin on PeerBase implements _Stream {
   var _$streamIdCounter = 0;
 
   final _$streamControllers = <int, StreamController<dynamic>>{};
 
+  @override
   Stream<int> simple() {
     final $streamId = _$streamIdCounter++;
     return (_$streamControllers[$streamId] = StreamController<int>(
@@ -53,33 +55,15 @@ mixin StreamClientMixin on PeerBase {
     )).stream;
   }
 
+  @override
   Stream<String> positional(
     String variant,
     User user, [
-    List<int>? levels,
-    Permission? permission,
+    List<int> levels = const [5, 75],
+    Permission permission = Permission.readOnly,
     Uri? reference,
-    Color? color,
+    Color color = const Color(255, 255, 255),
   ]) {
-    if (levels == null &&
-        (permission != null || reference != null || color != null)) {
-      throw ArgumentError(
-        'Cannot set optional value to null if any of the following parameters (color, reference, permission) are not null.',
-        'levels',
-      );
-    }
-    if (permission == null && (reference != null || color != null)) {
-      throw ArgumentError(
-        'Cannot set optional value to null if any of the following parameters (color, reference) are not null.',
-        'permission',
-      );
-    }
-    if (reference == null && (color != null)) {
-      throw ArgumentError(
-        'Cannot set optional value to null if any of the following parameters (color) are not null.',
-        'reference',
-      );
-    }
     final $streamId = _$streamIdCounter++;
     return (_$streamControllers[$streamId] = StreamController<String>(
       onListen: () async {
@@ -88,10 +72,18 @@ mixin StreamClientMixin on PeerBase {
             $streamId,
             variant,
             user,
-            ?levels,
-            ?permission?.name,
-            ?reference?.toString(),
-            ?color,
+            if (levels != const [5, 75] ||
+                permission != Permission.readOnly ||
+                reference != null ||
+                color != const Color(255, 255, 255))
+              levels,
+            if (permission != Permission.readOnly ||
+                reference != null ||
+                color != const Color(255, 255, 255))
+              permission.name,
+            if (reference != null || color != const Color(255, 255, 255))
+              reference?.toString(),
+            if (color != const Color(255, 255, 255)) color,
           ]);
         } catch ($error, $stackTrace) {
           final $controller = _$streamControllers.remove($streamId);
@@ -121,29 +113,33 @@ mixin StreamClientMixin on PeerBase {
     )).stream;
   }
 
+  @override
   Stream<(User, Permission)> named({
     required String variant,
     required User user,
-    List<int>? levels,
-    Permission? permission,
+    List<int> levels = const [5, 75],
+    Permission permission = Permission.readOnly,
     Uri? reference,
-    Color? color,
+    Color color = const Color(255, 255, 255),
   }) {
     final $streamId = _$streamIdCounter++;
     return (_$streamControllers[$streamId] =
             StreamController<(User, Permission)>(
               onListen: () async {
                 try {
-                  await jsonRpcInstance
-                      .sendRequest('named#listen', <String, dynamic>{
-                        r'$streamId': $streamId,
-                        'variant': variant,
-                        'user': user,
-                        'levels': ?levels,
-                        'permission': ?permission?.name,
-                        'reference': ?reference?.toString(),
-                        'color': ?color,
-                      });
+                  await jsonRpcInstance.sendRequest(
+                    'named#listen',
+                    <String, dynamic>{
+                      r'$streamId': $streamId,
+                      'variant': variant,
+                      'user': user,
+                      if (levels != const [5, 75]) 'levels': levels,
+                      if (permission != Permission.readOnly)
+                        'permission': permission.name,
+                      'reference': ?reference?.toString(),
+                      if (color != const Color(255, 255, 255)) 'color': color,
+                    },
+                  );
                 } catch ($error, $stackTrace) {
                   final $controller = _$streamControllers.remove($streamId);
                   if ($controller != null) {

@@ -9,46 +9,42 @@ part of 'parameter_tests.dart';
 // ignore_for_file: avoid_futureor_void, avoid_positional_boolean_parameters
 // ignore_for_file: cascade_invocations, cast_nullable_to_non_nullable
 // ignore_for_file: document_ignores, lines_longer_than_80_chars
+// ignore_for_file: no_literal_bool_comparisons
 // ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
 // ignore_for_file: unreachable_from_main, unused_element
 
-mixin ParameterTestsClientMixin on ClientBase {
-  void simplePositionalServer(bool a, num? b, [int? c, double? d, String? e]) {
-    if (c == null && (d != null || e != null)) {
-      throw ArgumentError(
-        'Cannot set optional value to null if any of the following parameters (e, d) are not null.',
-        'c',
-      );
-    }
-    if (d == null && (e != null)) {
-      throw ArgumentError(
-        'Cannot set optional value to null if any of the following parameters (e) are not null.',
-        'd',
-      );
-    }
-    jsonRpcInstance.sendNotification('simplePositionalServer', <dynamic>[
-      a,
-      b,
-      ?c,
-      ?d,
-      ?e,
-    ]);
-  }
+mixin ParameterTestsClientMixin on ClientBase implements _ParameterTests {
+  @override
+  void simplePositionalServer(
+    bool a,
+    num? b, [
+    int c = 42,
+    double? d,
+    String e = 'default',
+  ]) => jsonRpcInstance.sendNotification('simplePositionalServer', <dynamic>[
+    a,
+    b,
+    if (c != 42 || d != null || e != 'default') c,
+    if (d != null || e != 'default') d,
+    if (e != 'default') e,
+  ]);
 
+  @override
   void simpleNamedServer({
     required bool a,
     required num? b,
-    int? c,
+    int c = 42,
     double? d,
-    String? e,
+    String e = 'default',
   }) => jsonRpcInstance.sendNotification('simpleNamedServer', <String, dynamic>{
     'a': a,
     'b': b,
-    'c': ?c,
+    if (c != 42) 'c': c,
     'd': ?d,
-    'e': ?e,
+    if (e != 'default') 'e': e,
   });
 
+  @override
   void simplePositionalClient(
     bool a,
     num? b, [
@@ -63,6 +59,7 @@ mixin ParameterTestsClientMixin on ClientBase {
     e,
   ]);
 
+  @override
   void simpleNamedClient({
     required bool a,
     required num? b,
@@ -77,6 +74,7 @@ mixin ParameterTestsClientMixin on ClientBase {
     'e': e,
   });
 
+  @override
   void containers(
     Iterable<String> names,
     List<int> bytes,
@@ -89,34 +87,31 @@ mixin ParameterTestsClientMixin on ClientBase {
     deep.map(($k, $v) => MapEntry($k, $v.toList(growable: false))),
   ]);
 
-  void custom(User user, [Color? color, Permission? permission]) {
-    if (color == null && (permission != null)) {
-      throw ArgumentError(
-        'Cannot set optional value to null if any of the following parameters (permission) are not null.',
-        'color',
-      );
-    }
-    jsonRpcInstance.sendNotification('custom', <dynamic>[
-      user,
-      ?color,
-      ?permission?.name,
-    ]);
-  }
+  @override
+  void custom(
+    User user, [
+    Color color = const Color(255, 255, 255),
+    Permission permission = Permission.readOnly,
+  ]) => jsonRpcInstance.sendNotification('custom', <dynamic>[
+    user,
+    if (color != const Color(255, 255, 255) ||
+        permission != Permission.readOnly)
+      color,
+    if (permission != Permission.readOnly) permission.name,
+  ]);
 
-  void dotShorthandsServer(User user, [Color? color, Permission? permission]) {
-    if (color == null && (permission != null)) {
-      throw ArgumentError(
-        'Cannot set optional value to null if any of the following parameters (permission) are not null.',
-        'color',
-      );
-    }
-    jsonRpcInstance.sendNotification('dotShorthandsServer', <dynamic>[
-      user,
-      ?color,
-      ?permission?.name,
-    ]);
-  }
+  @override
+  void dotShorthandsServer(
+    User user, [
+    Color color = const .new(255, 255, 255),
+    Permission permission = .readOnly,
+  ]) => jsonRpcInstance.sendNotification('dotShorthandsServer', <dynamic>[
+    user,
+    if (color != const .new(255, 255, 255) || permission != .readOnly) color,
+    if (permission != .readOnly) permission.name,
+  ]);
 
+  @override
   void dotShorthandsClient(
     User user, [
     Color color = const .new(255, 255, 255),
@@ -127,16 +122,25 @@ mixin ParameterTestsClientMixin on ClientBase {
     permission.name,
   ]);
 
+  @override
   void customContainers({
     required Iterable<User> users,
-    Map<Color, List<Permission>>? colorPermissions,
+    Map<Color, List<Permission>> colorPermissions = const {
+      Color(0, 0, 0): [Permission.readWrite],
+    },
   }) => jsonRpcInstance.sendNotification('customContainers', <String, dynamic>{
     'users': users.toList(growable: false),
-    'colorPermissions': ?colorPermissions?.map(
-      ($k, $v) => MapEntry($k, $v.map(($e) => $e.name).toList(growable: false)),
-    ),
+    if (colorPermissions !=
+        const {
+          Color(0, 0, 0): [Permission.readWrite],
+        })
+      'colorPermissions': colorPermissions.map(
+        ($k, $v) =>
+            MapEntry($k, $v.map(($e) => $e.name).toList(growable: false)),
+      ),
   });
 
+  @override
   void records(
     () empty,
     ((int, int), String, Color?, User, List<Permission>?) positional,

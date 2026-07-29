@@ -3,7 +3,7 @@ import 'package:code_builder/code_builder.dart';
 import 'package:dart_test_tools/code_gen.dart';
 import 'package:meta/meta.dart';
 
-import '../../builders/if.dart';
+import '../../builders/iterable_if.dart';
 import '../../extensions/code_builder_extensions.dart';
 import '../../readers/defaults_reader.dart';
 import '../common/method_mapper_mixin.dart';
@@ -22,8 +22,6 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
     final isServerDefault = DefaultsReader.isServerDefault(method);
     final parameterMode = validateParameters(method);
 
-    final validations = <Code>[];
-
     final invocation = target.call([
       literalString('${method.name}$invocationSuffix'),
       if (parameterMode.hasPositional)
@@ -31,7 +29,6 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
           method.formalParameters,
           isServerDefault,
           extraArgs.values,
-          validations,
         )
       else if (parameterMode.hasNamed)
         _buildNamedParameters(
@@ -43,16 +40,10 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
         literalList(extraArgs.values, CoreTypes.$dynamic),
     ]);
 
-    if (validations.isEmpty && buildReturn == null) {
+    if (buildReturn == null) {
       return invocation.code;
     } else {
-      return Block.of([
-        ...validations.reversed,
-        if (buildReturn == null)
-          isAsync ? invocation.awaited.statement : invocation.statement
-        else
-          ...buildReturn(invocation),
-      ]);
+      return Block.of(buildReturn(invocation));
     }
   }
 
@@ -60,7 +51,6 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
     List<FormalParameterElement> params,
     bool isServerDefault,
     Iterable<Reference> extraArgs,
-    List<Code> validations,
   ) {
     if (!isServerDefault) {
       return literalList([
@@ -73,46 +63,34 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
 
     final paramExpressions = <Expression>[];
     Expression? validateRest;
-    final restNames = <String>[];
     for (final (index, param) in params.indexed.toList().reversed) {
+      final paramRef = refer(param.name!);
       if (index <= lastRequiredIndex) {
-        paramExpressions.add(toJson(param.type, refer(param.name!)));
+        paramExpressions.add(toJson(param.type, paramRef));
         continue;
       }
 
       if (validateRest == null) {
-        validateRest = refer(param.name!).notEqualTo(literalNull);
-        restNames.add(param.name!);
+        if (param.hasDefaultValue) {
+          validateRest = paramRef.notEqualTo(
+            CodeExpression(Code(param.defaultValueCode!)),
+          );
+          paramExpressions.add(
+            IterableIf(validateRest, toJson(param.type, paramRef)),
+          );
+        } else {
+          paramExpressions.add(toJson(param.type, paramRef).collectionNonNull);
+          validateRest = paramRef.notEqualTo(literalNull);
+        }
       } else {
-        validations.add(
-          $if(
-            refer(
-              param.name!,
-            ).equalTo(literalNull).and(validateRest.parenthesized),
-            [
-              CoreTypes.$ArgumentError
-                  .newInstance([
-                    literalString(
-                      'Cannot set optional value to null if any of the '
-                      'following parameters (${restNames.join(', ')}) are not '
-                      'null.',
-                    ),
-                    literalString(param.name!),
-                  ])
-                  .thrown
-                  .statement,
-            ],
-          ),
+        final defaultValue = param.hasDefaultValue
+            ? CodeExpression(Code(param.defaultValueCode!))
+            : literalNull;
+        validateRest = paramRef.notEqualTo(defaultValue).or(validateRest);
+        paramExpressions.add(
+          IterableIf(validateRest, toJson(param.type, paramRef)),
         );
-        validateRest = refer(
-          param.name!,
-        ).notEqualTo(literalNull).or(validateRest);
-        restNames.add(param.name!);
       }
-
-      paramExpressions.add(
-        toJson(param.type, refer(param.name!), isNull: true).collectionNonNull,
-      );
     }
 
     return literalList([
@@ -131,11 +109,21 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
         literalString(key, raw: true): value,
       for (final p in params)
         if (p.isOptional && isServerDefault)
-          literalString(p.name!): toJson(
-            p.type,
-            refer(p.name!),
-            isNull: true,
-          ).collectionNonNull
+          if (p.hasDefaultValue)
+            IterableIf(
+              refer(
+                p.name!,
+              ).notEqualTo(CodeExpression(Code(p.defaultValueCode!))),
+              literalString(p.name!),
+            ): toJson(
+              p.type,
+              refer(p.name!),
+            )
+          else
+            literalString(p.name!): toJson(
+              p.type,
+              refer(p.name!),
+            ).collectionNonNull
         else
           literalString(p.name!): toJson(p.type, refer(p.name!)),
     },

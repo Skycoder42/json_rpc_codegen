@@ -19,7 +19,6 @@ class User {
 }
 
 @jsonRpc
-// ignore: unused_element for code generation
 abstract class _SampleApi {
   void hello(String name, [int times = 5, double? interval, int delay = 100]);
 

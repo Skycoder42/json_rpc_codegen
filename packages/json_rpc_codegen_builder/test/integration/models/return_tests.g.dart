@@ -9,65 +9,78 @@ part of 'return_tests.dart';
 // ignore_for_file: avoid_futureor_void, avoid_positional_boolean_parameters
 // ignore_for_file: cascade_invocations, cast_nullable_to_non_nullable
 // ignore_for_file: document_ignores, lines_longer_than_80_chars
+// ignore_for_file: no_literal_bool_comparisons
 // ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
 // ignore_for_file: unreachable_from_main, unused_element
 
-mixin ReturnTestsClientMixin on ClientBase {
+mixin ReturnTestsClientMixin on ClientBase implements _ReturnTests {
+  @override
   Future<bool> boolRet() async {
     final $result = await jsonRpcInstance.sendRequest('boolRet');
     return ($result as bool);
   }
 
+  @override
   Future<num?> numRet() async {
     final $result = await jsonRpcInstance.sendRequest('numRet');
     return ($result as num?);
   }
 
+  @override
   Future<int> intRet() async {
     final $result = await jsonRpcInstance.sendRequest('intRet');
     return ($result as int);
   }
 
+  @override
   Future<double?> doubleRet() async {
     final $result = await jsonRpcInstance.sendRequest('doubleRet');
     return ($result as double?);
   }
 
+  @override
   Future<String> stringRet() async {
     final $result = await jsonRpcInstance.sendRequest('stringRet');
     return ($result as String);
   }
 
+  @override
   Future<DateTime> dateTimeRet() async {
     final $result = await jsonRpcInstance.sendRequest('dateTimeRet');
     return DateTime.parse(($result as String));
   }
 
+  @override
   Future<Uri> uriRet() async {
     final $result = await jsonRpcInstance.sendRequest('uriRet');
     return Uri.parse(($result as String));
   }
 
+  @override
   Future<dynamic> dynamicRet() async {
     final $result = await jsonRpcInstance.sendRequest('dynamicRet');
     return $result;
   }
 
+  @override
   Future<List<int>> listRet() async {
     final $result = await jsonRpcInstance.sendRequest('listRet');
     return ($result as List).map((dynamic $e) => ($e as int)).toList();
   }
 
+  @override
   Future<Iterable<bool>> iterableRet() async {
     final $result = await jsonRpcInstance.sendRequest('iterableRet');
     return ($result as List).map((dynamic $e) => ($e as bool));
   }
 
+  @override
   Future<Set<String>> setRet() async {
     final $result = await jsonRpcInstance.sendRequest('setRet');
     return ($result as List).map((dynamic $e) => ($e as String)).toSet();
   }
 
+  @override
   Future<Map<String, double>> mapRet() async {
     final $result = await jsonRpcInstance.sendRequest('mapRet');
     return ($result as Map).map(
@@ -75,6 +88,7 @@ mixin ReturnTestsClientMixin on ClientBase {
     );
   }
 
+  @override
   Future<Map<List<String>, Iterable<Map<dynamic, List<num>>>>> deepRet() async {
     final $result = await jsonRpcInstance.sendRequest('deepRet');
     return ($result as Map).map(
@@ -92,21 +106,25 @@ mixin ReturnTestsClientMixin on ClientBase {
     );
   }
 
+  @override
   Future<User> userRet() async {
     final $result = await jsonRpcInstance.sendRequest('userRet');
     return User.fromJson(($result as Map<String, dynamic>));
   }
 
+  @override
   Future<Color> colorRet() async {
     final $result = await jsonRpcInstance.sendRequest('colorRet');
     return Color.fromJson(($result as String));
   }
 
+  @override
   Future<Permission> permissionRet() async {
     final $result = await jsonRpcInstance.sendRequest('permissionRet');
     return Permission.values.byName(($result as String));
   }
 
+  @override
   Future<Iterable<User>> usersRet() async {
     final $result = await jsonRpcInstance.sendRequest('usersRet');
     return ($result as List).map(
@@ -114,6 +132,7 @@ mixin ReturnTestsClientMixin on ClientBase {
     );
   }
 
+  @override
   Future<Map<Color, List<Permission>>> colorPermissionsRet() async {
     final $result = await jsonRpcInstance.sendRequest('colorPermissionsRet');
     return ($result as Map).map(
@@ -126,6 +145,7 @@ mixin ReturnTestsClientMixin on ClientBase {
     );
   }
 
+  @override
   Future<(int?, Permission, Iterable<User?>, ({int x, int y}))>
   posRecordRet() async {
     final $result = await jsonRpcInstance.sendRequest('posRecordRet');
@@ -148,6 +168,7 @@ mixin ReturnTestsClientMixin on ClientBase {
     );
   }
 
+  @override
   Future<({Color c, Map<String, String?>? d, (int, int) p, double r})>
   namedRecordRet() async {
     final $result = await jsonRpcInstance.sendRequest('namedRecordRet');

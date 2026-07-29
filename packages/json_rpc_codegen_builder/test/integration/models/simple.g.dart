@@ -9,21 +9,28 @@ part of 'simple.dart';
 // ignore_for_file: avoid_futureor_void, avoid_positional_boolean_parameters
 // ignore_for_file: cascade_invocations, cast_nullable_to_non_nullable
 // ignore_for_file: document_ignores, lines_longer_than_80_chars
+// ignore_for_file: no_literal_bool_comparisons
 // ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
 // ignore_for_file: unreachable_from_main, unused_element
 
-mixin SimpleClientMixin on ClientBase {
+mixin SimpleClientMixin on ClientBase implements _Simple {
+  @override
   void notify(String message, [int level = 10]) =>
       jsonRpcInstance.sendNotification('notify', <dynamic>[message, level]);
 
+  @override
   Future<double> request({
     required int id,
     Category? category,
-    String? user,
+    String user = 'self',
   }) async {
     final $result = await jsonRpcInstance.sendRequest(
       'request',
-      <String, dynamic>{'id': id, 'category': ?category?.name, 'user': ?user},
+      <String, dynamic>{
+        'id': id,
+        'category': ?category?.name,
+        if (user != 'self') 'user': user,
+      },
     );
     return ($result as double);
   }

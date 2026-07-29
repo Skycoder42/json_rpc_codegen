@@ -80,6 +80,7 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc>
           ..ignoreForFile.add('cast_nullable_to_non_nullable')
           ..ignoreForFile.add('document_ignores')
           ..ignoreForFile.add('lines_longer_than_80_chars')
+          ..ignoreForFile.add('no_literal_bool_comparisons')
           ..ignoreForFile.add('prefer_expression_function_bodies')
           ..ignoreForFile.add('unnecessary_parenthesis')
           ..ignoreForFile.add('unreachable_from_main')

@@ -3,11 +3,9 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_test_tools/code_gen.dart';
 import 'package:meta/meta.dart';
-import 'package:source_gen/source_gen.dart';
-import 'package:source_helper/source_helper.dart';
 
 import '../../extensions/analyzer_extensions.dart';
-import '../../readers/defaults_reader.dart';
+import '../common/annotations.dart';
 import '../common/closure_builder_mixin.dart';
 import '../common/constants.dart';
 import '../common/method_mapper_mixin.dart';
@@ -40,6 +38,7 @@ final class ClientMixinBuilder extends ProxySpec
       ..on = StreamBuilderMixin.hasStreams(_class)
           ? Types.$PeerBase
           : Types.$ClientBase
+      ..implements.add(_class.toReference())
       ..fields.addAll(buildStreamFields(_class))
       ..methods.addAll(
         [
@@ -64,57 +63,29 @@ final class ClientMixinBuilder extends ProxySpec
   Method _buildNotificationMethod(MethodElement method) => mapMethod(
     method,
     buildMethod: (b) => b
+      ..annotations.add(Annotations.override)
       ..returns = CoreTypes.$void
       ..body = _buildNotificationBody(method),
-    buildParam: (p, b) => _buildParam(method, p, b),
   );
 
   Method _buildRequestMethod(MethodElement method, DartType returnType) =>
       mapMethod(
         method,
         buildMethod: (b) => b
+          ..annotations.add(Annotations.override)
           ..returns = CoreTypes.$Future(returnType.toReference())
           ..modifier = .async
           ..body = _buildRequestBody(method, returnType),
-        buildParam: (p, b) => _buildParam(method, p, b),
       );
 
   Method _buildStreamMethod(MethodElement method, DartType streamType) =>
       mapMethod(
         method,
         buildMethod: (b) => b
+          ..annotations.add(Annotations.override)
           ..returns = CoreTypes.$Stream(streamType.toReference())
           ..body = buildStreamBody(method, streamType),
-        buildParam: (p, b) => _buildParam(method, p, b),
       );
-
-  void _buildParam(
-    MethodElement method,
-    FormalParameterElement parameter,
-    ParameterBuilder builder,
-  ) {
-    if (parameter.isRequired) {
-      return;
-    }
-
-    final isClientDefault = DefaultsReader.isClientDefault(method);
-    if (isClientDefault) {
-      if (parameter.hasDefaultValue) {
-        builder.defaultTo = Code(parameter.defaultValueCode!);
-      } else if (!parameter.type.isNullableType) {
-        throw InvalidGenerationSourceError(
-          'An RPC method parameter that uses client defaults must either be '
-          'nullable or have an explicit default value set.',
-          element: parameter,
-          todo:
-              'Change the type to ${parameter.type}? '
-              'or specify a default value',
-        );
-      }
-    } else {
-      builder.type = parameter.type.toReference(nullable: true);
-    }
-  }
 
   Code _buildNotificationBody(MethodElement method) => buildMethodInvocation(
     JsonRpcInstance.sendNotification,

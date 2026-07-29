@@ -9,10 +9,11 @@ part of 'empty.dart';
 // ignore_for_file: avoid_futureor_void, avoid_positional_boolean_parameters
 // ignore_for_file: cascade_invocations, cast_nullable_to_non_nullable
 // ignore_for_file: document_ignores, lines_longer_than_80_chars
+// ignore_for_file: no_literal_bool_comparisons
 // ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
 // ignore_for_file: unreachable_from_main, unused_element
 
-mixin TestEmpty1ClientMixin on ClientBase {}
+mixin TestEmpty1ClientMixin on ClientBase implements _TestEmpty1 {}
 mixin TestEmpty1ServerMixin on ServerBase {
   @override
   @visibleForOverriding
@@ -47,7 +48,7 @@ abstract class TestEmpty1Server extends ServerBase with TestEmpty1ServerMixin {
   TestEmpty1Server.fromServer(super.jsonRpcInstance) : super.fromServer();
 }
 
-mixin TestEmpty2ClientMixin on ClientBase {}
+mixin TestEmpty2ClientMixin on ClientBase implements _TestEmpty2 {}
 mixin TestEmpty2ServerMixin on ServerBase {
   @override
   @visibleForOverriding
@@ -91,7 +92,7 @@ mixin TestEmpty6ServerMixin on ServerBase {
   }
 }
 
-mixin TestEmpty7ClientMixin on ClientBase {}
+mixin TestEmpty7ClientMixin on ClientBase implements _TestEmpty7 {}
 
 class TestEmpty7Client extends ClientBase with TestEmpty7ClientMixin {
   TestEmpty7Client(super.channel, {super.idGenerator}) : super();
@@ -102,9 +103,9 @@ class TestEmpty7Client extends ClientBase with TestEmpty7ClientMixin {
   TestEmpty7Client.fromClient(super.jsonRpcInstance) : super.fromClient();
 }
 
-mixin TestEmpty8ClientMixin on ClientBase {}
+mixin TestEmpty8ClientMixin on ClientBase implements _TestEmpty8 {}
 
-mixin TestEmpty9ClientMixin on ClientBase {}
+mixin TestEmpty9ClientMixin on ClientBase implements _TestEmpty9 {}
 mixin TestEmpty9ServerMixin on ServerBase {
   @override
   @visibleForOverriding
@@ -139,7 +140,7 @@ abstract class TestEmpty9Server extends ServerBase with TestEmpty9ServerMixin {
   TestEmpty9Server.fromServer(super.jsonRpcInstance) : super.fromServer();
 }
 
-mixin TestEmpty10ClientMixin on ClientBase {}
+mixin TestEmpty10ClientMixin on ClientBase implements _TestEmpty10 {}
 mixin TestEmpty10ServerMixin on ServerBase {
   @override
   @visibleForOverriding

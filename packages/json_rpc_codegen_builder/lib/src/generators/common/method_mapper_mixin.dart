@@ -111,8 +111,8 @@ base mixin MethodMapperMixin on ProxySpec {
   Method mapMethod(
     MethodElement method, {
     required void Function(MethodBuilder b) buildMethod,
-    required void Function(FormalParameterElement param, ParameterBuilder b)
-    buildParam,
+    // TODO remove if unused
+    void Function(FormalParameterElement param, ParameterBuilder b)? buildParam,
     bool Function(FormalParameterElement param) checkRequired =
         _defaultCheckRequired,
   }) => Method((b) {
@@ -142,16 +142,19 @@ base mixin MethodMapperMixin on ProxySpec {
 
   Parameter _buildParameter(
     FormalParameterElement parameter,
-    void Function(FormalParameterElement param, ParameterBuilder b) buildParam,
+    void Function(FormalParameterElement param, ParameterBuilder b)? buildParam,
   ) => Parameter((b) {
     b
       ..name = parameter.name!
       ..type = parameter.type.toReference()
       ..named = parameter.isNamed
       ..required = parameter.isRequiredNamed
-      ..covariant = parameter.isCovariant;
+      ..covariant = parameter.isCovariant
+      ..defaultTo = parameter.hasDefaultValue
+          ? Code(parameter.defaultValueCode!)
+          : null;
 
-    buildParam(parameter, b);
+    buildParam?.call(parameter, b);
   });
 
   static bool _defaultCheckRequired(FormalParameterElement param) =>
