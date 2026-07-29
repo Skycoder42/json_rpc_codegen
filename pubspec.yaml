@@ -1,7 +1,12 @@
-name: json_rpc_codegen_melos
+name: json_rpc_codegen_workspace
 
 environment:
-  sdk: ^3.2.0
+  sdk: ^3.12.0
 
-dependencies:
-  melos:
+workspace:
+  - packages/json_rpc_codegen
+  - packages/json_rpc_codegen_builder
+
+dev_dependencies:
+  dart_pre_commit: ^6.1.3
+  dart_test_tools: ^7.2.9

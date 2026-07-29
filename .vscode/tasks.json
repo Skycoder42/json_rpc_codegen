@@ -1,0 +1,27 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "dart",
+			"command": "dart",
+			"cwd": "packages/json_rpc_codegen_builder",
+			"args": [
+				"run",
+				"build_runner",
+				"watch"
+			],
+			"problemMatcher": [
+				"$dart-build_runner"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"label": "dart: dart run build_runner watch",
+			"detail": "packages/json_rpc_codegen_builder",
+			"runOptions": {
+				"runOn": "folderOpen"
+			}
+		}
+	]
+}
