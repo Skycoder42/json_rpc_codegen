@@ -2,14 +2,13 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 
-import '../common/base_constructor_builder_mixin.dart';
+import '../common/proxy_class_builder_mixin.dart';
 import '../common/stream_support.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
 
 @internal
-final class ServerClassBuilder extends ProxySpec
-    with BaseConstructorBuilderMixin {
+final class ServerClassBuilder extends ProxySpec with ProxyClassBuilderMixin {
   final ClassElement _class;
 
   const ServerClassBuilder(this._class);
@@ -17,37 +16,32 @@ final class ServerClassBuilder extends ProxySpec
   @override
   Class build() {
     final hasStreams = StreamRpc.hasStreams(_class);
-    return Class(
-      (b) => b
-        ..name = '${_class.name}Server'
-        ..abstract = true
-        ..extend = hasStreams ? Types.$PeerBase : Types.$ServerBase
-        ..mixins.add(
-          TypeReference((b) => b..symbol = '${_class.name}ServerMixin'),
-        )
-        ..constructors.addAll(
-          buildConstructors(hasStreams ? 'fromPeer' : 'fromServer', [
-            Parameter(
-              (b) => b
-                ..name = 'onUnhandledError'
-                ..named = true
-                ..toSuper = true,
-            ),
-            Parameter(
-              (b) => b
-                ..name = 'strictProtocolChecks'
-                ..named = true
-                ..toSuper = true,
-            ),
-            if (hasStreams)
-              Parameter(
-                (b) => b
-                  ..name = 'idGenerator'
-                  ..named = true
-                  ..toSuper = true,
-              ),
-          ]),
+    return buildProxyClass(
+      name: '${_class.name}Server',
+      extend: hasStreams ? Types.$PeerBase : Types.$ServerBase,
+      fromName: hasStreams ? 'fromPeer' : 'fromServer',
+      abstract: true,
+      extraParams: [
+        Parameter(
+          (b) => b
+            ..name = 'onUnhandledError'
+            ..named = true
+            ..toSuper = true,
         ),
+        Parameter(
+          (b) => b
+            ..name = 'strictProtocolChecks'
+            ..named = true
+            ..toSuper = true,
+        ),
+        if (hasStreams)
+          Parameter(
+            (b) => b
+              ..name = 'idGenerator'
+              ..named = true
+              ..toSuper = true,
+          ),
+      ],
     );
   }
 }
