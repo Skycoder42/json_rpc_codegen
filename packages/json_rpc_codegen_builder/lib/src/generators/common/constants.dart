@@ -9,8 +9,6 @@ abstract base class JsonRpcInstance {
   static final registerMethod = ref.property('registerMethod');
   static final isClosed = ref.property('isClosed');
 
-  static const methodParams = Reference(r'$params');
-
   static const serverError = Reference('jsonRpc2ServerError');
   static const getErrorMessage = Reference('jsonRpc2GetErrorMessage');
 }

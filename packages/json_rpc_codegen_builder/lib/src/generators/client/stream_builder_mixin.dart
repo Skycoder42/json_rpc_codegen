@@ -15,16 +15,11 @@ import '../common/method_mapper_mixin.dart';
 import '../common/parameter_builder_mixin.dart';
 import '../common/registration_builder_mixin.dart';
 import '../common/types.dart';
-import '../proxy_spec.dart';
 import 'invocation_builder_mixin.dart';
 
 @internal
 base mixin StreamBuilderMixin
-    on
-        ProxySpec,
-        MethodMapperMixin,
-        InvocationBuilderMixin,
-        RegistrationBuilderMixin {
+    on MethodMapperMixin, InvocationBuilderMixin, RegistrationBuilderMixin {
   static const _streamIdCounterRef = Reference(r'_$streamIdCounter');
   static const _controllerMapRef = Reference(r'_$streamControllers');
   static const _streamIdRef = Reference(r'$streamId');
@@ -83,7 +78,6 @@ base mixin StreamBuilderMixin
       JsonRpcInstance.sendRequest,
       method,
       invocationSuffix: '#listen',
-      isAsync: true,
       extraArgs: {_streamIdRef.symbol!: _streamIdRef},
       buildReturn: (i) {
         invocation = i;
@@ -101,7 +95,7 @@ base mixin StreamBuilderMixin
           Types.$StreamController(streamType.toReference()).newInstance(
             const [],
             {
-              'onListen': _buildOnListen(method, invocation),
+              'onListen': _buildOnListen(invocation),
               'onCancel': closure0(
                 () => CoreTypes.$Future().property('wait').call([
                   literalList([
@@ -149,30 +143,27 @@ base mixin StreamBuilderMixin
         .statement;
   }
 
-  Expression _buildOnListen(MethodElement method, Expression invocation) =>
-      closure0(
-        modifier: MethodModifier.async,
-        () => try$([invocation.awaited.statement]).catch$(
-          error: _errorRef,
-          stackTrace: _stackTraceRef,
-          body: [
-            declareFinal(_controllerRef.symbol!)
-                .assign(
-                  _controllerMapRef.property('remove').call(const [
-                    _streamIdRef,
-                  ]),
-                )
-                .statement,
-            $if(_controllerRef.notEqualTo(literalNull), [
-              _controllerRef.property('addError').call(const [
-                _errorRef,
-                _stackTraceRef,
-              ]).statement,
-              _controllerRef.property('close').call(const []).awaited.statement,
-            ]).$else([const Reference('rethrow').statement]),
-          ],
-        ),
-      );
+  Expression _buildOnListen(Expression invocation) => closure0(
+    modifier: MethodModifier.async,
+    () => try$([invocation.awaited.statement]).catch$(
+      error: _errorRef,
+      stackTrace: _stackTraceRef,
+      body: [
+        declareFinal(_controllerRef.symbol!)
+            .assign(
+              _controllerMapRef.property('remove').call(const [_streamIdRef]),
+            )
+            .statement,
+        $if(_controllerRef.notEqualTo(literalNull), [
+          _controllerRef.property('addError').call(const [
+            _errorRef,
+            _stackTraceRef,
+          ]).statement,
+          _controllerRef.property('close').call(const []).awaited.statement,
+        ]).$else([const Reference('rethrow').statement]),
+      ],
+    ),
+  );
 
   Expression _buildStreamNotification(
     MethodElement method,
@@ -191,8 +182,8 @@ base mixin StreamBuilderMixin
     final streamType = getReturnType(method).type;
     return Block.of([
       _buildAddMethod(method, streamType),
-      _buildErrorMethod(method, streamType),
-      _buildDoneMethod(method, streamType),
+      _buildErrorMethod(method),
+      _buildDoneMethod(method),
     ]);
   }
 
@@ -222,57 +213,55 @@ base mixin StreamBuilderMixin
         .code,
   );
 
-  Code _buildErrorMethod(MethodElement method, DartType streamType) =>
-      buildRegisterMethodWithParams(
-        '${method.name}#error',
-        async: false,
-        (params) => Block.of([
-          declareFinal(_errorRef.symbol!)
-              .assign(
-                params
-                    .index(literalNum(1))
-                    .property('asMap')
-                    .asA(
-                      CoreTypes.$Map(
-                        keyType: CoreTypes.$String,
-                        valueType: CoreTypes.$dynamic,
-                      ),
-                    ),
-              )
-              .statement,
-          _controllerMapRef
-              .index(params.index(literalNum(0)).property('asInt'))
-              .nullSafeProperty('addError')
-              .call([
-                Types.$RpcException.newInstance(
-                  [
-                    _errorRef.index(literalString('code')).asA(CoreTypes.$int),
-                    _errorRef
-                        .index(literalString('message'))
-                        .asA(CoreTypes.$String),
-                  ],
-                  {
-                    'data': _errorRef
-                        .index(literalString('data'))
-                        .asA(CoreTypes.$Object.asNullable(true)),
-                  },
+  Code _buildErrorMethod(MethodElement method) => buildRegisterMethodWithParams(
+    '${method.name}#error',
+    async: false,
+    (params) => Block.of([
+      declareFinal(_errorRef.symbol!)
+          .assign(
+            params
+                .index(literalNum(1))
+                .property('asMap')
+                .asA(
+                  CoreTypes.$Map(
+                    keyType: CoreTypes.$String,
+                    valueType: CoreTypes.$dynamic,
+                  ),
                 ),
-              ])
-              .statement,
-        ]),
-      );
+          )
+          .statement,
+      _controllerMapRef
+          .index(params.index(literalNum(0)).property('asInt'))
+          .nullSafeProperty('addError')
+          .call([
+            Types.$RpcException.newInstance(
+              [
+                _errorRef.index(literalString('code')).asA(CoreTypes.$int),
+                _errorRef
+                    .index(literalString('message'))
+                    .asA(CoreTypes.$String),
+              ],
+              {
+                'data': _errorRef
+                    .index(literalString('data'))
+                    .asA(CoreTypes.$Object.asNullable(true)),
+              },
+            ),
+          ])
+          .statement,
+    ]),
+  );
 
-  Code _buildDoneMethod(MethodElement method, DartType streamType) =>
-      buildRegisterMethodWithParams(
-        '${method.name}#done',
-        async: false,
-        (params) => _controllerMapRef
-            .property('remove')
-            .call([params.index(literalNum(0)).property('asInt')])
-            .nullSafeProperty('close')
-            .call(const [])
-            .code,
-      );
+  Code _buildDoneMethod(MethodElement method) => buildRegisterMethodWithParams(
+    '${method.name}#done',
+    async: false,
+    (params) => _controllerMapRef
+        .property('remove')
+        .call([params.index(literalNum(0)).property('asInt')])
+        .nullSafeProperty('close')
+        .call(const [])
+        .code,
+  );
 
   Code _buildCleanupMethod() => Globals.unawaitedRef.call([
     JsonRpcInstance.ref.property('done').property('then').call([

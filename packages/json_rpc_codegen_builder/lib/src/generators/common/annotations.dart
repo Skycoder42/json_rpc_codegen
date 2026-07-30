@@ -7,8 +7,6 @@ abstract base class Annotations {
 
   static const override = Reference('override');
 
-  static const protected = Reference('protected');
-
   static const visibleForOverriding = Reference('visibleForOverriding');
 
   static const mustCallSuper = Reference('mustCallSuper');

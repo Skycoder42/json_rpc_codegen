@@ -79,6 +79,14 @@ class _TestParameterTestsServer extends ParameterTestsServer {
   }) => mock.simpleNamedClient(a: a, b: b, c: c, d: d, e: e);
 
   @override
+  Future<void> simpleSpecials({
+    Uri? url,
+    Permission permission = .readOnly,
+    DateTime? dateTime,
+  }) =>
+      mock.simpleSpecials(url: url, permission: permission, dateTime: dateTime);
+
+  @override
   Future<void> containers(
     Iterable<String> names,
     List<int> bytes,
@@ -270,6 +278,30 @@ void main() {
       await sutClient.simpleNamedClient(a: true, b: 12.5, e: 'last');
 
       verify(sutServer.mock.simpleNamedClient(a: true, b: 12.5, e: 'last'));
+    });
+  });
+
+  group('simpleSpecials', () {
+    test('sends minimal parameters', () async {
+      await sutClient.simpleSpecials();
+
+      verify(sutServer.mock.simpleSpecials());
+    });
+
+    test('sends all parameters', () async {
+      await sutClient.simpleSpecials(
+        url: Uri.parse('https://example.com'),
+        permission: .writeOnly,
+        dateTime: DateTime(2024),
+      );
+
+      verify(
+        sutServer.mock.simpleSpecials(
+          url: Uri.parse('https://example.com'),
+          permission: .writeOnly,
+          dateTime: DateTime(2024),
+        ),
+      );
     });
   });
 

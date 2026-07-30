@@ -7,15 +7,13 @@ import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
 
 import '../../extensions/code_builder_extensions.dart';
-import '../proxy_spec.dart';
 import 'annotations.dart';
 import 'closure_builder_mixin.dart';
 import 'serialization_mixin.dart';
 import 'types.dart';
 
 @internal
-base mixin ParameterBuilderMixin
-    on ProxySpec, SerializationMixin, ClosureBuilderMixin {
+base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
   static const nullCheckedOrName = r'$nullCheckedOr';
   static const existsOrName = r'$existsOr';
   static const nullCheckedName = r'$nullChecked';

@@ -9,12 +9,6 @@ sealed class Types {
       ..types.addAll([?type]),
   );
 
-  static TypeReference $StreamChannel([Reference? type]) => TypeReference(
-    (b) => b
-      ..symbol = 'StreamChannel'
-      ..types.addAll([?type]),
-  );
-
   static TypeReference $StreamController([Reference? type]) => TypeReference(
     (b) => b
       ..symbol = 'StreamController'
@@ -27,19 +21,11 @@ sealed class Types {
       ..types.addAll([?type]),
   );
 
-  static final $Client = TypeReference((b) => b..symbol = 'Client');
-
-  static final $Server = TypeReference((b) => b..symbol = 'Server');
-
   static final $Parameters = TypeReference((b) => b..symbol = 'Parameters');
 
   static final $Parameter = TypeReference((b) => b..symbol = 'Parameter');
 
   static final $RpcException = TypeReference((b) => b..symbol = 'RpcException');
-
-  static final $Rpc2ErrorCallback = TypeReference(
-    (b) => b..symbol = 'ErrorCallback',
-  );
 
   static final $Chain = TypeReference((b) => b..symbol = 'Chain');
 

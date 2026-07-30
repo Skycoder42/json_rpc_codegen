@@ -83,6 +83,19 @@ mixin ParameterTestsClientMixin on ClientBase implements ParameterTests {
   }
 
   @override
+  Future<void> simpleSpecials({
+    Uri? url,
+    Permission permission = .readOnly,
+    DateTime? dateTime,
+  }) async {
+    await jsonRpcInstance.sendRequest('simpleSpecials', <String, dynamic>{
+      'url': ?url?.toString(),
+      if (permission != .readOnly) 'permission': permission.name,
+      'dateTime': ?dateTime?.toIso8601String(),
+    });
+  }
+
+  @override
   Future<void> containers(
     Iterable<String> names,
     List<int> bytes,
@@ -258,6 +271,24 @@ mixin ParameterTestsServerMixin on ServerBase implements ParameterTests {
         'default',
       );
       await simpleNamedClient(a: $$a, b: $$b, c: $$c, d: $$d, e: $$e);
+    });
+    jsonRpcInstance.registerMethod('simpleSpecials', (
+      Parameters $params,
+    ) async {
+      final $$url = $params['url'].$nullCheckedOr<Uri>(($v) => $v.asUri, null);
+      final $$permission = $params['permission'].$existsOr<Permission>(
+        ($v) => Permission.values.byName($v.asString),
+        .readOnly,
+      );
+      final $$dateTime = $params['dateTime'].$nullCheckedOr<DateTime>(
+        ($v) => $v.asDateTime,
+        null,
+      );
+      await simpleSpecials(
+        url: $$url,
+        permission: $$permission,
+        dateTime: $$dateTime,
+      );
     });
     jsonRpcInstance.registerMethod('containers', (Parameters $params) async {
       final $$names = $params[0].asList.map((dynamic $e) => ($e as String));

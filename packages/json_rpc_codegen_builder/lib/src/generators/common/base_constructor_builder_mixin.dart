@@ -1,11 +1,10 @@
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 
-import '../proxy_spec.dart';
 import 'constants.dart';
 
 @internal
-base mixin BaseConstructorBuilderMixin on ProxySpec {
+base mixin BaseConstructorBuilderMixin {
   @protected
   Iterable<Constructor> buildConstructors(
     String fromName, [

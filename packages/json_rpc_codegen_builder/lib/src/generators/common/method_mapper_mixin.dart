@@ -6,7 +6,6 @@ import 'package:dart_test_tools/code_gen.dart';
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
-import '../proxy_spec.dart';
 import 'annotations.dart';
 
 @internal
@@ -26,19 +25,16 @@ enum ParameterMode {
 enum ReturnKind { notification, request, stream }
 
 @internal
-base mixin MethodMapperMixin on ProxySpec {
+base mixin MethodMapperMixin {
   @protected
-  ({DartType type, ReturnKind kind}) getReturnType(
-    MethodElement method, [
-    DartType? returnType,
-  ]) {
-    final actualReturnType = returnType ?? method.returnType;
+  ({DartType type, ReturnKind kind}) getReturnType(MethodElement method) {
+    final returnType = method.returnType;
 
-    if (actualReturnType is VoidType) {
-      return (type: actualReturnType, kind: .notification);
+    if (returnType is VoidType) {
+      return (type: returnType, kind: .notification);
     }
 
-    if (actualReturnType case InterfaceType(
+    if (returnType case InterfaceType(
       isDartAsyncFutureOr: true,
       typeArguments: [final futureType],
     )) {
@@ -51,24 +47,24 @@ base mixin MethodMapperMixin on ProxySpec {
       );
     }
 
-    if (actualReturnType case InterfaceType(
+    if (returnType case InterfaceType(
       isDartAsyncStream: true,
       typeArguments: [final streamType],
     )) {
       return (type: streamType, kind: .stream);
     }
 
-    if (!actualReturnType.isDartAsyncFuture) {
+    if (!returnType.isDartAsyncFuture) {
       throw InvalidGenerationSourceError(
         'The return type of RPC methods must be a Future or void!',
         element: method,
         todo:
             'Change return type to '
-            'Future<${actualReturnType.getDisplayString()}>.',
+            'Future<${returnType.getDisplayString()}>.',
       );
     }
 
-    final futureType = (actualReturnType as InterfaceType).typeArguments.single;
+    final futureType = (returnType as InterfaceType).typeArguments.single;
 
     if (futureType.isDartCoreType ||
         futureType.isDartCoreSymbol ||

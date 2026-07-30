@@ -43,6 +43,12 @@ abstract interface class ParameterTests {
     String? e = 'default',
   });
 
+  Future<void> simpleSpecials({
+    Uri? url,
+    Permission permission = .readOnly,
+    DateTime? dateTime,
+  });
+
   Future<void> containers(
     Iterable<String> names,
     List<int> bytes,

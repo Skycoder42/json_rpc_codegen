@@ -31,8 +31,6 @@ abstract base class DefaultsReader {
     return true;
   }
 
-  static bool isClientDefault(MethodElement method) => !isServerDefault(method);
-
   static bool? _isClient(Element element) {
     final hasClient = _clientTypeChecker.hasAnnotationOfExact(element);
     final hasServer = _serverTypeChecker.hasAnnotationOfExact(element);

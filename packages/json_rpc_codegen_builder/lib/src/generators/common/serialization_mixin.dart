@@ -7,12 +7,11 @@ import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
 
 import '../../extensions/code_builder_extensions.dart';
-import '../proxy_spec.dart';
 import 'annotations.dart';
 import 'closure_builder_mixin.dart';
 
 @internal
-base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
+base mixin SerializationMixin on ClosureBuilderMixin {
   static const _mapRef = Reference(r'_$map');
   static const _maybeMapRef = Reference(r'_$maybeMap');
 
@@ -54,7 +53,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
           isNull ?? type.isNullableType,
           value,
           (ref) => type.toReference(nullable: false).property('parse').call([
-            _maybeCast(value, CoreTypes.$String, noCast),
+            _maybeCast(ref, CoreTypes.$String, noCast),
           ]),
         );
       case _ when _isPrimitiveType(type):

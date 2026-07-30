@@ -82,17 +82,13 @@ final class ClientMixinBuilder extends ProxySpec
           ..body = buildStreamBody(method, streamType),
       );
 
-  Code _buildNotificationBody(MethodElement method) => buildMethodInvocation(
-    JsonRpcInstance.sendNotification,
-    method,
-    isAsync: false,
-  );
+  Code _buildNotificationBody(MethodElement method) =>
+      buildMethodInvocation(JsonRpcInstance.sendNotification, method);
 
   Code _buildRequestBody(MethodElement method, DartType returnType) =>
       buildMethodInvocation(
         JsonRpcInstance.sendRequest,
         method,
-        isAsync: true,
         buildReturn: (invocation) sync* {
           if (returnType is VoidType) {
             yield invocation.awaited.statement;

@@ -1,10 +1,8 @@
 import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 
-import '../proxy_spec.dart';
-
 @internal
-base mixin ClosureBuilderMixin on ProxySpec {
+base mixin ClosureBuilderMixin {
   Expression closure0(Code Function() buildBody, {MethodModifier? modifier}) =>
       Method(
         (b) => b

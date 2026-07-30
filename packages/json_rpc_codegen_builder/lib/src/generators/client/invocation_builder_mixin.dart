@@ -14,7 +14,6 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
   Code buildMethodInvocation(
     Expression target,
     MethodElement method, {
-    required bool isAsync,
     String invocationSuffix = '',
     Iterable<Code> Function(Expression invocation)? buildReturn,
     Map<String, Reference> extraArgs = const {},
