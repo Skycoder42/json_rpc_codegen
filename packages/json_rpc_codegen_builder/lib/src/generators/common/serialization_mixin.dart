@@ -98,6 +98,33 @@ base mixin SerializationMixin on ClosureBuilderMixin {
     }
   }
 
+  /// Awaits [invocation] and returns its [convert]ed result.
+  ///
+  /// The result is hoisted into a local, because [convert] may inline its value
+  /// argument more than once (e.g. once per field for records). The hoist is
+  /// skipped if [convert] turns out to be a no-op.
+  @protected
+  Iterable<Code> buildConvertedReturn(
+    DartType type,
+    Expression invocation,
+    Expression Function(DartType type, Expression value) convert,
+  ) sync* {
+    if (type is VoidType) {
+      yield invocation.awaited.statement;
+      return;
+    }
+
+    const resultRef = Reference(r'$result');
+    final convertExpression = convert(type, resultRef);
+    if (identical(convertExpression, resultRef)) {
+      yield invocation.awaited.returned.statement;
+      return;
+    }
+
+    yield declareFinal(resultRef.symbol!).assign(invocation.awaited).statement;
+    yield convertExpression.returned.statement;
+  }
+
   Expression _fromList(
     InterfaceType type,
     Expression value, {

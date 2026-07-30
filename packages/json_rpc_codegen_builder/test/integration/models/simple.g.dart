@@ -55,7 +55,7 @@ mixin SimpleServerMixin on ServerBase implements Simple {
         null,
       );
       final $$user = $params['user'].asStringOr('self');
-      return (await request(id: $$id, category: $$category, user: $$user));
+      return await request(id: $$id, category: $$category, user: $$user);
     });
   }
 }

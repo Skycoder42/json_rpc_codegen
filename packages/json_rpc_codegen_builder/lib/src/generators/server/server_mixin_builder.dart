@@ -65,41 +65,17 @@ final class ServerMixinBuilder extends ProxySpec
     return parameterMode == ParameterMode.none
         ? buildRegisterMethodWithoutParams(
             method.name!,
-            () => Block.of(_buildInvocation(method, type, kind)),
+            () => Block.of(_buildInvocation(method, type)),
           )
         : buildRegisterMethodWithParams(
             method.name!,
             (params) => Block.of([
               ...buildParameterExtraction(method, parameterMode, params),
-              ..._buildInvocation(method, type, kind),
+              ..._buildInvocation(method, type),
             ]),
           );
   }
 
-  Iterable<Code> _buildInvocation(
-    MethodElement method,
-    DartType returnType,
-    ReturnKind returnKind,
-  ) sync* {
-    final invocation = buildTargetInvocation(method);
-
-    if (returnKind == .notification ||
-        (returnKind == .request && returnType is VoidType)) {
-      yield invocation.awaited.statement;
-      return;
-    }
-
-    if (returnType is RecordType) {
-      const resultRef = Reference(r'$result');
-      yield declareFinal(
-        resultRef.symbol!,
-      ).assign(invocation.awaited).statement;
-      yield toJson(returnType, resultRef).returned.statement;
-    } else {
-      yield toJson(
-        returnType,
-        invocation.awaited.parenthesized,
-      ).returned.statement;
-    }
-  }
+  Iterable<Code> _buildInvocation(MethodElement method, DartType returnType) =>
+      buildConvertedReturn(returnType, buildTargetInvocation(method), toJson);
 }

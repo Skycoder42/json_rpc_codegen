@@ -89,17 +89,7 @@ final class ClientMixinBuilder extends ProxySpec
       buildMethodInvocation(
         JsonRpcInstance.sendRequest,
         method,
-        buildReturn: (invocation) sync* {
-          if (returnType is VoidType) {
-            yield invocation.awaited.statement;
-            return;
-          }
-
-          const resultVarRef = Reference(r'$result');
-          yield declareFinal(
-            resultVarRef.symbol!,
-          ).assign(invocation.awaited).statement;
-          yield fromJson(returnType, resultVarRef).returned.statement;
-        },
+        buildReturn: (invocation) =>
+            buildConvertedReturn(returnType, invocation, fromJson),
       );
 }

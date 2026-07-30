@@ -58,8 +58,7 @@ mixin ReturnTestsClientMixin on ClientBase implements ReturnTests {
 
   @override
   Future<dynamic> dynamicRet() async {
-    final $result = await jsonRpcInstance.sendRequest('dynamicRet');
-    return $result;
+    return await jsonRpcInstance.sendRequest('dynamicRet');
   }
 
   @override
@@ -192,60 +191,66 @@ mixin ReturnTestsServerMixin on ServerBase implements ReturnTests {
   void registerMethods() {
     super.registerMethods();
     jsonRpcInstance.registerMethod('boolRet', () async {
-      return (await boolRet());
+      return await boolRet();
     });
     jsonRpcInstance.registerMethod('numRet', () async {
-      return (await numRet());
+      return await numRet();
     });
     jsonRpcInstance.registerMethod('intRet', () async {
-      return (await intRet());
+      return await intRet();
     });
     jsonRpcInstance.registerMethod('doubleRet', () async {
-      return (await doubleRet());
+      return await doubleRet();
     });
     jsonRpcInstance.registerMethod('stringRet', () async {
-      return (await stringRet());
+      return await stringRet();
     });
     jsonRpcInstance.registerMethod('dateTimeRet', () async {
-      return (await dateTimeRet()).toIso8601String();
+      final $result = await dateTimeRet();
+      return $result.toIso8601String();
     });
     jsonRpcInstance.registerMethod('uriRet', () async {
-      return (await uriRet()).toString();
+      final $result = await uriRet();
+      return $result.toString();
     });
     jsonRpcInstance.registerMethod('dynamicRet', () async {
-      return (await dynamicRet());
+      return await dynamicRet();
     });
     jsonRpcInstance.registerMethod('listRet', () async {
-      return (await listRet());
+      return await listRet();
     });
     jsonRpcInstance.registerMethod('iterableRet', () async {
-      return (await iterableRet()).toList(growable: false);
+      final $result = await iterableRet();
+      return $result.toList(growable: false);
     });
     jsonRpcInstance.registerMethod('setRet', () async {
-      return (await setRet()).toList(growable: false);
+      final $result = await setRet();
+      return $result.toList(growable: false);
     });
     jsonRpcInstance.registerMethod('mapRet', () async {
-      return (await mapRet());
+      return await mapRet();
     });
     jsonRpcInstance.registerMethod('deepRet', () async {
-      return (await deepRet()).map(
-        ($k, $v) => MapEntry($k, $v.toList(growable: false)),
-      );
+      final $result = await deepRet();
+      return $result.map(($k, $v) => MapEntry($k, $v.toList(growable: false)));
     });
     jsonRpcInstance.registerMethod('userRet', () async {
-      return (await userRet());
+      return await userRet();
     });
     jsonRpcInstance.registerMethod('colorRet', () async {
-      return (await colorRet());
+      return await colorRet();
     });
     jsonRpcInstance.registerMethod('permissionRet', () async {
-      return (await permissionRet()).name;
+      final $result = await permissionRet();
+      return $result.name;
     });
     jsonRpcInstance.registerMethod('usersRet', () async {
-      return (await usersRet()).toList(growable: false);
+      final $result = await usersRet();
+      return $result.toList(growable: false);
     });
     jsonRpcInstance.registerMethod('colorPermissionsRet', () async {
-      return (await colorPermissionsRet()).map(
+      final $result = await colorPermissionsRet();
+      return $result.map(
         ($k, $v) =>
             MapEntry($k, $v.map(($e) => $e.name).toList(growable: false)),
       );
