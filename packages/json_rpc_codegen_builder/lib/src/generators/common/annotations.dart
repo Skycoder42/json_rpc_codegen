@@ -18,4 +18,10 @@ abstract base class Annotations {
   static const pragmaWasmPreferInline = Reference(
     "pragma('wasm:prefer-inline')",
   );
+
+  static const alwaysInline = [
+    pragmaVmPreferInline,
+    pragmaDart2jsTryInline,
+    pragmaWasmPreferInline,
+  ];
 }

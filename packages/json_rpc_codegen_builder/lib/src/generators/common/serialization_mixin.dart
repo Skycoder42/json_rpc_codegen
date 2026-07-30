@@ -367,9 +367,7 @@ base mixin SerializationMixin on ClosureBuilderMixin {
     return Method(
       (b) => b
         ..name = _mapRef.symbol
-        ..annotations.add(Annotations.pragmaVmPreferInline)
-        ..annotations.add(Annotations.pragmaDart2jsTryInline)
-        ..annotations.add(Annotations.pragmaWasmPreferInline)
+        ..annotations.addAll(Annotations.alwaysInline)
         ..returns = tConverted
         ..types.add(tConverted.boundTo(CoreTypes.$Object))
         ..types.add(tJson.boundTo(CoreTypes.$Object))
@@ -403,9 +401,7 @@ base mixin SerializationMixin on ClosureBuilderMixin {
     return Method(
       (b) => b
         ..name = _maybeMapRef.symbol
-        ..annotations.add(Annotations.pragmaVmPreferInline)
-        ..annotations.add(Annotations.pragmaDart2jsTryInline)
-        ..annotations.add(Annotations.pragmaWasmPreferInline)
+        ..annotations.addAll(Annotations.alwaysInline)
         ..returns = tConverted.asNullable(true)
         ..types.add(tConverted.boundTo(CoreTypes.$Object))
         ..types.add(tJson.boundTo(CoreTypes.$Object))

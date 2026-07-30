@@ -267,9 +267,7 @@ base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
           Method(
             (b) => b
               ..name = nullCheckedName
-              ..annotations.add(Annotations.pragmaVmPreferInline)
-              ..annotations.add(Annotations.pragmaDart2jsTryInline)
-              ..annotations.add(Annotations.pragmaWasmPreferInline)
+              ..annotations.addAll(Annotations.alwaysInline)
               ..types.add(typeT.boundTo(CoreTypes.$Object))
               ..returns = typeT.asNullable(true)
               ..requiredParameters.add(_buildGetter(getterParamRef, typeT))
@@ -286,9 +284,7 @@ base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
           Method(
             (b) => b
               ..name = nullCheckedOrName
-              ..annotations.add(Annotations.pragmaVmPreferInline)
-              ..annotations.add(Annotations.pragmaDart2jsTryInline)
-              ..annotations.add(Annotations.pragmaWasmPreferInline)
+              ..annotations.addAll(Annotations.alwaysInline)
               ..types.add(typeT.boundTo(CoreTypes.$Object))
               ..returns = typeT.asNullable(true)
               ..requiredParameters.add(_buildGetter(getterParamRef, typeT))
@@ -311,9 +307,7 @@ base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
           Method(
             (b) => b
               ..name = existsOrName
-              ..annotations.add(Annotations.pragmaVmPreferInline)
-              ..annotations.add(Annotations.pragmaDart2jsTryInline)
-              ..annotations.add(Annotations.pragmaWasmPreferInline)
+              ..annotations.addAll(Annotations.alwaysInline)
               ..types.add(typeT)
               ..returns = typeT
               ..requiredParameters.add(_buildGetter(getterParamRef, typeT))

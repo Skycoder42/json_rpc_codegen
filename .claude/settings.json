@@ -8,7 +8,7 @@
       "mcp__dart-mcp-server__pub_dev_search",
       "Bash(dart format *)",
       "Bash(dart test *)",
-      "Bash(dart run build_runner build *)"
+      "Bash(dart run build_runner *)"
     ]
   },
   "sandbox": {
