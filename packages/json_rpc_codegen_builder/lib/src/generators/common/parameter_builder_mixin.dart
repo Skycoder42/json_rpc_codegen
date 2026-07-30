@@ -1,6 +1,7 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart' hide FunctionType;
 import 'package:code_builder/code_builder.dart' hide RecordType;
+import 'package:collection/collection.dart';
 import 'package:dart_test_tools/code_gen.dart';
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
@@ -9,6 +10,7 @@ import 'package:source_helper/source_helper.dart';
 import '../../extensions/code_builder_extensions.dart';
 import 'annotations.dart';
 import 'closure_builder_mixin.dart';
+import 'method_mapper_mixin.dart';
 import 'serialization_mixin.dart';
 import 'types.dart';
 
@@ -33,6 +35,38 @@ base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
 
   Code buildNamed(Reference paramsRef, FormalParameterElement param) =>
       _buildParameter(paramsRef.index(literalString(param.name!)), param);
+
+  /// Extracts all formal parameters of [method] from [params] into locals.
+  @protected
+  Iterable<Code> buildParameterExtraction(
+    MethodElement method,
+    ParameterMode parameterMode,
+    Reference params, {
+    int positionalOffset = 0,
+  }) sync* {
+    if (parameterMode.hasPositional) {
+      yield* method.formalParameters.mapIndexed(
+        (i, e) => buildPositional(params, i + positionalOffset, e),
+      );
+    }
+    if (parameterMode.hasNamed) {
+      yield* method.formalParameters.map((e) => buildNamed(params, e));
+    }
+  }
+
+  /// Invokes [method] on the implementation, forwarding the extracted locals.
+  @protected
+  Expression buildTargetInvocation(MethodElement method) =>
+      refer(method.name!).call(
+        [
+          for (final p in method.formalParameters.where((p) => p.isPositional))
+            paramRefFor(p),
+        ],
+        {
+          for (final p in method.formalParameters.where((p) => p.isNamed))
+            p.name!: paramRefFor(p),
+        },
+      );
 
   Code _buildParameter(Expression paramRef, FormalParameterElement param) =>
       declareFinal(

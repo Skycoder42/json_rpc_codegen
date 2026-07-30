@@ -1,7 +1,6 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart' hide RecordType;
-import 'package:collection/collection.dart';
 import 'package:dart_test_tools/code_gen.dart';
 import 'package:meta/meta.dart';
 
@@ -71,12 +70,7 @@ final class ServerMixinBuilder extends ProxySpec
         : buildRegisterMethodWithParams(
             method.name!,
             (params) => Block.of([
-              if (parameterMode.hasPositional)
-                ...method.formalParameters.mapIndexed(
-                  (i, e) => buildPositional(params, i, e),
-                ),
-              if (parameterMode.hasNamed)
-                ...method.formalParameters.map((e) => buildNamed(params, e)),
+              ...buildParameterExtraction(method, parameterMode, params),
               ..._buildInvocation(method, type, kind),
             ]),
           );
@@ -87,16 +81,7 @@ final class ServerMixinBuilder extends ProxySpec
     DartType returnType,
     ReturnKind returnKind,
   ) sync* {
-    final invocation = refer(method.name!).call(
-      [
-        for (final p in method.formalParameters.where((p) => p.isPositional))
-          paramRefFor(p),
-      ],
-      {
-        for (final p in method.formalParameters.where((p) => p.isNamed))
-          p.name!: paramRefFor(p),
-      },
-    );
+    final invocation = buildTargetInvocation(method);
 
     if (returnKind == .notification ||
         (returnKind == .request && returnType is VoidType)) {

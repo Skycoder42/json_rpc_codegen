@@ -1,7 +1,6 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
-import 'package:collection/collection.dart';
 import 'package:dart_test_tools/code_gen.dart';
 import 'package:meta/meta.dart';
 
@@ -127,27 +126,13 @@ base mixin ServerStreamBuilderMixin
     ParameterMode parameterMode,
     Reference params,
   ) sync* {
-    if (parameterMode.hasPositional) {
-      yield* method.formalParameters.mapIndexed(
-        (i, e) => buildPositional(params, i + 1, e),
-      );
-    }
-    if (parameterMode.hasNamed) {
-      yield* method.formalParameters.map((e) => buildNamed(params, e));
-    }
-    yield refer(method.name!)
-        .call(
-          [
-            for (final p in method.formalParameters.where(
-              (p) => p.isPositional,
-            ))
-              paramRefFor(p),
-          ],
-          {
-            for (final p in method.formalParameters.where((p) => p.isNamed))
-              p.name!: paramRefFor(p),
-          },
-        )
+    yield* buildParameterExtraction(
+      method,
+      parameterMode,
+      params,
+      positionalOffset: 1,
+    );
+    yield buildTargetInvocation(method)
         .property('listen')
         .call(
           [_buildOnData(method, streamType)],
