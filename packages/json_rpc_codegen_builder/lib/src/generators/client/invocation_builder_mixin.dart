@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 
 import '../../builders/iterable_if.dart';
 import '../../extensions/code_builder_extensions.dart';
+import '../../extensions/parameter_extensions.dart';
 import '../../readers/defaults_reader.dart';
 import '../common/method_mapper_mixin.dart';
 import '../common/serialization_mixin.dart';
@@ -71,9 +72,7 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
 
       if (validateRest == null) {
         if (param.hasDefaultValue) {
-          validateRest = paramRef.notEqualTo(
-            CodeExpression(Code(param.defaultValueCode!)),
-          );
+          validateRest = paramRef.notEqualTo(param.defaultValueExpression);
           paramExpressions.add(
             IterableIf(validateRest, toJson(param.type, paramRef)),
           );
@@ -82,10 +81,9 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
           validateRest = paramRef.notEqualTo(literalNull);
         }
       } else {
-        final defaultValue = param.hasDefaultValue
-            ? CodeExpression(Code(param.defaultValueCode!))
-            : literalNull;
-        validateRest = paramRef.notEqualTo(defaultValue).or(validateRest);
+        validateRest = paramRef
+            .notEqualTo(param.defaultValueExpression)
+            .or(validateRest);
         paramExpressions.add(
           IterableIf(validateRest, toJson(param.type, paramRef)),
         );
@@ -110,9 +108,7 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
         if (p.isOptional && isServerDefault)
           if (p.hasDefaultValue)
             IterableIf(
-              refer(
-                p.name!,
-              ).notEqualTo(CodeExpression(Code(p.defaultValueCode!))),
+              refer(p.name!).notEqualTo(p.defaultValueExpression),
               literalString(p.name!),
             ): toJson(
               p.type,

@@ -8,6 +8,7 @@ import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
 
 import '../../extensions/code_builder_extensions.dart';
+import '../../extensions/parameter_extensions.dart';
 import 'annotations.dart';
 import 'closure_builder_mixin.dart';
 import 'method_mapper_mixin.dart';
@@ -20,21 +21,30 @@ base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
   static const existsOrName = r'$existsOr';
   static const nullCheckedName = r'$nullChecked';
 
+  static const _getterParamRef = Reference('getter');
+  static final _typeT = TypeReference((b) => b..symbol = 'T');
+
   static Iterable<Spec> buildGlobals() sync* {
     yield _buildParameterExtensions();
   }
 
+  @protected
   Reference paramRefFor(FormalParameterElement param) =>
       refer('\$\$${param.name}');
 
+  @protected
   Code buildPositional(
     Reference paramsRef,
     int position,
     FormalParameterElement param,
-  ) => _buildParameter(paramsRef.index(literalNum(position)), param);
+  ) => _declareExtractedParameter(paramsRef.index(literalNum(position)), param);
 
+  @protected
   Code buildNamed(Reference paramsRef, FormalParameterElement param) =>
-      _buildParameter(paramsRef.index(literalString(param.name!)), param);
+      _declareExtractedParameter(
+        paramsRef.index(literalString(param.name!)),
+        param,
+      );
 
   /// Extracts all formal parameters of [method] from [params] into locals.
   @protected
@@ -68,59 +78,36 @@ base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
         },
       );
 
-  Code _buildParameter(Expression paramRef, FormalParameterElement param) =>
-      declareFinal(
-        '\$\$${param.name}',
-      ).assign(_buildConversion(paramRef, param)).statement;
+  Code _declareExtractedParameter(
+    Expression paramRef,
+    FormalParameterElement param,
+  ) => declareFinal(
+    paramRefFor(param).symbol!,
+  ).assign(_buildConversion(paramRef, param)).statement;
 
   Expression _buildConversion(
     Expression paramRef,
     FormalParameterElement param,
   ) {
     final paramType = param.type;
+    if (_primitiveAccessor(paramType) case (:final getter, :final transform)?) {
+      return _accessPrimitive(paramRef, param, getter, transform);
+    }
     return switch (paramType) {
-      DartType(isDartCoreInt: true) => _accessPrimitive(
-        paramRef,
-        param,
-        'asInt',
-      ),
-      DartType(isDartCoreDouble: true) => _accessPrimitive(
-        paramRef,
-        param,
-        'asNum',
-        (value) => value.property('toDouble').call(const []),
-      ),
-      DartType(isDartCoreNum: true) => _accessPrimitive(
-        paramRef,
-        param,
-        'asNum',
-      ),
-      DartType(isDartCoreBool: true) => _accessPrimitive(
-        paramRef,
-        param,
-        'asBool',
-      ),
-      DartType(isDartCoreString: true) => _accessPrimitive(
-        paramRef,
-        param,
-        'asString',
-      ),
       DartType(isEnum: true) => _accessJsonConverted(
         paramRef,
         param,
         'asString',
-        paramType,
       ),
       DartType(isDartCoreIterable: true) ||
       DartType(isDartCoreList: true) ||
       DartType(
         isDartCoreSet: true,
-      ) => _accessJsonConverted(paramRef, param, 'asList', paramType),
+      ) => _accessJsonConverted(paramRef, param, 'asList'),
       DartType(isDartCoreMap: true) => _accessJsonConverted(
         paramRef,
         param,
         'asMap',
-        paramType,
       ),
       RecordType(
         positionalFields: List(isNotEmpty: true),
@@ -131,14 +118,8 @@ base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
         paramRef,
         param,
         'asMap',
-        paramType,
       ),
-      RecordType() => _accessJsonConverted(
-        paramRef,
-        param,
-        'asList',
-        paramType,
-      ),
+      RecordType() => _accessJsonConverted(paramRef, param, 'asList'),
       InterfaceType(element: ClassElement(name: 'Uri')) => _accessPrimitive(
         paramRef,
         param,
@@ -146,8 +127,7 @@ base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
       ),
       InterfaceType(element: ClassElement(name: 'DateTime')) =>
         _accessPrimitive(paramRef, param, 'asDateTime'),
-      DynamicType() => _accessPrimitive(paramRef, param, 'value'),
-      _ => _accessFromJson(paramRef, param, paramType),
+      _ => _accessFromJson(paramRef, param),
     };
   }
 
@@ -162,29 +142,13 @@ base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
         r'$v',
         (p1) => p1.property(getter).apply(transform).code,
       );
-      if (param.isOptional) {
-        return paramRef
-            .property(nullCheckedOrName)
-            .call(
-              [closure, _getDefault(param)],
-              const {},
-              [param.type.toReference(nullable: false)],
-            );
-      } else {
-        return paramRef
-            .property(nullCheckedName)
-            .call(
-              [closure],
-              const {},
-              [param.type.toReference(nullable: false)],
-            );
-      }
+      return _accessNullChecked(paramRef, param, closure);
     } else {
       if (param.isOptional) {
         _ensureHasDefault(param);
         return paramRef
             .property('${getter}Or')
-            .call([_getDefault(param)])
+            .call([param.defaultValueExpression])
             .apply(transform);
       } else {
         return paramRef.property(getter).apply(transform);
@@ -195,14 +159,13 @@ base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
   Expression _accessJsonConverted(
     Expression paramRef,
     FormalParameterElement param,
-    String getter,
-    DartType type, [
+    String getter, [
     Expression Function(Expression value)? transform,
   ]) {
     final closure = closure1(
       r'$v',
       (p1) => fromJson(
-        type,
+        param.type,
         p1.property(getter).apply(transform),
         noCast: true,
         isNull: false,
@@ -210,32 +173,20 @@ base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
     );
 
     if (param.type.isNullableType && param.type is! DynamicType) {
-      if (param.isOptional) {
-        return paramRef
-            .property(nullCheckedOrName)
-            .call(
-              [closure, _getDefault(param)],
-              const {},
-              [type.toReference(nullable: false)],
-            );
-      } else {
-        return paramRef
-            .property(nullCheckedName)
-            .call([closure], const {}, [type.toReference(nullable: false)]);
-      }
+      return _accessNullChecked(paramRef, param, closure);
     } else {
       if (param.isOptional) {
         _ensureHasDefault(param);
         return paramRef
             .property(existsOrName)
             .call(
-              [closure, _getDefault(param)],
+              [closure, param.defaultValueExpression],
               const {},
-              [type.toReference()],
+              [param.type.toReference()],
             );
       } else {
         return fromJson(
-          type,
+          param.type,
           paramRef.property(getter).apply(transform),
           noCast: true,
         );
@@ -243,21 +194,37 @@ base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
     }
   }
 
+  /// Reads a nullable [param] via [closure], honoring an optional default.
+  Expression _accessNullChecked(
+    Expression paramRef,
+    FormalParameterElement param,
+    Expression closure,
+  ) {
+    if (param.isOptional) {
+      return paramRef
+          .property(nullCheckedOrName)
+          .call(
+            [closure, param.defaultValueExpression],
+            const {},
+            [param.type.toReference(nullable: false)],
+          );
+    } else {
+      return paramRef
+          .property(nullCheckedName)
+          .call([closure], const {}, [param.type.toReference(nullable: false)]);
+    }
+  }
+
   Expression _accessFromJson(
     Expression paramRef,
     FormalParameterElement param,
-    DartType type,
   ) {
-    final jsonType = fromJsonType(type);
+    final jsonType = fromJsonType(param.type);
+    if (_primitiveAccessor(jsonType) case (:final getter, :final transform)?) {
+      return _accessJsonConverted(paramRef, param, getter, transform);
+    }
+
     final (getter, transform) = switch (jsonType) {
-      DartType(isDartCoreInt: true) => ('asInt', null),
-      DartType(isDartCoreDouble: true) => (
-        'asNum',
-        (Expression e) => e.property('toDouble').call(const []),
-      ),
-      DartType(isDartCoreNum: true) => ('asNum', null),
-      DartType(isDartCoreBool: true) => ('asBool', null),
-      DartType(isDartCoreString: true) => ('asString', null),
       DartType(isEnum: true) => ('asString', null),
       DartType(isDartCoreIterable: true) ||
       DartType(isDartCoreList: true) ||
@@ -268,16 +235,25 @@ base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
         'asMap',
         (Expression e) => e.property('cast').call(const []),
       ),
-      DynamicType() => ('value', null),
       _ => ('value', (Expression e) => e.asA(jsonType.toReference())),
     };
-    return _accessJsonConverted(paramRef, param, getter, type, transform);
+    return _accessJsonConverted(paramRef, param, getter, transform);
   }
 
-  // TODO public use everywhere
-  Expression _getDefault(FormalParameterElement param) => param.hasDefaultValue
-      ? CodeExpression(Code(param.defaultValueCode!))
-      : literalNull;
+  /// Maps [type] to the json_rpc_2 parameter getter for it, if primitive.
+  ({String getter, Expression Function(Expression value)? transform})?
+  _primitiveAccessor(DartType type) => switch (type) {
+    DartType(isDartCoreInt: true) => (getter: 'asInt', transform: null),
+    DartType(isDartCoreDouble: true) => (
+      getter: 'asNum',
+      transform: (value) => value.property('toDouble').call(const []),
+    ),
+    DartType(isDartCoreNum: true) => (getter: 'asNum', transform: null),
+    DartType(isDartCoreBool: true) => (getter: 'asBool', transform: null),
+    DartType(isDartCoreString: true) => (getter: 'asString', transform: null),
+    DynamicType() => (getter: 'value', transform: null),
+    _ => null,
+  };
 
   void _ensureHasDefault(FormalParameterElement param) {
     if (!param.hasDefaultValue) {
@@ -290,89 +266,88 @@ base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
   }
 
   static Extension _buildParameterExtensions() {
-    final typeT = TypeReference((b) => b..symbol = 'T');
-    const getterParamRef = Reference('getter');
     const defaultValueParamRef = Reference('defaultValue');
     return Extension(
       (b) => b
         ..name = r'_$JsonRpc2ParameterExtensions'
         ..on = Types.$Parameter
         ..methods.add(
-          Method(
-            (b) => b
-              ..name = nullCheckedName
-              ..annotations.addAll(Annotations.alwaysInline)
-              ..types.add(typeT.boundTo(CoreTypes.$Object))
-              ..returns = typeT.asNullable(true)
-              ..requiredParameters.add(_buildGetter(getterParamRef, typeT))
-              ..body = refer('value')
-                  .notEqualTo(literalNull)
-                  .conditional(
-                    getterParamRef.call([refer('this')]),
-                    literalNull,
-                  )
-                  .code,
+          _buildExtensionMethod(
+            name: nullCheckedName,
+            typeParam: _typeT.boundTo(CoreTypes.$Object),
+            returns: _typeT.asNullable(true),
+            body: refer('value')
+                .notEqualTo(literalNull)
+                .conditional(_getterParamRef.call([refer('this')]), literalNull)
+                .code,
           ),
         )
         ..methods.add(
-          Method(
-            (b) => b
-              ..name = nullCheckedOrName
-              ..annotations.addAll(Annotations.alwaysInline)
-              ..types.add(typeT.boundTo(CoreTypes.$Object))
-              ..returns = typeT.asNullable(true)
-              ..requiredParameters.add(_buildGetter(getterParamRef, typeT))
-              ..requiredParameters.add(
-                Parameter(
-                  (b) => b
-                    ..name = defaultValueParamRef.symbol!
-                    ..type = typeT.asNullable(true),
-                ),
-              )
-              ..body = refer('exists')
-                  .conditional(
-                    refer(nullCheckedName).call([getterParamRef]),
-                    defaultValueParamRef,
-                  )
-                  .code,
+          _buildExtensionMethod(
+            name: nullCheckedOrName,
+            typeParam: _typeT.boundTo(CoreTypes.$Object),
+            returns: _typeT.asNullable(true),
+            defaultValueParam: Parameter(
+              (b) => b
+                ..name = defaultValueParamRef.symbol!
+                ..type = _typeT.asNullable(true),
+            ),
+            body: refer('exists')
+                .conditional(
+                  refer(nullCheckedName).call([_getterParamRef]),
+                  defaultValueParamRef,
+                )
+                .code,
           ),
         )
         ..methods.add(
-          Method(
-            (b) => b
-              ..name = existsOrName
-              ..annotations.addAll(Annotations.alwaysInline)
-              ..types.add(typeT)
-              ..returns = typeT
-              ..requiredParameters.add(_buildGetter(getterParamRef, typeT))
-              ..requiredParameters.add(
-                Parameter(
-                  (b) => b
-                    ..name = defaultValueParamRef.symbol!
-                    ..type = typeT,
-                ),
-              )
-              ..body = refer('exists')
-                  .conditional(
-                    getterParamRef.call([refer('this')]),
-                    defaultValueParamRef,
-                  )
-                  .code,
+          _buildExtensionMethod(
+            name: existsOrName,
+            typeParam: _typeT,
+            returns: _typeT,
+            defaultValueParam: Parameter(
+              (b) => b
+                ..name = defaultValueParamRef.symbol!
+                ..type = _typeT,
+            ),
+            body: refer('exists')
+                .conditional(
+                  _getterParamRef.call([refer('this')]),
+                  defaultValueParamRef,
+                )
+                .code,
           ),
         ),
     );
   }
 
-  static Parameter _buildGetter(Reference name, TypeReference type) =>
-      Parameter(
+  /// Builds one of the `Parameter` accessor extension methods.
+  static Method _buildExtensionMethod({
+    required String name,
+    required TypeReference typeParam,
+    required Reference returns,
+    Parameter? defaultValueParam,
+    required Code body,
+  }) => Method(
+    (b) => b
+      ..name = name
+      ..annotations.addAll(Annotations.alwaysInline)
+      ..types.add(typeParam)
+      ..returns = returns
+      ..requiredParameters.add(_buildGetter())
+      ..requiredParameters.addAll([?defaultValueParam])
+      ..body = body,
+  );
+
+  static Parameter _buildGetter() => Parameter(
+    (b) => b
+      ..name = _getterParamRef.symbol!
+      ..type = FunctionType(
         (b) => b
-          ..name = name.symbol!
-          ..type = FunctionType(
-            (b) => b
-              ..returnType = type
-              ..requiredParameters.add(Types.$Parameter),
-          ),
-      );
+          ..returnType = _typeT
+          ..requiredParameters.add(Types.$Parameter),
+      ),
+  );
 }
 
 extension on Expression {

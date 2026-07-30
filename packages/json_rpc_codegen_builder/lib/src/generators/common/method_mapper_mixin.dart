@@ -6,6 +6,7 @@ import 'package:dart_test_tools/code_gen.dart';
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
+import '../../extensions/parameter_extensions.dart';
 import 'annotations.dart';
 
 @internal
@@ -38,13 +39,7 @@ base mixin MethodMapperMixin {
       isDartAsyncFutureOr: true,
       typeArguments: [final futureType],
     )) {
-      throw InvalidGenerationSourceError(
-        'The return type of RPC methods must be a Future or void!',
-        element: method,
-        todo:
-            'Change return type to '
-            'Future<${futureType.getDisplayString()}>.',
-      );
+      _throwNotAFuture(method, futureType);
     }
 
     if (returnType case InterfaceType(
@@ -55,13 +50,7 @@ base mixin MethodMapperMixin {
     }
 
     if (!returnType.isDartAsyncFuture) {
-      throw InvalidGenerationSourceError(
-        'The return type of RPC methods must be a Future or void!',
-        element: method,
-        todo:
-            'Change return type to '
-            'Future<${returnType.getDisplayString()}>.',
-      );
+      _throwNotAFuture(method, returnType);
     }
 
     final futureType = (returnType as InterfaceType).typeArguments.single;
@@ -134,6 +123,15 @@ base mixin MethodMapperMixin {
     buildMethod(b);
   });
 
+  Never _throwNotAFuture(MethodElement method, DartType displayType) =>
+      throw InvalidGenerationSourceError(
+        'The return type of RPC methods must be a Future or void!',
+        element: method,
+        todo:
+            'Change return type to '
+            'Future<${displayType.getDisplayString()}>.',
+      );
+
   Parameter _buildParameter(FormalParameterElement parameter) => Parameter(
     (b) => b
       ..name = parameter.name!
@@ -141,8 +139,6 @@ base mixin MethodMapperMixin {
       ..named = parameter.isNamed
       ..required = parameter.isRequiredNamed
       ..covariant = parameter.isCovariant
-      ..defaultTo = parameter.hasDefaultValue
-          ? Code(parameter.defaultValueCode!)
-          : null,
+      ..defaultTo = parameter.defaultValueCodeOrNull,
   );
 }
