@@ -3,9 +3,9 @@ import 'package:code_builder/code_builder.dart';
 import 'package:meta/meta.dart';
 
 import '../common/base_constructor_builder_mixin.dart';
+import '../common/stream_support.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
-import 'stream_builder_mixin.dart';
 
 @internal
 final class ClientClassBuilder extends ProxySpec
@@ -16,7 +16,7 @@ final class ClientClassBuilder extends ProxySpec
 
   @override
   Class build() {
-    final hasStreams = StreamBuilderMixin.hasStreams(_class);
+    final hasStreams = StreamRpc.hasStreams(_class);
     return Class(
       (b) => b
         ..name = '${_class.name}Client'

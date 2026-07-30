@@ -10,6 +10,7 @@ import '../common/method_mapper_mixin.dart';
 import '../common/parameter_builder_mixin.dart';
 import '../common/registration_builder_mixin.dart';
 import '../common/serialization_mixin.dart';
+import '../common/stream_support.dart';
 import '../common/types.dart';
 import '../proxy_spec.dart';
 import 'stream_builder_mixin.dart';
@@ -22,7 +23,8 @@ final class ServerMixinBuilder extends ProxySpec
         SerializationMixin,
         ParameterBuilderMixin,
         RegistrationBuilderMixin,
-        StreamBuilderMixin {
+        StreamSupportMixin,
+        ServerStreamBuilderMixin {
   final ClassElement _class;
 
   const ServerMixinBuilder(this._class);
@@ -31,9 +33,7 @@ final class ServerMixinBuilder extends ProxySpec
   Mixin build() => Mixin(
     (b) => b
       ..name = '${_class.name}ServerMixin'
-      ..on = StreamBuilderMixin.hasStreams(_class)
-          ? Types.$PeerBase
-          : Types.$ServerBase
+      ..on = StreamRpc.hasStreams(_class) ? Types.$PeerBase : Types.$ServerBase
       ..implements.add(_class.toReference())
       ..fields.addAll(buildStreamFields(_class))
       ..methods.addAll(

@@ -5,7 +5,6 @@ import 'package:dart_test_tools/code_gen.dart';
 import 'package:meta/meta.dart';
 import 'package:source_helper/source_helper.dart';
 
-import '../../builders/for_in.dart';
 import '../../builders/if.dart';
 import '../../builders/iterable_if.dart';
 import '../../builders/try_catch.dart';
@@ -14,24 +13,23 @@ import '../common/constants.dart';
 import '../common/method_mapper_mixin.dart';
 import '../common/parameter_builder_mixin.dart';
 import '../common/registration_builder_mixin.dart';
+import '../common/stream_support.dart';
 import '../common/types.dart';
 import 'invocation_builder_mixin.dart';
 
 @internal
-base mixin StreamBuilderMixin
-    on MethodMapperMixin, InvocationBuilderMixin, RegistrationBuilderMixin {
+base mixin ClientStreamBuilderMixin
+    on
+        MethodMapperMixin,
+        InvocationBuilderMixin,
+        RegistrationBuilderMixin,
+        StreamSupportMixin {
   static const _streamIdCounterRef = Reference(r'_$streamIdCounter');
   static const _controllerMapRef = Reference(r'_$streamControllers');
-  static const _streamIdRef = Reference(r'$streamId');
   static const _controllerRef = Reference(r'$controller');
-  static const _errorRef = Reference(r'$error');
-  static const _stackTraceRef = Reference(r'$stackTrace');
-
-  static bool hasStreams(ClassElement clazz) =>
-      clazz.methods.any((m) => m.returnType.isDartAsyncStream);
 
   Iterable<Field> buildStreamFields(ClassElement clazz) sync* {
-    if (!hasStreams(clazz)) {
+    if (!StreamRpc.hasStreams(clazz)) {
       return;
     }
 
@@ -57,7 +55,7 @@ base mixin StreamBuilderMixin
       Block.of(_buildStreamBodyImpl(method, streamType));
 
   Method? buildStreamListeners(ClassElement clazz) {
-    if (!hasStreams(clazz)) {
+    if (!StreamRpc.hasStreams(clazz)) {
       return null;
     }
 
@@ -65,7 +63,14 @@ base mixin StreamBuilderMixin
       clazz.methods
           .where((m) => m.returnType.isDartAsyncStream)
           .map(_buildStreamListeners)
-          .followedBy([_buildCleanupMethod()]),
+          .followedBy(
+            buildStreamCleanup(
+              clazz,
+              map: _controllerMapRef,
+              itemRef: _controllerRef,
+              dispose: 'close',
+            ),
+          ),
     );
   }
 
@@ -77,8 +82,8 @@ base mixin StreamBuilderMixin
     yield buildMethodInvocation(
       JsonRpcInstance.sendRequest,
       method,
-      invocationSuffix: '#listen',
-      extraArgs: {_streamIdRef.symbol!: _streamIdRef},
+      invocationSuffix: StreamSubMethod.listen.suffix,
+      extraArgs: {StreamRpc.streamIdRef.symbol!: StreamRpc.streamIdRef},
       buildReturn: (i) {
         invocation = i;
         return [];
@@ -86,56 +91,57 @@ base mixin StreamBuilderMixin
     );
 
     yield declareFinal(
-      _streamIdRef.symbol!,
+      StreamRpc.streamIdRef.symbol!,
     ).assign(_streamIdCounterRef.postfixIncrement).statement;
 
     yield _controllerMapRef
-        .index(_streamIdRef)
+        .index(StreamRpc.streamIdRef)
         .assign(
-          Types.$StreamController(streamType.toReference()).newInstance(
-            const [],
-            {
-              'onListen': _buildOnListen(invocation),
-              'onCancel': closure0(
-                () => CoreTypes.$Future().property('wait').call([
-                  literalList([
-                    IterableIf(
-                      JsonRpcInstance.isClosed.negate(),
-                      _buildStreamNotification(
-                        method,
-                        'cancel',
-                        asRequest: true,
-                      ).property('onError').call(
-                        [closure2('_', '_', (_, _) => Block())],
-                        {
-                          'test': closure1(
-                            '_',
-                            (_) => JsonRpcInstance.isClosed.code,
-                          ),
-                        },
-                        [CoreTypes.$StateError],
-                      ),
+          Types.$StreamController(
+            streamType.toReference(),
+          ).newInstance(const [], {
+            'onListen': _buildOnListen(invocation),
+            'onCancel': closure0(
+              () => CoreTypes.$Future().property('wait').call([
+                literalList([
+                  IterableIf(
+                    JsonRpcInstance.isClosed.negate(),
+                    _buildStreamNotification(
+                      method,
+                      StreamSubMethod.cancel,
+                      asRequest: true,
+                    ).property('onError').call(
+                      [closure2('_', '_', (_, _) => Block())],
+                      {
+                        'test': closure1(
+                          '_',
+                          (_) => JsonRpcInstance.isClosed.code,
+                        ),
+                      },
+                      [CoreTypes.$StateError],
                     ),
-                    IterableIf(
-                      _controllerMapRef
-                          .property('remove')
-                          .call(const [_streamIdRef])
-                          .$case(
-                            declareFinal(_controllerRef.symbol!).patternNonNull,
-                          ),
-                      _controllerRef.property('close').call(const []),
-                    ),
-                  ]),
-                ]).code,
-              ),
-              'onPause': closure0(
-                () => _buildStreamNotification(method, 'pause').code,
-              ),
-              'onResume': closure0(
-                () => _buildStreamNotification(method, 'resume').code,
-              ),
-            },
-          ),
+                  ),
+                  IterableIf(
+                    _controllerMapRef
+                        .property('remove')
+                        .call(const [StreamRpc.streamIdRef])
+                        .$case(
+                          declareFinal(_controllerRef.symbol!).patternNonNull,
+                        ),
+                    _controllerRef.property('close').call(const []),
+                  ),
+                ]),
+              ]).code,
+            ),
+            'onPause': closure0(
+              () =>
+                  _buildStreamNotification(method, StreamSubMethod.pause).code,
+            ),
+            'onResume': closure0(
+              () =>
+                  _buildStreamNotification(method, StreamSubMethod.resume).code,
+            ),
+          }),
         )
         .parenthesized
         .property('stream')
@@ -146,18 +152,20 @@ base mixin StreamBuilderMixin
   Expression _buildOnListen(Expression invocation) => closure0(
     modifier: MethodModifier.async,
     () => try$([invocation.awaited.statement]).catch$(
-      error: _errorRef,
-      stackTrace: _stackTraceRef,
+      error: StreamRpc.errorRef,
+      stackTrace: StreamRpc.stackTraceRef,
       body: [
         declareFinal(_controllerRef.symbol!)
             .assign(
-              _controllerMapRef.property('remove').call(const [_streamIdRef]),
+              _controllerMapRef.property('remove').call(const [
+                StreamRpc.streamIdRef,
+              ]),
             )
             .statement,
         $if(_controllerRef.notEqualTo(literalNull), [
           _controllerRef.property('addError').call(const [
-            _errorRef,
-            _stackTraceRef,
+            StreamRpc.errorRef,
+            StreamRpc.stackTraceRef,
           ]).statement,
           _controllerRef.property('close').call(const []).awaited.statement,
         ]).$else([const Reference('rethrow').statement]),
@@ -167,15 +175,15 @@ base mixin StreamBuilderMixin
 
   Expression _buildStreamNotification(
     MethodElement method,
-    String command, {
+    StreamSubMethod subMethod, {
     bool asRequest = false,
   }) =>
       (asRequest
               ? JsonRpcInstance.sendRequest
               : JsonRpcInstance.sendNotification)
           .call([
-            literalString('${method.name}#$command'),
-            literalList([StreamBuilderMixin._streamIdRef]),
+            literalString(StreamRpc.methodName(method, subMethod)),
+            literalList([StreamRpc.streamIdRef]),
           ]);
 
   Code _buildStreamListeners(MethodElement method) {
@@ -191,10 +199,10 @@ base mixin StreamBuilderMixin
     MethodElement method,
     DartType streamType,
   ) => buildRegisterMethodWithParams(
-    '${method.name}#data',
+    StreamRpc.methodName(method, StreamSubMethod.data),
     async: false,
     (params) => _controllerMapRef
-        .index(params.index(literalNum(0)).property('asInt'))
+        .index(streamIdFrom(params))
         .asA(Types.$StreamController(streamType.toReference()).asNullable(true))
         .nullSafeProperty('add')
         .call([
@@ -214,10 +222,10 @@ base mixin StreamBuilderMixin
   );
 
   Code _buildErrorMethod(MethodElement method) => buildRegisterMethodWithParams(
-    '${method.name}#error',
+    StreamRpc.methodName(method, StreamSubMethod.error),
     async: false,
     (params) => Block.of([
-      declareFinal(_errorRef.symbol!)
+      declareFinal(StreamRpc.errorRef.symbol!)
           .assign(
             params
                 .index(literalNum(1))
@@ -231,18 +239,20 @@ base mixin StreamBuilderMixin
           )
           .statement,
       _controllerMapRef
-          .index(params.index(literalNum(0)).property('asInt'))
+          .index(streamIdFrom(params))
           .nullSafeProperty('addError')
           .call([
             Types.$RpcException.newInstance(
               [
-                _errorRef.index(literalString('code')).asA(CoreTypes.$int),
-                _errorRef
+                StreamRpc.errorRef
+                    .index(literalString('code'))
+                    .asA(CoreTypes.$int),
+                StreamRpc.errorRef
                     .index(literalString('message'))
                     .asA(CoreTypes.$String),
               ],
               {
-                'data': _errorRef
+                'data': StreamRpc.errorRef
                     .index(literalString('data'))
                     .asA(CoreTypes.$Object.asNullable(true)),
               },
@@ -253,31 +263,13 @@ base mixin StreamBuilderMixin
   );
 
   Code _buildDoneMethod(MethodElement method) => buildRegisterMethodWithParams(
-    '${method.name}#done',
+    StreamRpc.methodName(method, StreamSubMethod.done),
     async: false,
     (params) => _controllerMapRef
         .property('remove')
-        .call([params.index(literalNum(0)).property('asInt')])
+        .call([streamIdFrom(params)])
         .nullSafeProperty('close')
         .call(const [])
         .code,
   );
-
-  Code _buildCleanupMethod() => Globals.unawaitedRef.call([
-    JsonRpcInstance.ref.property('done').property('then').call([
-      closure1(
-        '_',
-        (_) => Block.of([
-          ForIn(
-            _controllerRef.symbol!,
-            _controllerMapRef.property('values'),
-            Globals.unawaitedRef.call([
-              _controllerRef.property('close').call(const []),
-            ]).statement,
-          ),
-          _controllerMapRef.property('clear').call(const []).statement,
-        ]),
-      ),
-    ]),
-  ]).statement;
 }
