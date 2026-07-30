@@ -16,8 +16,8 @@ base mixin SerializationMixin on ClosureBuilderMixin {
   static const _maybeMapRef = Reference(r'_$maybeMap');
 
   static Iterable<Spec> buildGlobals() sync* {
-    yield _buildMap();
-    yield _buildMaybeMap();
+    yield _buildMapMethod(_mapRef, nullable: false);
+    yield _buildMapMethod(_maybeMapRef, nullable: true);
   }
 
   @protected
@@ -27,19 +27,20 @@ base mixin SerializationMixin on ClosureBuilderMixin {
     bool noCast = false,
     bool? isNull,
   }) {
+    final nullable = isNull ?? type.isNullableType;
     switch (type) {
       case InterfaceType(isDartCoreIterable: true) ||
           InterfaceType(isDartCoreList: true) ||
           InterfaceType(isDartCoreSet: true):
-        return _fromList(type, value, noCast: noCast, isNull: isNull);
+        return _fromList(type, value, noCast: noCast, nullable: nullable);
       case InterfaceType(isDartCoreMap: true):
-        return _fromMap(type, value, noCast: noCast, isNull: isNull);
+        return _fromMap(type, value, noCast: noCast, nullable: nullable);
       case RecordType():
-        return _fromRecord(type, value, noCast: noCast, isNull: isNull);
+        return _fromRecord(type, value, noCast: noCast, nullable: nullable);
       case DartType(isEnum: true):
         return _ifNotNull(
           type,
-          isNull ?? type.isNullableType,
+          nullable,
           value,
           (ref) => type
               .toReference(nullable: false)
@@ -50,7 +51,7 @@ base mixin SerializationMixin on ClosureBuilderMixin {
       case InterfaceType(element: ClassElement(name: 'Uri' || 'DateTime')):
         return _ifNotNull(
           type,
-          isNull ?? type.isNullableType,
+          nullable,
           value,
           (ref) => type.toReference(nullable: false).property('parse').call([
             _maybeCast(ref, CoreTypes.$String, noCast),
@@ -64,7 +65,7 @@ base mixin SerializationMixin on ClosureBuilderMixin {
         final jsonType = fromJsonType(type);
         return _ifNotNull(
           type,
-          isNull ?? type.isNullableType,
+          nullable,
           value,
           (ref) => type.toReference(nullable: false).newInstanceNamed(
             'fromJson',
@@ -76,25 +77,22 @@ base mixin SerializationMixin on ClosureBuilderMixin {
 
   @protected
   Expression toJson(DartType type, Expression value, {bool? isNull}) {
+    final nullable = isNull ?? type.isNullableType;
     switch (type) {
       case InterfaceType(isDartCoreIterable: true) ||
           InterfaceType(isDartCoreList: true) ||
           InterfaceType(isDartCoreSet: true):
-        return _toList(type, value, isNull: isNull);
+        return _toList(type, value, nullable: nullable);
       case InterfaceType(isDartCoreMap: true):
-        return _toMap(type, value, isNull: isNull);
+        return _toMap(type, value, nullable: nullable);
       case RecordType():
-        return _toRecord(type, value, isNull: isNull);
+        return _toRecord(type, value, nullable: nullable);
       case DartType(isEnum: true):
-        return value.autoProperty('name', isNull ?? type.isNullableType);
+        return value.autoProperty('name', nullable);
       case InterfaceType(element: ClassElement(name: 'Uri')):
-        return value
-            .autoProperty('toString', isNull ?? type.isNullableType)
-            .call(const []);
+        return value.autoProperty('toString', nullable).call(const []);
       case InterfaceType(element: ClassElement(name: 'DateTime')):
-        return value
-            .autoProperty('toIso8601String', isNull ?? type.isNullableType)
-            .call(const []);
+        return value.autoProperty('toIso8601String', nullable).call(const []);
       case _:
         return value;
     }
@@ -103,27 +101,25 @@ base mixin SerializationMixin on ClosureBuilderMixin {
   Expression _fromList(
     InterfaceType type,
     Expression value, {
+    required bool nullable,
     bool noCast = false,
-    bool? isNull,
   }) {
     final listType = type.typeArguments.single;
 
     var iterable = _maybeCast(
       value,
-      CoreTypes.$List().asNullable(isNull ?? type.isNullableType),
+      CoreTypes.$List().asNullable(nullable),
       noCast,
     );
 
     if (listType is! DynamicType) {
-      iterable = iterable
-          .autoProperty('map', isNull ?? type.isNullableType)
-          .call([
-            closure1(
-              r'$e',
-              type1: CoreTypes.$dynamic,
-              (p1) => fromJson(listType, p1).code,
-            ),
-          ]);
+      iterable = iterable.autoProperty('map', nullable).call([
+        closure1(
+          r'$e',
+          type1: CoreTypes.$dynamic,
+          (p1) => fromJson(listType, p1).code,
+        ),
+      ]);
     }
 
     if (type.isDartCoreList) {
@@ -135,22 +131,25 @@ base mixin SerializationMixin on ClosureBuilderMixin {
     return iterable;
   }
 
-  Expression _toList(InterfaceType type, Expression value, {bool? isNull}) {
+  Expression _toList(
+    InterfaceType type,
+    Expression value, {
+    required bool nullable,
+  }) {
     final listType = type.typeArguments.single;
 
     const elementParamRef = Reference(r'$e');
     final convertExpression = toJson(listType, elementParamRef);
     if (identical(convertExpression, elementParamRef)) {
       return !type.isDartCoreList
-          ? value.autoProperty('toList', isNull ?? type.isNullableType).call(
-              const [],
-              const {'growable': literalFalse},
-            )
+          ? value.autoProperty('toList', nullable).call(const [], const {
+              'growable': literalFalse,
+            })
           : value;
     }
 
     return value
-        .autoProperty('map', isNull ?? type.isNullableType)
+        .autoProperty('map', nullable)
         .call([
           closure1(elementParamRef.symbol!, (p1) => convertExpression.code),
         ])
@@ -161,22 +160,18 @@ base mixin SerializationMixin on ClosureBuilderMixin {
   Expression _fromMap(
     InterfaceType type,
     Expression value, {
+    required bool nullable,
     bool noCast = false,
-    bool? isNull,
   }) {
     _validateMapKey(type);
 
     final keyType = type.typeArguments[0];
     final valueType = type.typeArguments[1];
 
-    var map = _maybeCast(
-      value,
-      CoreTypes.$Map().asNullable(isNull ?? type.isNullableType),
-      noCast,
-    );
+    var map = _maybeCast(value, CoreTypes.$Map().asNullable(nullable), noCast);
 
     if (keyType is! DynamicType || valueType is! DynamicType) {
-      map = map.autoProperty('map', isNull ?? type.isNullableType).call([
+      map = map.autoProperty('map', nullable).call([
         closure2(
           r'$k',
           r'$v',
@@ -194,9 +189,12 @@ base mixin SerializationMixin on ClosureBuilderMixin {
     return map;
   }
 
-  Expression _toMap(InterfaceType type, Expression value, {bool? isNull}) {
+  Expression _toMap(
+    InterfaceType type,
+    Expression value, {
+    required bool nullable,
+  }) {
     _validateMapKey(type);
-
     final valueType = type.typeArguments[1];
 
     const keyParamRef = Reference(r'$k');
@@ -208,7 +206,7 @@ base mixin SerializationMixin on ClosureBuilderMixin {
       return value;
     }
 
-    return value.autoProperty('map', isNull ?? type.isNullableType).call([
+    return value.autoProperty('map', nullable).call([
       closure2(
         keyParamRef.symbol!,
         valueParamRef.symbol!,
@@ -223,21 +221,17 @@ base mixin SerializationMixin on ClosureBuilderMixin {
   Expression _fromRecord(
     RecordType type,
     Expression value, {
+    required bool nullable,
     bool noCast = false,
-    bool? isNull,
   }) {
     if (type.namedFields.isNotEmpty && type.positionalFields.isNotEmpty) {
       throwInvalidRecord(type);
     } else if (type.namedFields.isNotEmpty) {
       return _ifNotNull(
         type,
-        isNull ?? type.isNullableType,
+        nullable,
         mapNonNull: true,
-        _maybeCast(
-          value,
-          CoreTypes.$Map().asNullable(isNull ?? type.isNullableType),
-          noCast,
-        ),
+        _maybeCast(value, CoreTypes.$Map().asNullable(nullable), noCast),
         (ref) => literalRecord(const [], {
           for (final field in type.namedFields)
             field.name: fromJson(
@@ -250,13 +244,9 @@ base mixin SerializationMixin on ClosureBuilderMixin {
       // empty records are treated as positional
       return _ifNotNull(
         type,
-        isNull ?? type.isNullableType,
+        nullable,
         mapNonNull: true,
-        _maybeCast(
-          value,
-          CoreTypes.$List().asNullable(isNull ?? type.isNullableType),
-          noCast,
-        ),
+        _maybeCast(value, CoreTypes.$List().asNullable(nullable), noCast),
         (ref) => literalRecord([
           for (final (index, field) in type.positionalFields.indexed)
             fromJson(field.type, ref.index(literalNum(index))),
@@ -265,13 +255,17 @@ base mixin SerializationMixin on ClosureBuilderMixin {
     }
   }
 
-  Expression _toRecord(RecordType type, Expression value, {bool? isNull}) {
+  Expression _toRecord(
+    RecordType type,
+    Expression value, {
+    required bool nullable,
+  }) {
     if (type.namedFields.isNotEmpty && type.positionalFields.isNotEmpty) {
       throwInvalidRecord(type);
     } else if (type.namedFields.isNotEmpty) {
       return _ifNotNull(
         type,
-        isNull ?? type.isNullableType,
+        nullable,
         value,
         (ref) => literalMap(
           {
@@ -289,7 +283,7 @@ base mixin SerializationMixin on ClosureBuilderMixin {
       // empty records are treated as positional
       return _ifNotNull(
         type,
-        isNull ?? type.isNullableType,
+        nullable,
         value,
         (ref) => literalList({
           for (final (index, field) in type.positionalFields.indexed)
@@ -359,23 +353,24 @@ base mixin SerializationMixin on ClosureBuilderMixin {
     ]);
   }
 
-  static Method _buildMap() {
+  static Method _buildMapMethod(Reference name, {required bool nullable}) {
     final tConverted = TypeReference((b) => b..symbol = 'TConverted');
     final tJson = TypeReference((b) => b..symbol = 'TJson');
     const valueParamRef = Reference(r'$value');
     const convertParamRef = Reference(r'$convert');
+    final convertCall = convertParamRef.call([valueParamRef]);
     return Method(
       (b) => b
-        ..name = _mapRef.symbol
+        ..name = name.symbol
         ..annotations.addAll(Annotations.alwaysInline)
-        ..returns = tConverted
+        ..returns = tConverted.asNullable(nullable)
         ..types.add(tConverted.boundTo(CoreTypes.$Object))
         ..types.add(tJson.boundTo(CoreTypes.$Object))
         ..requiredParameters.add(
           Parameter(
             (b) => b
               ..name = valueParamRef.symbol!
-              ..type = tJson,
+              ..type = tJson.asNullable(nullable),
           ),
         )
         ..requiredParameters.add(
@@ -389,44 +384,13 @@ base mixin SerializationMixin on ClosureBuilderMixin {
               ),
           ),
         )
-        ..body = convertParamRef.call([valueParamRef]).code,
-    );
-  }
-
-  static Method _buildMaybeMap() {
-    final tConverted = TypeReference((b) => b..symbol = 'TConverted');
-    final tJson = TypeReference((b) => b..symbol = 'TJson');
-    const valueParamRef = Reference(r'$value');
-    const convertParamRef = Reference(r'$convert');
-    return Method(
-      (b) => b
-        ..name = _maybeMapRef.symbol
-        ..annotations.addAll(Annotations.alwaysInline)
-        ..returns = tConverted.asNullable(true)
-        ..types.add(tConverted.boundTo(CoreTypes.$Object))
-        ..types.add(tJson.boundTo(CoreTypes.$Object))
-        ..requiredParameters.add(
-          Parameter(
-            (b) => b
-              ..name = valueParamRef.symbol!
-              ..type = tJson.asNullable(true),
-          ),
-        )
-        ..requiredParameters.add(
-          Parameter(
-            (b) => b
-              ..name = convertParamRef.symbol!
-              ..type = FunctionType(
-                (b) => b
-                  ..returnType = tConverted
-                  ..requiredParameters.add(tJson),
-              ),
-          ),
-        )
-        ..body = valueParamRef
-            .equalTo(literalNull)
-            .conditional(literalNull, convertParamRef.call([valueParamRef]))
-            .code,
+        ..body =
+            (nullable
+                    ? valueParamRef
+                          .equalTo(literalNull)
+                          .conditional(literalNull, convertCall)
+                    : convertCall)
+                .code,
     );
   }
 
