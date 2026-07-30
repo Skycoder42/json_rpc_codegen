@@ -5,8 +5,7 @@ import 'common.dart';
 part 'return_tests.g.dart';
 
 @jsonRpcMixins
-// ignore: unused_element for testing
-abstract class _ReturnTests {
+abstract interface class ReturnTests {
   Future<bool> boolRet();
 
   Future<num?> numRet();
@@ -31,17 +30,17 @@ abstract class _ReturnTests {
 
   Future<Map<String, double>> mapRet();
 
-  Future<Map<List<String>, Iterable<Map<dynamic, List<num>>>>> deepRet();
+  Future<Map<String, Iterable<Map<dynamic, List<num>>>>> deepRet();
 
   Future<User> userRet();
 
-  Future<Color> colorRet();
+  Future<Color?> colorRet();
 
   Future<Permission> permissionRet();
 
   Future<Iterable<User>> usersRet();
 
-  Future<Map<Color, List<Permission>>> colorPermissionsRet();
+  Future<Map<dynamic, List<Permission>>> colorPermissionsRet();
 
   Future<(int?, Permission, Iterable<User?>, ({int x, int y}))> posRecordRet();
 

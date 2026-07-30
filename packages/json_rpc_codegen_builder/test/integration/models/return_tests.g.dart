@@ -13,7 +13,7 @@ part of 'return_tests.dart';
 // ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
 // ignore_for_file: unreachable_from_main, unused_element
 
-mixin ReturnTestsClientMixin on ClientBase implements _ReturnTests {
+mixin ReturnTestsClientMixin on ClientBase implements ReturnTests {
   @override
   Future<bool> boolRet() async {
     final $result = await jsonRpcInstance.sendRequest('boolRet');
@@ -89,11 +89,11 @@ mixin ReturnTestsClientMixin on ClientBase implements _ReturnTests {
   }
 
   @override
-  Future<Map<List<String>, Iterable<Map<dynamic, List<num>>>>> deepRet() async {
+  Future<Map<String, Iterable<Map<dynamic, List<num>>>>> deepRet() async {
     final $result = await jsonRpcInstance.sendRequest('deepRet');
     return ($result as Map).map(
       (dynamic $k, dynamic $v) => MapEntry(
-        ($k as List).map((dynamic $e) => ($e as String)).toList(),
+        ($k as String),
         ($v as List).map(
           (dynamic $e) => ($e as Map).map(
             (dynamic $k, dynamic $v) => MapEntry(
@@ -113,9 +113,9 @@ mixin ReturnTestsClientMixin on ClientBase implements _ReturnTests {
   }
 
   @override
-  Future<Color> colorRet() async {
+  Future<Color?> colorRet() async {
     final $result = await jsonRpcInstance.sendRequest('colorRet');
-    return Color.fromJson(($result as String));
+    return _$maybeMap($result, ($v) => Color.fromJson(($v as String)));
   }
 
   @override
@@ -133,11 +133,11 @@ mixin ReturnTestsClientMixin on ClientBase implements _ReturnTests {
   }
 
   @override
-  Future<Map<Color, List<Permission>>> colorPermissionsRet() async {
+  Future<Map<dynamic, List<Permission>>> colorPermissionsRet() async {
     final $result = await jsonRpcInstance.sendRequest('colorPermissionsRet');
     return ($result as Map).map(
       (dynamic $k, dynamic $v) => MapEntry(
-        Color.fromJson(($k as String)),
+        $k,
         ($v as List)
             .map((dynamic $e) => Permission.values.byName(($e as String)))
             .toList(),
@@ -185,49 +185,7 @@ mixin ReturnTestsClientMixin on ClientBase implements _ReturnTests {
     );
   }
 }
-mixin ReturnTestsServerMixin on ServerBase {
-  @protected
-  FutureOr<bool> boolRet();
-  @protected
-  FutureOr<num?> numRet();
-  @protected
-  FutureOr<int> intRet();
-  @protected
-  FutureOr<double?> doubleRet();
-  @protected
-  FutureOr<String> stringRet();
-  @protected
-  FutureOr<DateTime> dateTimeRet();
-  @protected
-  FutureOr<Uri> uriRet();
-  @protected
-  FutureOr<dynamic> dynamicRet();
-  @protected
-  FutureOr<List<int>> listRet();
-  @protected
-  FutureOr<Iterable<bool>> iterableRet();
-  @protected
-  FutureOr<Set<String>> setRet();
-  @protected
-  FutureOr<Map<String, double>> mapRet();
-  @protected
-  FutureOr<Map<List<String>, Iterable<Map<dynamic, List<num>>>>> deepRet();
-  @protected
-  FutureOr<User> userRet();
-  @protected
-  FutureOr<Color> colorRet();
-  @protected
-  FutureOr<Permission> permissionRet();
-  @protected
-  FutureOr<Iterable<User>> usersRet();
-  @protected
-  FutureOr<Map<Color, List<Permission>>> colorPermissionsRet();
-  @protected
-  FutureOr<(int?, Permission, Iterable<User?>, ({int x, int y}))>
-  posRecordRet();
-  @protected
-  FutureOr<({Color c, Map<String, String?>? d, (int, int) p, double r})>
-  namedRecordRet();
+mixin ReturnTestsServerMixin on ServerBase implements ReturnTests {
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -313,11 +271,15 @@ mixin ReturnTestsServerMixin on ServerBase {
   }
 }
 @pragma('vm:prefer-inline')
+@pragma('dart2js:tryInline')
+@pragma('wasm:prefer-inline')
 TConverted _$map<TConverted extends Object, TJson extends Object>(
   TJson $value,
   TConverted Function(TJson) $convert,
 ) => $convert($value);
 @pragma('vm:prefer-inline')
+@pragma('dart2js:tryInline')
+@pragma('wasm:prefer-inline')
 TConverted? _$maybeMap<TConverted extends Object, TJson extends Object>(
   TJson? $value,
   TConverted Function(TJson) $convert,
@@ -325,14 +287,22 @@ TConverted? _$maybeMap<TConverted extends Object, TJson extends Object>(
 
 extension _$JsonRpc2ParameterExtensions on Parameter {
   @pragma('vm:prefer-inline')
-  T $maybeOr<T>(T Function(Parameter) getter, T defaultValue) =>
-      exists ? getter(this) : defaultValue;
-
-  @pragma('vm:prefer-inline')
-  T? $nullOr<T>(T Function(Parameter) getter) =>
+  @pragma('dart2js:tryInline')
+  @pragma('wasm:prefer-inline')
+  T? $nullChecked<T extends Object>(T Function(Parameter) getter) =>
       value != null ? getter(this) : null;
 
   @pragma('vm:prefer-inline')
-  T? $maybeNullOr<T>(T Function(Parameter) getter) =>
-      exists && value != null ? getter(this) : null;
+  @pragma('dart2js:tryInline')
+  @pragma('wasm:prefer-inline')
+  T? $nullCheckedOr<T extends Object>(
+    T Function(Parameter) getter,
+    T? defaultValue,
+  ) => exists ? $nullChecked(getter) : defaultValue;
+
+  @pragma('vm:prefer-inline')
+  @pragma('dart2js:tryInline')
+  @pragma('wasm:prefer-inline')
+  T $existsOr<T>(T Function(Parameter) getter, T defaultValue) =>
+      exists ? getter(this) : defaultValue;
 }

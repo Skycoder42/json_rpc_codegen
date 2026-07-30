@@ -212,7 +212,7 @@ base mixin StreamBuilderMixin
             streamType.isNullableType
                 ? params
                       .index(literalNum(1))
-                      .property(ParameterBuilderMixin.nullOrName)
+                      .property(ParameterBuilderMixin.nullCheckedName)
                       .call([
                         closure1(r'$v', (p1) => p1.property('value').code),
                       ])

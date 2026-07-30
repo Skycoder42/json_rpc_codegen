@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__dart-mcp-server__analyze_files",
+      "mcp__dart-mcp-server__lsp",
+      "mcp__dart-mcp-server__read_package_uris",
+      "mcp__dart-mcp-server__rip_grep_packages",
+      "mcp__dart-mcp-server__pub_dev_search",
+      "Bash(dart format *)",
+      "Bash(dart test *)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": false,
+    "allowUnsandboxedCommands": false,
+    "network": {
+      "allowedDomains": [
+        "pub.dev"
+      ],
+      "allowLocalBinding": true
+    },
+    "filesystem": {
+      "allowWrite": [
+        "$FLUTTER_ROOT/bin/cache/"
+      ]
+    },
+    "enableWeakerNetworkIsolation": true
+  }
+}

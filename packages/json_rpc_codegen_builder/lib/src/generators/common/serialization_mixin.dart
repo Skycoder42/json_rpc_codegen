@@ -62,25 +62,14 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
       case DynamicType():
         return value;
       case _:
-        final jsonType = _fromJsonType(type);
-        if (jsonType == null) {
-          throw InvalidGenerationSourceError(
-            'Unable to build deserialization code for $type. Is not a standard '
-            'dart type and no valid .fromJson constructor could be found.',
-            element: type.element,
-            todo:
-                'Add a fromJson constructor that a single, '
-                'positional parameter.',
-          );
-        }
-
+        final jsonType = fromJsonType(type);
         return _ifNotNull(
           type,
           isNull ?? type.isNullableType,
           value,
           (ref) => type.toReference(nullable: false).newInstanceNamed(
             'fromJson',
-            [ref.asA(jsonType.toReference())],
+            [_maybeCast(ref, jsonType.toReference(), noCast)],
           ),
         );
     }
@@ -176,6 +165,8 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     bool noCast = false,
     bool? isNull,
   }) {
+    _validateMapKey(type);
+
     final keyType = type.typeArguments[0];
     final valueType = type.typeArguments[1];
 
@@ -193,7 +184,8 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
           type1: CoreTypes.$dynamic,
           type2: CoreTypes.$dynamic,
           (p1, p2) => CoreTypes.$MapEntry().newInstance([
-            fromJson(keyType, p1),
+            // keys are never converted, only cast - see _validateMapKey
+            _maybeCast(p1, keyType.toReference(), keyType is DynamicType),
             fromJson(valueType, p2),
           ]).code,
         ),
@@ -204,16 +196,16 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
   }
 
   Expression _toMap(InterfaceType type, Expression value, {bool? isNull}) {
-    final keyType = type.typeArguments[0];
+    _validateMapKey(type);
+
     final valueType = type.typeArguments[1];
 
     const keyParamRef = Reference(r'$k');
     const valueParamRef = Reference(r'$v');
 
-    final convertKeyExpression = toJson(keyType, keyParamRef);
+    // keys are always strings and thus never need to be converted
     final convertValueExpression = toJson(valueType, valueParamRef);
-    if (identical(convertKeyExpression, keyParamRef) &&
-        identical(convertValueExpression, valueParamRef)) {
+    if (identical(convertValueExpression, valueParamRef)) {
       return value;
     }
 
@@ -222,7 +214,7 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
         keyParamRef.symbol!,
         valueParamRef.symbol!,
         (p1, p2) => CoreTypes.$MapEntry().newInstance([
-          convertKeyExpression,
+          p1,
           convertValueExpression,
         ]).code,
       ),
@@ -316,17 +308,29 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
       type.isDartCoreDouble ||
       type.isDartCoreString;
 
-  DartType? _fromJsonType(DartType type) {
+  DartType fromJsonType(DartType type) {
     final element = type.element;
+    DartType? jsonType;
     if (element case ClassElement()) {
       final fromJsonConstructor = element.constructors.firstWhere(
         (c) => c.name == 'fromJson',
       );
       final jsonArg = fromJsonConstructor.formalParameters.firstOrNull;
-      return jsonArg?.type;
-    } else {
-      return null;
+      jsonType = jsonArg?.type;
     }
+
+    if (jsonType == null) {
+      throw InvalidGenerationSourceError(
+        'Unable to build deserialization code for $type. Is not a standard '
+        'dart type and no valid .fromJson constructor could be found.',
+        element: type.element,
+        todo:
+            'Add a fromJson constructor that a single, '
+            'positional parameter.',
+      );
+    }
+
+    return jsonType;
   }
 
   Expression _maybeCast(Expression ref, Reference type, bool noCast) =>
@@ -364,7 +368,9 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     return Method(
       (b) => b
         ..name = _mapRef.symbol
-        ..annotations.add(Annotations.pragmaPreferInline)
+        ..annotations.add(Annotations.pragmaVmPreferInline)
+        ..annotations.add(Annotations.pragmaDart2jsTryInline)
+        ..annotations.add(Annotations.pragmaWasmPreferInline)
         ..returns = tConverted
         ..types.add(tConverted.boundTo(CoreTypes.$Object))
         ..types.add(tJson.boundTo(CoreTypes.$Object))
@@ -398,7 +404,9 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
     return Method(
       (b) => b
         ..name = _maybeMapRef.symbol
-        ..annotations.add(Annotations.pragmaPreferInline)
+        ..annotations.add(Annotations.pragmaVmPreferInline)
+        ..annotations.add(Annotations.pragmaDart2jsTryInline)
+        ..annotations.add(Annotations.pragmaWasmPreferInline)
         ..returns = tConverted.asNullable(true)
         ..types.add(tConverted.boundTo(CoreTypes.$Object))
         ..types.add(tJson.boundTo(CoreTypes.$Object))
@@ -424,6 +432,30 @@ base mixin SerializationMixin on ProxySpec, ClosureBuilderMixin {
             .equalTo(literalNull)
             .conditional(literalNull, convertParamRef.call([valueParamRef]))
             .code,
+    );
+  }
+
+  /// Ensures that the key type of [mapType] can be a JSON object key.
+  ///
+  /// Only non nullable [String]s can be used. `dynamic`, `Object` and `Object?`
+  /// are accepted as an unchecked escape hatch - no conversion is emitted for
+  /// them and the key must already be a [String] at runtime.
+  static void _validateMapKey(InterfaceType mapType) {
+    final keyType = mapType.typeArguments[0];
+
+    // must be checked first, as isNullableType reports dynamic as nullable
+    if (keyType is DynamicType || keyType.isDartCoreObject) {
+      return;
+    }
+
+    if (keyType.isDartCoreString && !keyType.isNullableType) {
+      return;
+    }
+
+    throw InvalidGenerationSourceError(
+      'Only non nullable Strings can be used as map keys, but '
+      '${mapType.getDisplayString()} was used.',
+      todo: 'Change the key type of the map to String.',
     );
   }
 

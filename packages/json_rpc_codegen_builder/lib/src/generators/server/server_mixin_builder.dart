@@ -5,8 +5,6 @@ import 'package:collection/collection.dart';
 import 'package:dart_test_tools/code_gen.dart';
 import 'package:meta/meta.dart';
 
-import '../../extensions/analyzer_extensions.dart';
-import '../common/annotations.dart';
 import '../common/closure_builder_mixin.dart';
 import '../common/method_mapper_mixin.dart';
 import '../common/parameter_builder_mixin.dart';
@@ -32,34 +30,22 @@ final class ServerMixinBuilder extends ProxySpec
   @override
   Mixin build() => Mixin(
     (b) => b
-      ..name = '${_class.publicName}ServerMixin'
+      ..name = '${_class.name}ServerMixin'
       ..on = StreamBuilderMixin.hasStreams(_class)
           ? Types.$PeerBase
           : Types.$ServerBase
+      ..implements.add(_class.toReference())
       ..fields.addAll(buildStreamFields(_class))
       ..methods.addAll(
-        _class.methods.map(
-          (method) => mapMethod(
-            method,
-            buildMethod: (b) => b
-              ..annotations.add(Annotations.protected)
-              ..returns = switch (getReturnType(method)) {
-                (kind: .notification, type: _) => Types.$FutureOr(
-                  CoreTypes.$void,
-                ),
-                (kind: .request, :final type) => Types.$FutureOr(
-                  type.toReference(),
-                ),
-                (kind: .stream, :final type) => CoreTypes.$Stream(
-                  type.toReference(),
-                ),
-              },
-            buildParam: (_, builder) => builder
-              ..named = false
-              ..required = false,
-            checkRequired: (_) => true,
-          ),
-        ),
+        _class.methods
+            .where((m) => getReturnType(m).kind == .notification)
+            .map(
+              (method) => mapMethod(
+                method,
+                buildMethod: (b) =>
+                    b..returns = Types.$FutureOr(CoreTypes.$void),
+              ),
+            ),
       )
       ..methods.add(
         buildRegisterMethods(
@@ -101,9 +87,16 @@ final class ServerMixinBuilder extends ProxySpec
     DartType returnType,
     ReturnKind returnKind,
   ) sync* {
-    final invocation = refer(
-      method.name!,
-    ).call([for (final p in method.formalParameters) paramRefFor(p)]);
+    final invocation = refer(method.name!).call(
+      [
+        for (final p in method.formalParameters.where((p) => p.isPositional))
+          paramRefFor(p),
+      ],
+      {
+        for (final p in method.formalParameters.where((p) => p.isNamed))
+          p.name!: paramRefFor(p),
+      },
+    );
 
     if (returnKind == .notification ||
         (returnKind == .request && returnType is VoidType)) {

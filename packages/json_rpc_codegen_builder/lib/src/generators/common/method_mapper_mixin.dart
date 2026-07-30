@@ -7,6 +7,7 @@ import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
 import '../proxy_spec.dart';
+import 'annotations.dart';
 
 @internal
 enum ParameterMode {
@@ -111,10 +112,6 @@ base mixin MethodMapperMixin on ProxySpec {
   Method mapMethod(
     MethodElement method, {
     required void Function(MethodBuilder b) buildMethod,
-    // TODO remove if unused
-    void Function(FormalParameterElement param, ParameterBuilder b)? buildParam,
-    bool Function(FormalParameterElement param) checkRequired =
-        _defaultCheckRequired,
   }) => Method((b) {
     if (method.typeParameters.isNotEmpty) {
       throw InvalidGenerationSourceError(
@@ -127,24 +124,22 @@ base mixin MethodMapperMixin on ProxySpec {
     b
       ..name = method.name
       ..returns = method.returnType.toReference()
+      ..annotations.add(Annotations.override)
       ..requiredParameters.addAll(
         method.formalParameters
-            .where(checkRequired)
-            .map((e) => _buildParameter(e, buildParam)),
+            .where((p) => p.isRequiredPositional)
+            .map(_buildParameter),
       )
       ..optionalParameters.addAll(
         method.formalParameters
-            .whereNot(checkRequired)
-            .map((e) => _buildParameter(e, buildParam)),
+            .whereNot((p) => p.isRequiredPositional)
+            .map(_buildParameter),
       );
     buildMethod(b);
   });
 
-  Parameter _buildParameter(
-    FormalParameterElement parameter,
-    void Function(FormalParameterElement param, ParameterBuilder b)? buildParam,
-  ) => Parameter((b) {
-    b
+  Parameter _buildParameter(FormalParameterElement parameter) => Parameter(
+    (b) => b
       ..name = parameter.name!
       ..type = parameter.type.toReference()
       ..named = parameter.isNamed
@@ -152,11 +147,6 @@ base mixin MethodMapperMixin on ProxySpec {
       ..covariant = parameter.isCovariant
       ..defaultTo = parameter.hasDefaultValue
           ? Code(parameter.defaultValueCode!)
-          : null;
-
-    buildParam?.call(parameter, b);
-  });
-
-  static bool _defaultCheckRequired(FormalParameterElement param) =>
-      param.isRequiredPositional;
+          : null,
+  );
 }

@@ -1,27 +1,28 @@
-// ignore_for_file: avoid_futureor_void for tests
-
 import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
+import '../helpers.dart';
 import 'models/simple.dart';
 
-@GenerateNiceMocks([MockSpec<SimpleServer>()])
+@GenerateNiceMocks([MockSpec<Simple>()])
 import 'simple_test.mocks.dart';
 
 class _TestSimpleServer extends SimpleServer {
-  final mock = MockSimpleServer();
+  final mock = MockSimple();
 
   _TestSimpleServer(super.channel) : super();
 
   @override
-  FutureOr<void> notify(String message, int level) =>
-      mock.notify(message, level);
+  void notify(String message, [int level = 10]) => mock.notify(message, level);
 
   @override
-  FutureOr<double> request(int id, Category? category, String user) =>
-      mock.request(id, category, user);
+  Future<double> request({
+    required int id,
+    Category? category,
+    String user = 'self',
+  }) => mock.request(id: id, category: category, user: user);
 }
 
 void main() {
@@ -72,7 +73,7 @@ void main() {
 
       await pumpEventQueue();
 
-      verify(sutServer.mock.notify(testMessage, 10));
+      verify(sutServer.mock.notify(testMessage));
     });
   });
 
@@ -83,22 +84,40 @@ void main() {
     const testResult = 4.22;
 
     test('sends request to server and returns the server result', () async {
-      when(sutServer.mock.request(any, any, any)).thenReturn(testResult);
+      when(
+        sutServer.mock.request(
+          id: anyNamed('id'),
+          category: anyNamed('category'),
+          user: anyNamed('user'),
+        ),
+      ).thenReturnAsync(testResult);
 
       await expectLater(
         sutClient.request(id: testId, category: testCategory, user: testUser),
         completion(testResult),
       );
 
-      verify(sutServer.mock.request(testId, testCategory, testUser));
+      verify(
+        sutServer.mock.request(
+          id: testId,
+          category: testCategory,
+          user: testUser,
+        ),
+      );
     });
 
     test('passes server defaults to callback', () async {
-      when(sutServer.mock.request(any, any, any)).thenReturn(testResult);
+      when(
+        sutServer.mock.request(
+          id: anyNamed('id'),
+          category: anyNamed('category'),
+          user: anyNamed('user'),
+        ),
+      ).thenReturnAsync(testResult);
 
       await expectLater(sutClient.request(id: testId), completion(testResult));
 
-      verify(sutServer.mock.request(testId, null, 'self'));
+      verify(sutServer.mock.request(id: testId));
     });
   });
 }

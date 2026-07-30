@@ -19,7 +19,7 @@ class User {
 }
 
 @jsonRpc
-abstract class _SampleApi {
+abstract interface class SampleApi {
   void hello(String name, [int times = 5, double? interval, int delay = 100]);
 
   @clientDefaults
@@ -48,7 +48,7 @@ abstract class _SampleApi {
     User user = const .new('admin', 'admin'),
     required User? authorizeFor,
     Permission permission = .administrate,
-    List<Uri>? resources,
+    List<Uri>? resources = const <Uri>[],
   });
 
   // ignore: strict_raw_type to test type defaults

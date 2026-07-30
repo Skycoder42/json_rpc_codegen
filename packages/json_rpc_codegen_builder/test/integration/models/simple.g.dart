@@ -13,7 +13,7 @@ part of 'simple.dart';
 // ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
 // ignore_for_file: unreachable_from_main, unused_element
 
-mixin SimpleClientMixin on ClientBase implements _Simple {
+mixin SimpleClientMixin on ClientBase implements Simple {
   @override
   void notify(String message, [int level = 10]) =>
       jsonRpcInstance.sendNotification('notify', <dynamic>[message, level]);
@@ -35,11 +35,9 @@ mixin SimpleClientMixin on ClientBase implements _Simple {
     return ($result as double);
   }
 }
-mixin SimpleServerMixin on ServerBase {
-  @protected
-  FutureOr<void> notify(String message, int level);
-  @protected
-  FutureOr<double> request(int id, Category? category, String user);
+mixin SimpleServerMixin on ServerBase implements Simple {
+  @override
+  FutureOr<void> notify(String message, [int level = 10]);
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -47,16 +45,17 @@ mixin SimpleServerMixin on ServerBase {
     super.registerMethods();
     jsonRpcInstance.registerMethod('notify', (Parameters $params) async {
       final $$message = $params[0].asString;
-      final $$level = $params[1].asInt;
+      final $$level = $params[1].asIntOr(10);
       await notify($$message, $$level);
     });
     jsonRpcInstance.registerMethod('request', (Parameters $params) async {
       final $$id = $params['id'].asInt;
-      final $$category = $params['category'].$maybeNullOr(
+      final $$category = $params['category'].$nullCheckedOr<Category>(
         ($v) => Category.values.byName($v.asString),
+        null,
       );
       final $$user = $params['user'].asStringOr('self');
-      return (await request($$id, $$category, $$user));
+      return (await request(id: $$id, category: $$category, user: $$user));
     });
   }
 }
@@ -87,11 +86,15 @@ abstract class SimpleServer extends ServerBase with SimpleServerMixin {
 }
 
 @pragma('vm:prefer-inline')
+@pragma('dart2js:tryInline')
+@pragma('wasm:prefer-inline')
 TConverted _$map<TConverted extends Object, TJson extends Object>(
   TJson $value,
   TConverted Function(TJson) $convert,
 ) => $convert($value);
 @pragma('vm:prefer-inline')
+@pragma('dart2js:tryInline')
+@pragma('wasm:prefer-inline')
 TConverted? _$maybeMap<TConverted extends Object, TJson extends Object>(
   TJson? $value,
   TConverted Function(TJson) $convert,
@@ -99,14 +102,22 @@ TConverted? _$maybeMap<TConverted extends Object, TJson extends Object>(
 
 extension _$JsonRpc2ParameterExtensions on Parameter {
   @pragma('vm:prefer-inline')
-  T $maybeOr<T>(T Function(Parameter) getter, T defaultValue) =>
-      exists ? getter(this) : defaultValue;
-
-  @pragma('vm:prefer-inline')
-  T? $nullOr<T>(T Function(Parameter) getter) =>
+  @pragma('dart2js:tryInline')
+  @pragma('wasm:prefer-inline')
+  T? $nullChecked<T extends Object>(T Function(Parameter) getter) =>
       value != null ? getter(this) : null;
 
   @pragma('vm:prefer-inline')
-  T? $maybeNullOr<T>(T Function(Parameter) getter) =>
-      exists && value != null ? getter(this) : null;
+  @pragma('dart2js:tryInline')
+  @pragma('wasm:prefer-inline')
+  T? $nullCheckedOr<T extends Object>(
+    T Function(Parameter) getter,
+    T? defaultValue,
+  ) => exists ? $nullChecked(getter) : defaultValue;
+
+  @pragma('vm:prefer-inline')
+  @pragma('dart2js:tryInline')
+  @pragma('wasm:prefer-inline')
+  T $existsOr<T>(T Function(Parameter) getter, T defaultValue) =>
+      exists ? getter(this) : defaultValue;
 }

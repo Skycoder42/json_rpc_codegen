@@ -13,7 +13,7 @@ part of 'stream.dart';
 // ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
 // ignore_for_file: unreachable_from_main, unused_element
 
-mixin StreamClientMixin on PeerBase implements _Stream {
+mixin StreamTestsClientMixin on PeerBase implements StreamTests {
   var _$streamIdCounter = 0;
 
   final _$streamControllers = <int, StreamController<dynamic>>{};
@@ -257,29 +257,9 @@ mixin StreamClientMixin on PeerBase implements _Stream {
     );
   }
 }
-mixin StreamServerMixin on PeerBase {
+mixin StreamTestsServerMixin on PeerBase implements StreamTests {
   final _$streamSubscriptions = <int, StreamSubscription<dynamic>>{};
 
-  @protected
-  Stream<int> simple();
-  @protected
-  Stream<String> positional(
-    String variant,
-    User user,
-    List<int> levels,
-    Permission permission,
-    Uri? reference,
-    Color color,
-  );
-  @protected
-  Stream<(User, Permission)> named(
-    String variant,
-    User user,
-    List<int> levels,
-    Permission permission,
-    Uri? reference,
-    Color color,
-  );
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -346,20 +326,21 @@ mixin StreamServerMixin on PeerBase {
         ),
         ifAbsent: () {
           final $$variant = $params[1].asString;
-          final $$user = User.fromJson(
-            ($params[2].value as Map<String, dynamic>),
-          );
-          final $$levels = $params[3].$maybeOr<List<int>>(
+          final $$user = User.fromJson($params[2].asMap.cast());
+          final $$levels = $params[3].$existsOr<List<int>>(
             ($v) => $v.asList.map((dynamic $e) => ($e as int)).toList(),
             const [5, 75],
           );
-          final $$permission = $params[4].$maybeOr<Permission>(
+          final $$permission = $params[4].$existsOr<Permission>(
             ($v) => Permission.values.byName($v.asString),
             Permission.readOnly,
           );
-          final $$reference = $params[5].$maybeNullOr(($v) => $v.asUri);
-          final $$color = $params[6].$maybeOr<Color>(
-            ($v) => Color.fromJson(($v.value as String)),
+          final $$reference = $params[5].$nullCheckedOr<Uri>(
+            ($v) => $v.asUri,
+            null,
+          );
+          final $$color = $params[6].$existsOr<Color>(
+            ($v) => Color.fromJson($v.asString),
             const Color(255, 255, 255),
           );
           return positional(
@@ -421,31 +402,30 @@ mixin StreamServerMixin on PeerBase {
         ),
         ifAbsent: () {
           final $$variant = $params['variant'].asString;
-          final $$user = User.fromJson(
-            ($params['user'].value as Map<String, dynamic>),
-          );
-          final $$levels = $params['levels'].$maybeOr<List<int>>(
+          final $$user = User.fromJson($params['user'].asMap.cast());
+          final $$levels = $params['levels'].$existsOr<List<int>>(
             ($v) => $v.asList.map((dynamic $e) => ($e as int)).toList(),
             const [5, 75],
           );
-          final $$permission = $params['permission'].$maybeOr<Permission>(
+          final $$permission = $params['permission'].$existsOr<Permission>(
             ($v) => Permission.values.byName($v.asString),
             Permission.readOnly,
           );
-          final $$reference = $params['reference'].$maybeNullOr(
+          final $$reference = $params['reference'].$nullCheckedOr<Uri>(
             ($v) => $v.asUri,
+            null,
           );
-          final $$color = $params['color'].$maybeOr<Color>(
-            ($v) => Color.fromJson(($v.value as String)),
+          final $$color = $params['color'].$existsOr<Color>(
+            ($v) => Color.fromJson($v.asString),
             const Color(255, 255, 255),
           );
           return named(
-            $$variant,
-            $$user,
-            $$levels,
-            $$permission,
-            $$reference,
-            $$color,
+            variant: $$variant,
+            user: $$user,
+            levels: $$levels,
+            permission: $$permission,
+            reference: $$reference,
+            color: $$color,
           ).listen(
             ($data) => jsonRpcInstance.sendNotification('named#data', <dynamic>[
               $streamId,
@@ -499,48 +479,52 @@ mixin StreamServerMixin on PeerBase {
   }
 }
 
-class StreamClient extends PeerBase with StreamClientMixin {
-  StreamClient(
+class StreamTestsClient extends PeerBase with StreamTestsClientMixin {
+  StreamTestsClient(
     super.channel, {
     super.idGenerator,
     super.onUnhandledError,
     super.strictProtocolChecks,
   }) : super();
 
-  StreamClient.withoutJson(
+  StreamTestsClient.withoutJson(
     super.channel, {
     super.idGenerator,
     super.onUnhandledError,
     super.strictProtocolChecks,
   }) : super.withoutJson();
 
-  StreamClient.fromPeer(super.jsonRpcInstance) : super.fromPeer();
+  StreamTestsClient.fromPeer(super.jsonRpcInstance) : super.fromPeer();
 }
 
-abstract class StreamServer extends PeerBase with StreamServerMixin {
-  StreamServer(
+abstract class StreamTestsServer extends PeerBase with StreamTestsServerMixin {
+  StreamTestsServer(
     super.channel, {
     super.onUnhandledError,
     super.strictProtocolChecks,
     super.idGenerator,
   }) : super();
 
-  StreamServer.withoutJson(
+  StreamTestsServer.withoutJson(
     super.channel, {
     super.onUnhandledError,
     super.strictProtocolChecks,
     super.idGenerator,
   }) : super.withoutJson();
 
-  StreamServer.fromPeer(super.jsonRpcInstance) : super.fromPeer();
+  StreamTestsServer.fromPeer(super.jsonRpcInstance) : super.fromPeer();
 }
 
 @pragma('vm:prefer-inline')
+@pragma('dart2js:tryInline')
+@pragma('wasm:prefer-inline')
 TConverted _$map<TConverted extends Object, TJson extends Object>(
   TJson $value,
   TConverted Function(TJson) $convert,
 ) => $convert($value);
 @pragma('vm:prefer-inline')
+@pragma('dart2js:tryInline')
+@pragma('wasm:prefer-inline')
 TConverted? _$maybeMap<TConverted extends Object, TJson extends Object>(
   TJson? $value,
   TConverted Function(TJson) $convert,
@@ -548,14 +532,22 @@ TConverted? _$maybeMap<TConverted extends Object, TJson extends Object>(
 
 extension _$JsonRpc2ParameterExtensions on Parameter {
   @pragma('vm:prefer-inline')
-  T $maybeOr<T>(T Function(Parameter) getter, T defaultValue) =>
-      exists ? getter(this) : defaultValue;
-
-  @pragma('vm:prefer-inline')
-  T? $nullOr<T>(T Function(Parameter) getter) =>
+  @pragma('dart2js:tryInline')
+  @pragma('wasm:prefer-inline')
+  T? $nullChecked<T extends Object>(T Function(Parameter) getter) =>
       value != null ? getter(this) : null;
 
   @pragma('vm:prefer-inline')
-  T? $maybeNullOr<T>(T Function(Parameter) getter) =>
-      exists && value != null ? getter(this) : null;
+  @pragma('dart2js:tryInline')
+  @pragma('wasm:prefer-inline')
+  T? $nullCheckedOr<T extends Object>(
+    T Function(Parameter) getter,
+    T? defaultValue,
+  ) => exists ? $nullChecked(getter) : defaultValue;
+
+  @pragma('vm:prefer-inline')
+  @pragma('dart2js:tryInline')
+  @pragma('wasm:prefer-inline')
+  T $existsOr<T>(T Function(Parameter) getter, T defaultValue) =>
+      exists ? getter(this) : defaultValue;
 }

@@ -4,8 +4,6 @@ import 'package:code_builder/code_builder.dart';
 import 'package:dart_test_tools/code_gen.dart';
 import 'package:meta/meta.dart';
 
-import '../../extensions/analyzer_extensions.dart';
-import '../common/annotations.dart';
 import '../common/closure_builder_mixin.dart';
 import '../common/constants.dart';
 import '../common/method_mapper_mixin.dart';
@@ -34,7 +32,7 @@ final class ClientMixinBuilder extends ProxySpec
   @override
   Mixin build() => Mixin(
     (b) => b
-      ..name = '${_class.publicName}ClientMixin'
+      ..name = '${_class.name}ClientMixin'
       ..on = StreamBuilderMixin.hasStreams(_class)
           ? Types.$PeerBase
           : Types.$ClientBase
@@ -63,7 +61,6 @@ final class ClientMixinBuilder extends ProxySpec
   Method _buildNotificationMethod(MethodElement method) => mapMethod(
     method,
     buildMethod: (b) => b
-      ..annotations.add(Annotations.override)
       ..returns = CoreTypes.$void
       ..body = _buildNotificationBody(method),
   );
@@ -72,7 +69,6 @@ final class ClientMixinBuilder extends ProxySpec
       mapMethod(
         method,
         buildMethod: (b) => b
-          ..annotations.add(Annotations.override)
           ..returns = CoreTypes.$Future(returnType.toReference())
           ..modifier = .async
           ..body = _buildRequestBody(method, returnType),
@@ -82,7 +78,6 @@ final class ClientMixinBuilder extends ProxySpec
       mapMethod(
         method,
         buildMethod: (b) => b
-          ..annotations.add(Annotations.override)
           ..returns = CoreTypes.$Stream(streamType.toReference())
           ..body = buildStreamBody(method, streamType),
       );

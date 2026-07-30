@@ -1,3 +1,5 @@
+// ignore_for_file: unreachable_from_main for testing
+
 import 'dart:async';
 
 import 'package:dart_test_tools/test.dart' hide MockCallable0, MockCallable1;
@@ -16,7 +18,7 @@ import 'models/stream.dart';
   MockSpec<Callable0>(),
   // ignore: strict_raw_type for mocking
   MockSpec<Callable1>(),
-  MockSpec<StreamServer>(),
+  MockSpec<StreamTests>(),
 ])
 import 'stream_test.mocks.dart';
 
@@ -28,8 +30,8 @@ abstract interface class Callable1<TReturn, TArg1> {
   TReturn call(TArg1 arg1);
 }
 
-class TestStreamServer extends StreamServer {
-  final mock = MockStreamServer();
+class TestStreamServer extends StreamTestsServer {
+  final mock = MockStreamTests();
 
   TestStreamServer(super.channel) : super();
 
@@ -39,27 +41,34 @@ class TestStreamServer extends StreamServer {
   @override
   Stream<String> positional(
     String variant,
-    User user,
-    List<int> levels,
-    Permission permission,
+    User user, [
+    List<int> levels = const [5, 75],
+    Permission permission = Permission.readOnly,
     Uri? reference,
-    Color color,
-  ) => mock.positional(variant, user, levels, permission, reference, color);
+    Color color = const Color(255, 255, 255),
+  ]) => mock.positional(variant, user, levels, permission, reference, color);
 
   @override
-  Stream<(User, Permission)> named(
-    String variant,
-    User user,
-    List<int> levels,
-    Permission permission,
+  Stream<(User, Permission)> named({
+    required String variant,
+    required User user,
+    List<int> levels = const [5, 75],
+    Permission permission = Permission.readOnly,
     Uri? reference,
-    Color color,
-  ) => mock.named(variant, user, levels, permission, reference, color);
+    Color color = const Color(255, 255, 255),
+  }) => mock.named(
+    variant: variant,
+    user: user,
+    levels: levels,
+    permission: permission,
+    reference: reference,
+    color: color,
+  );
 }
 
 void main() {
   late TestStreamServer sutServer;
-  late StreamClient sutClient;
+  late StreamTestsClient sutClient;
 
   setUpAll(() {
     provideDummyBuilder<Future<void>>((_, _) => .value());
@@ -88,7 +97,7 @@ void main() {
     sutServer = TestStreamServer(serverChannel)..listen();
     addTearDown(sutServer.close);
     // ignore: discarded_futures for testing
-    sutClient = StreamClient(clientChannel)..listen();
+    sutClient = StreamTestsClient(clientChannel)..listen();
     addTearDown(sutClient.close);
   });
 
@@ -96,7 +105,14 @@ void main() {
     test('forwards a simple, single event', () async {
       const testValue = (User('a', 'b'), Permission.writeOnly);
       when(
-        sutServer.mock.named(any, any, any, any, any, any),
+        sutServer.mock.named(
+          variant: anyNamed('variant'),
+          user: anyNamed('user'),
+          levels: anyNamed('levels'),
+          permission: anyNamed('permission'),
+          reference: anyNamed('reference'),
+          color: anyNamed('color'),
+        ),
       ).thenStream(Stream.value(testValue));
 
       await expectLater(
@@ -110,12 +126,9 @@ void main() {
 
       verify(
         sutServer.mock.named(
-          'variant',
-          testValue.$1,
-          const [5, 75],
-          Permission.readWrite,
-          null,
-          const Color(255, 255, 255),
+          variant: 'variant',
+          user: testValue.$1,
+          permission: Permission.readWrite,
         ),
       );
     });

@@ -13,8 +13,8 @@ part of 'empty.dart';
 // ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
 // ignore_for_file: unreachable_from_main, unused_element
 
-mixin TestEmpty1ClientMixin on ClientBase implements _TestEmpty1 {}
-mixin TestEmpty1ServerMixin on ServerBase {
+mixin TestEmpty1ClientMixin on ClientBase implements TestEmpty1 {}
+mixin TestEmpty1ServerMixin on ServerBase implements TestEmpty1 {
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -48,8 +48,8 @@ abstract class TestEmpty1Server extends ServerBase with TestEmpty1ServerMixin {
   TestEmpty1Server.fromServer(super.jsonRpcInstance) : super.fromServer();
 }
 
-mixin TestEmpty2ClientMixin on ClientBase implements _TestEmpty2 {}
-mixin TestEmpty2ServerMixin on ServerBase {
+mixin TestEmpty2ClientMixin on ClientBase implements TestEmpty2 {}
+mixin TestEmpty2ServerMixin on ServerBase implements TestEmpty2 {
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -58,7 +58,7 @@ mixin TestEmpty2ServerMixin on ServerBase {
   }
 }
 
-mixin TestEmpty5ServerMixin on ServerBase {
+mixin TestEmpty5ServerMixin on ServerBase implements TestEmpty5 {
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -83,7 +83,7 @@ abstract class TestEmpty5Server extends ServerBase with TestEmpty5ServerMixin {
   TestEmpty5Server.fromServer(super.jsonRpcInstance) : super.fromServer();
 }
 
-mixin TestEmpty6ServerMixin on ServerBase {
+mixin TestEmpty6ServerMixin on ServerBase implements TestEmpty6 {
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -92,7 +92,7 @@ mixin TestEmpty6ServerMixin on ServerBase {
   }
 }
 
-mixin TestEmpty7ClientMixin on ClientBase implements _TestEmpty7 {}
+mixin TestEmpty7ClientMixin on ClientBase implements TestEmpty7 {}
 
 class TestEmpty7Client extends ClientBase with TestEmpty7ClientMixin {
   TestEmpty7Client(super.channel, {super.idGenerator}) : super();
@@ -103,10 +103,10 @@ class TestEmpty7Client extends ClientBase with TestEmpty7ClientMixin {
   TestEmpty7Client.fromClient(super.jsonRpcInstance) : super.fromClient();
 }
 
-mixin TestEmpty8ClientMixin on ClientBase implements _TestEmpty8 {}
+mixin TestEmpty8ClientMixin on ClientBase implements TestEmpty8 {}
 
-mixin TestEmpty9ClientMixin on ClientBase implements _TestEmpty9 {}
-mixin TestEmpty9ServerMixin on ServerBase {
+mixin TestEmpty9ClientMixin on ClientBase implements TestEmpty9 {}
+mixin TestEmpty9ServerMixin on ServerBase implements TestEmpty9 {
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -140,8 +140,8 @@ abstract class TestEmpty9Server extends ServerBase with TestEmpty9ServerMixin {
   TestEmpty9Server.fromServer(super.jsonRpcInstance) : super.fromServer();
 }
 
-mixin TestEmpty10ClientMixin on ClientBase implements _TestEmpty10 {}
-mixin TestEmpty10ServerMixin on ServerBase {
+mixin TestEmpty10ClientMixin on ClientBase implements TestEmpty10 {}
+mixin TestEmpty10ServerMixin on ServerBase implements TestEmpty10 {
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -150,11 +150,15 @@ mixin TestEmpty10ServerMixin on ServerBase {
   }
 }
 @pragma('vm:prefer-inline')
+@pragma('dart2js:tryInline')
+@pragma('wasm:prefer-inline')
 TConverted _$map<TConverted extends Object, TJson extends Object>(
   TJson $value,
   TConverted Function(TJson) $convert,
 ) => $convert($value);
 @pragma('vm:prefer-inline')
+@pragma('dart2js:tryInline')
+@pragma('wasm:prefer-inline')
 TConverted? _$maybeMap<TConverted extends Object, TJson extends Object>(
   TJson? $value,
   TConverted Function(TJson) $convert,
@@ -162,14 +166,22 @@ TConverted? _$maybeMap<TConverted extends Object, TJson extends Object>(
 
 extension _$JsonRpc2ParameterExtensions on Parameter {
   @pragma('vm:prefer-inline')
-  T $maybeOr<T>(T Function(Parameter) getter, T defaultValue) =>
-      exists ? getter(this) : defaultValue;
-
-  @pragma('vm:prefer-inline')
-  T? $nullOr<T>(T Function(Parameter) getter) =>
+  @pragma('dart2js:tryInline')
+  @pragma('wasm:prefer-inline')
+  T? $nullChecked<T extends Object>(T Function(Parameter) getter) =>
       value != null ? getter(this) : null;
 
   @pragma('vm:prefer-inline')
-  T? $maybeNullOr<T>(T Function(Parameter) getter) =>
-      exists && value != null ? getter(this) : null;
+  @pragma('dart2js:tryInline')
+  @pragma('wasm:prefer-inline')
+  T? $nullCheckedOr<T extends Object>(
+    T Function(Parameter) getter,
+    T? defaultValue,
+  ) => exists ? $nullChecked(getter) : defaultValue;
+
+  @pragma('vm:prefer-inline')
+  @pragma('dart2js:tryInline')
+  @pragma('wasm:prefer-inline')
+  T $existsOr<T>(T Function(Parameter) getter, T defaultValue) =>
+      exists ? getter(this) : defaultValue;
 }

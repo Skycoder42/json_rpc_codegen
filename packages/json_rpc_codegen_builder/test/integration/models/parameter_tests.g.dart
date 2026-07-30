@@ -13,135 +13,150 @@ part of 'parameter_tests.dart';
 // ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
 // ignore_for_file: unreachable_from_main, unused_element
 
-mixin ParameterTestsClientMixin on ClientBase implements _ParameterTests {
+mixin ParameterTestsClientMixin on ClientBase implements ParameterTests {
   @override
-  void simplePositionalServer(
+  Future<void> simplePositionalServer(
     bool a,
     num? b, [
     int c = 42,
     double? d,
-    String e = 'default',
-  ]) => jsonRpcInstance.sendNotification('simplePositionalServer', <dynamic>[
-    a,
-    b,
-    if (c != 42 || d != null || e != 'default') c,
-    if (d != null || e != 'default') d,
-    if (e != 'default') e,
-  ]);
+    String? e = 'default',
+  ]) async {
+    await jsonRpcInstance.sendRequest('simplePositionalServer', <dynamic>[
+      a,
+      b,
+      if (c != 42 || d != null || e != 'default') c,
+      if (d != null || e != 'default') d,
+      if (e != 'default') e,
+    ]);
+  }
 
   @override
-  void simpleNamedServer({
+  Future<void> simpleNamedServer({
     required bool a,
     required num? b,
     int c = 42,
     double? d,
-    String e = 'default',
-  }) => jsonRpcInstance.sendNotification('simpleNamedServer', <String, dynamic>{
-    'a': a,
-    'b': b,
-    if (c != 42) 'c': c,
-    'd': ?d,
-    if (e != 'default') 'e': e,
-  });
+    String? e = 'default',
+  }) async {
+    await jsonRpcInstance.sendRequest('simpleNamedServer', <String, dynamic>{
+      'a': a,
+      'b': b,
+      if (c != 42) 'c': c,
+      'd': ?d,
+      if (e != 'default') 'e': e,
+    });
+  }
 
   @override
-  void simplePositionalClient(
+  Future<void> simplePositionalClient(
     bool a,
     num? b, [
     int c = 42,
     double? d,
-    String e = 'default',
-  ]) => jsonRpcInstance.sendNotification('simplePositionalClient', <dynamic>[
-    a,
-    b,
-    c,
-    d,
-    e,
-  ]);
+    String? e = 'default',
+  ]) async {
+    await jsonRpcInstance.sendRequest('simplePositionalClient', <dynamic>[
+      a,
+      b,
+      c,
+      d,
+      e,
+    ]);
+  }
 
   @override
-  void simpleNamedClient({
+  Future<void> simpleNamedClient({
     required bool a,
     required num? b,
     int c = 42,
     double? d,
-    String e = 'default',
-  }) => jsonRpcInstance.sendNotification('simpleNamedClient', <String, dynamic>{
-    'a': a,
-    'b': b,
-    'c': c,
-    'd': d,
-    'e': e,
-  });
+    String? e = 'default',
+  }) async {
+    await jsonRpcInstance.sendRequest('simpleNamedClient', <String, dynamic>{
+      'a': a,
+      'b': b,
+      'c': c,
+      'd': d,
+      'e': e,
+    });
+  }
 
   @override
-  void containers(
+  Future<void> containers(
     Iterable<String> names,
     List<int> bytes,
     Map<String, bool> features,
-    Map<List<String>, Iterable<Map<dynamic, List<num>>>> deep,
-  ) => jsonRpcInstance.sendNotification('containers', <dynamic>[
-    names.toList(growable: false),
-    bytes,
-    features,
-    deep.map(($k, $v) => MapEntry($k, $v.toList(growable: false))),
-  ]);
+    Map<String, Iterable<Map<dynamic, List<num>>>> deep,
+  ) async {
+    await jsonRpcInstance.sendRequest('containers', <dynamic>[
+      names.toList(growable: false),
+      bytes,
+      features,
+      deep.map(($k, $v) => MapEntry($k, $v.toList(growable: false))),
+    ]);
+  }
 
   @override
-  void custom(
+  Future<void> custom(
     User user, [
     Color color = const Color(255, 255, 255),
     Permission permission = Permission.readOnly,
-  ]) => jsonRpcInstance.sendNotification('custom', <dynamic>[
-    user,
-    if (color != const Color(255, 255, 255) ||
-        permission != Permission.readOnly)
-      color,
-    if (permission != Permission.readOnly) permission.name,
-  ]);
+  ]) async {
+    await jsonRpcInstance.sendRequest('custom', <dynamic>[
+      user,
+      if (color != const Color(255, 255, 255) ||
+          permission != Permission.readOnly)
+        color,
+      if (permission != Permission.readOnly) permission.name,
+    ]);
+  }
 
   @override
-  void dotShorthandsServer(
+  Future<void> dotShorthands(
     User user, [
     Color color = const .new(255, 255, 255),
     Permission permission = .readOnly,
-  ]) => jsonRpcInstance.sendNotification('dotShorthandsServer', <dynamic>[
-    user,
-    if (color != const .new(255, 255, 255) || permission != .readOnly) color,
-    if (permission != .readOnly) permission.name,
-  ]);
+  ]) async {
+    await jsonRpcInstance.sendRequest('dotShorthands', <dynamic>[
+      user,
+      if (color != const .new(255, 255, 255) || permission != .readOnly) color,
+      if (permission != .readOnly) permission.name,
+    ]);
+  }
 
   @override
-  void dotShorthandsClient(
-    User user, [
-    Color color = const .new(255, 255, 255),
-    Permission permission = .readOnly,
-  ]) => jsonRpcInstance.sendNotification('dotShorthandsClient', <dynamic>[
-    user,
-    color,
-    permission.name,
-  ]);
-
-  @override
-  void customContainers({
+  Future<void> customContainers({
     required Iterable<User> users,
-    Map<Color, List<Permission>> colorPermissions = const {
-      Color(0, 0, 0): [Permission.readWrite],
+    Map<String, List<Permission>> colorPermissions = const {
+      'black': [Permission.readWrite],
     },
-  }) => jsonRpcInstance.sendNotification('customContainers', <String, dynamic>{
-    'users': users.toList(growable: false),
-    if (colorPermissions !=
-        const {
-          Color(0, 0, 0): [Permission.readWrite],
-        })
-      'colorPermissions': colorPermissions.map(
-        ($k, $v) =>
-            MapEntry($k, $v.map(($e) => $e.name).toList(growable: false)),
-      ),
-  });
+    List<Set<User?>?>? nullables,
+    Map<Object, bool?>? optionalsNullable = const {
+      'readOnly': true,
+      'readWrite': null,
+    },
+  }) async {
+    await jsonRpcInstance.sendRequest('customContainers', <String, dynamic>{
+      'users': users.toList(growable: false),
+      if (colorPermissions !=
+          const {
+            'black': [Permission.readWrite],
+          })
+        'colorPermissions': colorPermissions.map(
+          ($k, $v) =>
+              MapEntry($k, $v.map(($e) => $e.name).toList(growable: false)),
+        ),
+      'nullables': ?nullables
+          ?.map(($e) => $e?.toList(growable: false))
+          .toList(growable: false),
+      if (optionalsNullable != const {'readOnly': true, 'readWrite': null})
+        'optionalsNullable': optionalsNullable,
+    });
+  }
 
   @override
-  void records(
+  Future<void> records(
     () empty,
     ((int, int), String, Color?, User, List<Permission>?) positional,
     ({
@@ -152,86 +167,29 @@ mixin ParameterTestsClientMixin on ClientBase implements _ParameterTests {
       User? user,
     })
     named,
-  ) => jsonRpcInstance.sendNotification('records', <dynamic>[
-    <dynamic>[],
-    <dynamic>[
-      <dynamic>[positional.$1.$1, positional.$1.$2],
-      positional.$2,
-      positional.$3,
-      positional.$4,
-      positional.$5?.map(($e) => $e.name).toList(growable: false),
-    ],
-    <String, dynamic>{
-      'color': named.color,
-      'name': named.name,
-      'permissions': named.permissions
-          .map(($e) => $e?.name)
-          .toList(growable: false),
-      'point': <String, dynamic>{'x': named.point.x, 'y': named.point.y},
-      'user': named.user,
-    },
-  ]);
+  ) async {
+    await jsonRpcInstance.sendRequest('records', <dynamic>[
+      <dynamic>[],
+      <dynamic>[
+        <dynamic>[positional.$1.$1, positional.$1.$2],
+        positional.$2,
+        positional.$3,
+        positional.$4,
+        positional.$5?.map(($e) => $e.name).toList(growable: false),
+      ],
+      <String, dynamic>{
+        'color': named.color,
+        'name': named.name,
+        'permissions': named.permissions
+            .map(($e) => $e?.name)
+            .toList(growable: false),
+        'point': <String, dynamic>{'x': named.point.x, 'y': named.point.y},
+        'user': named.user,
+      },
+    ]);
+  }
 }
-mixin ParameterTestsServerMixin on ServerBase {
-  @protected
-  FutureOr<void> simplePositionalServer(
-    bool a,
-    num? b,
-    int c,
-    double? d,
-    String e,
-  );
-  @protected
-  FutureOr<void> simpleNamedServer(bool a, num? b, int c, double? d, String e);
-  @protected
-  FutureOr<void> simplePositionalClient(
-    bool a,
-    num? b,
-    int c,
-    double? d,
-    String e,
-  );
-  @protected
-  FutureOr<void> simpleNamedClient(bool a, num? b, int c, double? d, String e);
-  @protected
-  FutureOr<void> containers(
-    Iterable<String> names,
-    List<int> bytes,
-    Map<String, bool> features,
-    Map<List<String>, Iterable<Map<dynamic, List<num>>>> deep,
-  );
-  @protected
-  FutureOr<void> custom(User user, Color color, Permission permission);
-  @protected
-  FutureOr<void> dotShorthandsServer(
-    User user,
-    Color color,
-    Permission permission,
-  );
-  @protected
-  FutureOr<void> dotShorthandsClient(
-    User user,
-    Color color,
-    Permission permission,
-  );
-  @protected
-  FutureOr<void> customContainers(
-    Iterable<User> users,
-    Map<Color, List<Permission>> colorPermissions,
-  );
-  @protected
-  FutureOr<void> records(
-    () empty,
-    ((int, int), String, Color?, User, List<Permission>?) positional,
-    ({
-      Color color,
-      String name,
-      Iterable<Permission?> permissions,
-      ({int x, int y}) point,
-      User? user,
-    })
-    named,
-  );
+mixin ParameterTestsServerMixin on ServerBase implements ParameterTests {
   @override
   @visibleForOverriding
   @mustCallSuper
@@ -241,41 +199,65 @@ mixin ParameterTestsServerMixin on ServerBase {
       Parameters $params,
     ) async {
       final $$a = $params[0].asBool;
-      final $$b = $params[1].$nullOr(($v) => $v.asNum);
+      final $$b = $params[1].$nullChecked<num>(($v) => $v.asNum);
       final $$c = $params[2].asIntOr(42);
-      final $$d = $params[3].$maybeNullOr(($v) => $v.asNum)?.toDouble();
-      final $$e = $params[4].asStringOr('default');
+      final $$d = $params[3].$nullCheckedOr<double>(
+        ($v) => $v.asNum.toDouble(),
+        null,
+      );
+      final $$e = $params[4].$nullCheckedOr<String>(
+        ($v) => $v.asString,
+        'default',
+      );
       await simplePositionalServer($$a, $$b, $$c, $$d, $$e);
     });
     jsonRpcInstance.registerMethod('simpleNamedServer', (
       Parameters $params,
     ) async {
       final $$a = $params['a'].asBool;
-      final $$b = $params['b'].$nullOr(($v) => $v.asNum);
+      final $$b = $params['b'].$nullChecked<num>(($v) => $v.asNum);
       final $$c = $params['c'].asIntOr(42);
-      final $$d = $params['d'].$maybeNullOr(($v) => $v.asNum)?.toDouble();
-      final $$e = $params['e'].asStringOr('default');
-      await simpleNamedServer($$a, $$b, $$c, $$d, $$e);
+      final $$d = $params['d'].$nullCheckedOr<double>(
+        ($v) => $v.asNum.toDouble(),
+        null,
+      );
+      final $$e = $params['e'].$nullCheckedOr<String>(
+        ($v) => $v.asString,
+        'default',
+      );
+      await simpleNamedServer(a: $$a, b: $$b, c: $$c, d: $$d, e: $$e);
     });
     jsonRpcInstance.registerMethod('simplePositionalClient', (
       Parameters $params,
     ) async {
       final $$a = $params[0].asBool;
-      final $$b = $params[1].$nullOr(($v) => $v.asNum);
-      final $$c = $params[2].asInt;
-      final $$d = $params[3].$nullOr(($v) => $v.asNum)?.toDouble();
-      final $$e = $params[4].asString;
+      final $$b = $params[1].$nullChecked<num>(($v) => $v.asNum);
+      final $$c = $params[2].asIntOr(42);
+      final $$d = $params[3].$nullCheckedOr<double>(
+        ($v) => $v.asNum.toDouble(),
+        null,
+      );
+      final $$e = $params[4].$nullCheckedOr<String>(
+        ($v) => $v.asString,
+        'default',
+      );
       await simplePositionalClient($$a, $$b, $$c, $$d, $$e);
     });
     jsonRpcInstance.registerMethod('simpleNamedClient', (
       Parameters $params,
     ) async {
       final $$a = $params['a'].asBool;
-      final $$b = $params['b'].$nullOr(($v) => $v.asNum);
-      final $$c = $params['c'].asInt;
-      final $$d = $params['d'].$nullOr(($v) => $v.asNum)?.toDouble();
-      final $$e = $params['e'].asString;
-      await simpleNamedClient($$a, $$b, $$c, $$d, $$e);
+      final $$b = $params['b'].$nullChecked<num>(($v) => $v.asNum);
+      final $$c = $params['c'].asIntOr(42);
+      final $$d = $params['d'].$nullCheckedOr<double>(
+        ($v) => $v.asNum.toDouble(),
+        null,
+      );
+      final $$e = $params['e'].$nullCheckedOr<String>(
+        ($v) => $v.asString,
+        'default',
+      );
+      await simpleNamedClient(a: $$a, b: $$b, c: $$c, d: $$d, e: $$e);
     });
     jsonRpcInstance.registerMethod('containers', (Parameters $params) async {
       final $$names = $params[0].asList.map((dynamic $e) => ($e as String));
@@ -287,7 +269,7 @@ mixin ParameterTestsServerMixin on ServerBase {
       );
       final $$deep = $params[3].asMap.map(
         (dynamic $k, dynamic $v) => MapEntry(
-          ($k as List).map((dynamic $e) => ($e as String)).toList(),
+          ($k as String),
           ($v as List).map(
             (dynamic $e) => ($e as Map).map(
               (dynamic $k, dynamic $v) => MapEntry(
@@ -301,38 +283,28 @@ mixin ParameterTestsServerMixin on ServerBase {
       await containers($$names, $$bytes, $$features, $$deep);
     });
     jsonRpcInstance.registerMethod('custom', (Parameters $params) async {
-      final $$user = User.fromJson(($params[0].value as Map<String, dynamic>));
-      final $$color = $params[1].$maybeOr<Color>(
-        ($v) => Color.fromJson(($v.value as String)),
+      final $$user = User.fromJson($params[0].asMap.cast());
+      final $$color = $params[1].$existsOr<Color>(
+        ($v) => Color.fromJson($v.asString),
         const Color(255, 255, 255),
       );
-      final $$permission = $params[2].$maybeOr<Permission>(
+      final $$permission = $params[2].$existsOr<Permission>(
         ($v) => Permission.values.byName($v.asString),
         Permission.readOnly,
       );
       await custom($$user, $$color, $$permission);
     });
-    jsonRpcInstance.registerMethod('dotShorthandsServer', (
-      Parameters $params,
-    ) async {
-      final $$user = User.fromJson(($params[0].value as Map<String, dynamic>));
-      final $$color = $params[1].$maybeOr<Color>(
-        ($v) => Color.fromJson(($v.value as String)),
+    jsonRpcInstance.registerMethod('dotShorthands', (Parameters $params) async {
+      final $$user = User.fromJson($params[0].asMap.cast());
+      final $$color = $params[1].$existsOr<Color>(
+        ($v) => Color.fromJson($v.asString),
         const .new(255, 255, 255),
       );
-      final $$permission = $params[2].$maybeOr<Permission>(
+      final $$permission = $params[2].$existsOr<Permission>(
         ($v) => Permission.values.byName($v.asString),
         .readOnly,
       );
-      await dotShorthandsServer($$user, $$color, $$permission);
-    });
-    jsonRpcInstance.registerMethod('dotShorthandsClient', (
-      Parameters $params,
-    ) async {
-      final $$user = User.fromJson(($params[0].value as Map<String, dynamic>));
-      final $$color = Color.fromJson(($params[1].value as String));
-      final $$permission = Permission.values.byName($params[2].asString);
-      await dotShorthandsClient($$user, $$color, $$permission);
+      await dotShorthands($$user, $$color, $$permission);
     });
     jsonRpcInstance.registerMethod('customContainers', (
       Parameters $params,
@@ -341,10 +313,10 @@ mixin ParameterTestsServerMixin on ServerBase {
         (dynamic $e) => User.fromJson(($e as Map<String, dynamic>)),
       );
       final $$colorPermissions = $params['colorPermissions']
-          .$maybeOr<Map<Color, List<Permission>>>(
+          .$existsOr<Map<String, List<Permission>>>(
             ($v) => $v.asMap.map(
               (dynamic $k, dynamic $v) => MapEntry(
-                Color.fromJson(($k as String)),
+                ($k as String),
                 ($v as List)
                     .map(
                       (dynamic $e) => Permission.values.byName(($e as String)),
@@ -353,10 +325,39 @@ mixin ParameterTestsServerMixin on ServerBase {
               ),
             ),
             const {
-              Color(0, 0, 0): [Permission.readWrite],
+              'black': [Permission.readWrite],
             },
           );
-      await customContainers($$users, $$colorPermissions);
+      final $$nullables = $params['nullables']
+          .$nullCheckedOr<List<Set<User?>?>>(
+            ($v) => $v.asList
+                .map(
+                  (dynamic $e) => ($e as List?)
+                      ?.map(
+                        (dynamic $e) => _$maybeMap(
+                          $e,
+                          ($v) => User.fromJson(($v as Map<String, dynamic>)),
+                        ),
+                      )
+                      .toSet(),
+                )
+                .toList(),
+            null,
+          );
+      final $$optionalsNullable = $params['optionalsNullable']
+          .$nullCheckedOr<Map<Object, bool?>>(
+            ($v) => $v.asMap.map(
+              (dynamic $k, dynamic $v) =>
+                  MapEntry(($k as Object), ($v as bool?)),
+            ),
+            const {'readOnly': true, 'readWrite': null},
+          );
+      await customContainers(
+        users: $$users,
+        colorPermissions: $$colorPermissions,
+        nullables: $$nullables,
+        optionalsNullable: $$optionalsNullable,
+      );
     });
     jsonRpcInstance.registerMethod('records', (Parameters $params) async {
       final $$empty = _$map($params[0].asList, ($v) => ());
@@ -398,11 +399,15 @@ mixin ParameterTestsServerMixin on ServerBase {
   }
 }
 @pragma('vm:prefer-inline')
+@pragma('dart2js:tryInline')
+@pragma('wasm:prefer-inline')
 TConverted _$map<TConverted extends Object, TJson extends Object>(
   TJson $value,
   TConverted Function(TJson) $convert,
 ) => $convert($value);
 @pragma('vm:prefer-inline')
+@pragma('dart2js:tryInline')
+@pragma('wasm:prefer-inline')
 TConverted? _$maybeMap<TConverted extends Object, TJson extends Object>(
   TJson? $value,
   TConverted Function(TJson) $convert,
@@ -410,14 +415,22 @@ TConverted? _$maybeMap<TConverted extends Object, TJson extends Object>(
 
 extension _$JsonRpc2ParameterExtensions on Parameter {
   @pragma('vm:prefer-inline')
-  T $maybeOr<T>(T Function(Parameter) getter, T defaultValue) =>
-      exists ? getter(this) : defaultValue;
-
-  @pragma('vm:prefer-inline')
-  T? $nullOr<T>(T Function(Parameter) getter) =>
+  @pragma('dart2js:tryInline')
+  @pragma('wasm:prefer-inline')
+  T? $nullChecked<T extends Object>(T Function(Parameter) getter) =>
       value != null ? getter(this) : null;
 
   @pragma('vm:prefer-inline')
-  T? $maybeNullOr<T>(T Function(Parameter) getter) =>
-      exists && value != null ? getter(this) : null;
+  @pragma('dart2js:tryInline')
+  @pragma('wasm:prefer-inline')
+  T? $nullCheckedOr<T extends Object>(
+    T Function(Parameter) getter,
+    T? defaultValue,
+  ) => exists ? $nullChecked(getter) : defaultValue;
+
+  @pragma('vm:prefer-inline')
+  @pragma('dart2js:tryInline')
+  @pragma('wasm:prefer-inline')
+  T $existsOr<T>(T Function(Parameter) getter, T defaultValue) =>
+      exists ? getter(this) : defaultValue;
 }

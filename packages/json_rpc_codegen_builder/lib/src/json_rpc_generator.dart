@@ -43,9 +43,12 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc>
     ConstantReader annotation,
     BuildStep buildStep,
   ) {
-    if (element is! ClassElement || !element.isAbstract || !element.isPrivate) {
+    if (element is! ClassElement ||
+        !element.isAbstract ||
+        !element.isInterface) {
       throw InvalidGenerationSourceError(
-        'The $JsonRpc annotation can only be used on abstract private classes',
+        'The $JsonRpc annotation can only be used on abstract interface '
+        'classes',
         element: element,
       );
     }

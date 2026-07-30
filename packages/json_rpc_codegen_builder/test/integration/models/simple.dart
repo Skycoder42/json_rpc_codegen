@@ -5,8 +5,7 @@ part 'simple.g.dart';
 enum Category { catA, catB, catC }
 
 @jsonRpc
-// ignore: unused_element for testing
-abstract class _Simple {
+abstract interface class Simple {
   @clientDefaults
   void notify(String message, [int level = 10]);
 

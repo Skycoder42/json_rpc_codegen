@@ -7,77 +7,74 @@ import 'common.dart';
 part 'parameter_tests.g.dart';
 
 @jsonRpcMixins
-// ignore: unused_element for testing
-abstract class _ParameterTests {
+abstract interface class ParameterTests {
   // test all supported parameter types
-  void simplePositionalServer(
+  Future<void> simplePositionalServer(
     bool a,
     num? b, [
     int c = 42,
     double? d,
-    String e = 'default',
+    String? e = 'default',
   ]);
 
-  void simpleNamedServer({
+  Future<void> simpleNamedServer({
     required bool a,
     required num? b,
     int c = 42,
     double? d,
-    String e = 'default',
+    String? e = 'default',
   });
 
   @clientDefaults
-  void simplePositionalClient(
+  Future<void> simplePositionalClient(
     bool a,
     num? b, [
     int c = 42,
     double? d,
-    String e = 'default',
+    String? e = 'default',
   ]);
 
   @clientDefaults
-  void simpleNamedClient({
+  Future<void> simpleNamedClient({
     required bool a,
     required num? b,
     int c = 42,
     double? d,
-    String e = 'default',
+    String? e = 'default',
   });
 
-  void containers(
+  Future<void> containers(
     Iterable<String> names,
     List<int> bytes,
     Map<String, bool> features,
-    Map<List<String>, Iterable<Map<dynamic, List<num>>>> deep,
+    Map<String, Iterable<Map<dynamic, List<num>>>> deep,
   );
 
-  void custom(
+  Future<void> custom(
     User user, [
     Color color = const Color(255, 255, 255),
     Permission permission = Permission.readOnly,
   ]);
 
-  void dotShorthandsServer(
+  Future<void> dotShorthands(
     User user, [
     Color color = const .new(255, 255, 255),
     Permission permission = .readOnly,
   ]);
 
-  @clientDefaults
-  void dotShorthandsClient(
-    User user, [
-    Color color = const .new(255, 255, 255),
-    Permission permission = .readOnly,
-  ]);
-
-  void customContainers({
+  Future<void> customContainers({
     required Iterable<User> users,
-    Map<Color, List<Permission>> colorPermissions = const {
-      Color(0, 0, 0): [Permission.readWrite],
+    Map<String, List<Permission>> colorPermissions = const {
+      'black': [Permission.readWrite],
+    },
+    List<Set<User?>?>? nullables,
+    Map<Object, bool?>? optionalsNullable = const {
+      'readOnly': true,
+      'readWrite': null,
     },
   });
 
-  void records(
+  Future<void> records(
     () empty,
     ((int, int), String, Color?, User, List<Permission>?) positional,
     ({

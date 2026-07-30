@@ -17,7 +17,8 @@ implementation for dart)
   multiple definitions, you can creates those by using the base class and the mixins
 - Supports all basic dart types and custom JSON serializables as well
   - Can handle primitive types (bool, int, ...)
-  - Can handle infinitely nested containes (List, Set, Map, ...)
+  - Can handle infinitely nested containers (List, Set, Map, ...)
+    - Map keys must be non nullable `String`s, as JSON objects can only have string keys
   - Can handle infinitely nested records
   - Can handle advanced dart types (DateTime, Uri)
   - Can handle custom types via `fromJson` and `toJson` methods
@@ -39,8 +40,8 @@ dev_dependencies:
 ```
 
 ## Usage
-The API usage is very basic. You create an abstract dart class that describes the interface, and the code generator
-will do the rest for you:
+The API usage is very basic. You create an abstract interface class that describes the interface, and the code
+generator will do the rest for you:
 
 ```dart
 import 'package:json_rpc_codegen/json_rpc_codegen.dart';
@@ -50,7 +51,7 @@ part 'my_class.g.dart';
 enum Stage { all, pre, post }
 
 @jsonRpc
-abstract class _MyClass {
+abstract interface class MyClass {
   void startServerTask({
     required int id,
     required String taskName,

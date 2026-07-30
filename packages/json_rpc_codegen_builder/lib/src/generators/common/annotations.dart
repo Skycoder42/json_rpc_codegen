@@ -13,5 +13,11 @@ abstract base class Annotations {
 
   static const mustCallSuper = Reference('mustCallSuper');
 
-  static const pragmaPreferInline = Reference("pragma('vm:prefer-inline')");
+  static const pragmaVmPreferInline = Reference("pragma('vm:prefer-inline')");
+  static const pragmaDart2jsTryInline = Reference(
+    "pragma('dart2js:tryInline')",
+  );
+  static const pragmaWasmPreferInline = Reference(
+    "pragma('wasm:prefer-inline')",
+  );
 }

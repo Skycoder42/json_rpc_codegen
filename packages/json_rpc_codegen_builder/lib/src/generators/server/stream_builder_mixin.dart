@@ -147,7 +147,18 @@ base mixin StreamBuilderMixin
       yield* method.formalParameters.map((e) => buildNamed(params, e));
     }
     yield refer(method.name!)
-        .call([for (final p in method.formalParameters) paramRefFor(p)])
+        .call(
+          [
+            for (final p in method.formalParameters.where(
+              (p) => p.isPositional,
+            ))
+              paramRefFor(p),
+          ],
+          {
+            for (final p in method.formalParameters.where((p) => p.isNamed))
+              p.name!: paramRefFor(p),
+          },
+        )
         .property('listen')
         .call(
           [_buildOnData(method, streamType)],

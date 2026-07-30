@@ -5,8 +5,7 @@ import 'common.dart';
 part 'stream.g.dart';
 
 @jsonRpc
-// ignore: unused_element for testing
-abstract class _Stream {
+abstract interface class StreamTests {
   Stream<int> simple();
 
   Stream<String> positional(
