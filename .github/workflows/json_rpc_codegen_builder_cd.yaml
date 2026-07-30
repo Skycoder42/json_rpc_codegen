@@ -1,29 +1,22 @@
 name: CD - Publish json_rpc_codegen_builder to pub.dev
 
 on:
-  push:
-    tags:
-      - "json_rpc_codegen_builder-v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: The version to be deployed
+        required: true
 
 jobs:
-  ci:
-    name: CI (pub.dev)
-    uses: Skycoder42/dart_test_tools/.github/workflows/dart.yml@main
-    with:
-      workingDirectory: packages/json_rpc_codegen_builder
-      buildRunner: true
-      buildRunnerArgs: --delete-conflicting-outputs
-      unitTestPaths: test/unit
-      minCoverage: 0
-      integrationTestPaths: test/integration
   publish:
     name: Publish
     uses: Skycoder42/dart_test_tools/.github/workflows/publish.yml@main
     permissions:
       id-token: write
     with:
-      environment: pub-deploy
       tagPrefix: json_rpc_codegen_builder-v
+      version: ${{ inputs.version }}
       workingDirectory: packages/json_rpc_codegen_builder
       buildRunner: true
-      buildRunnerArgs: --delete-conflicting-outputs
+      buildRunnerArgs: --workspace

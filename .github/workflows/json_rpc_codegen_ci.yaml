@@ -4,9 +4,12 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "packages/json_rpc_codegen/**"
-      - ".github/workflows/json_rpc_codegen_ci.yaml"
-      - ".github/workflows/json_rpc_codegen_cd.yaml"
+      - packages/json_rpc_codegen/**
+      - .github/workflows/json_rpc_codegen_c?.yaml
+  pull_request:
+    paths:
+      - packages/json_rpc_codegen/**
+      - .github/workflows/json_rpc_codegen_c?.yaml
 
 jobs:
   ci:
@@ -14,15 +17,17 @@ jobs:
     uses: Skycoder42/dart_test_tools/.github/workflows/dart.yml@main
     with:
       workingDirectory: packages/json_rpc_codegen
-      buildRunner: false
-      panaScoreThreshold: 10
+      buildRunner: true
+
   cd:
     name: CD
     uses: Skycoder42/dart_test_tools/.github/workflows/release.yml@main
     needs:
       - ci
+    permissions:
+      contents: write
+      actions: write
     with:
       workingDirectory: packages/json_rpc_codegen
       tagPrefix: json_rpc_codegen-v
-    secrets:
-      githubToken: ${{ secrets.GH_PAT }}
+      publishWorkflow: json_rpc_codegen_cd.yaml

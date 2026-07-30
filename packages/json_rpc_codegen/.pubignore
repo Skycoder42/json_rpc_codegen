@@ -1,4 +1,3 @@
 # Unignores
 ## Generated files
-!*.g.dart
 !*.mocks.dart

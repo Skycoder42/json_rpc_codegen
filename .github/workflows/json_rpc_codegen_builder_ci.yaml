@@ -4,9 +4,12 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "packages/json_rpc_codegen_builder/**"
-      - ".github/workflows/json_rpc_codegen_builder_ci.yaml"
-      - ".github/workflows/json_rpc_codegen_builder_cd.yaml"
+      - packages/json_rpc_codegen_builder/**
+      - .github/workflows/json_rpc_codegen_builder_c?.yaml
+  pull_request:
+    paths:
+      - packages/json_rpc_codegen_builder/**
+      - .github/workflows/json_rpc_codegen_builder_c?.yaml
 
 jobs:
   ci:
@@ -15,18 +18,18 @@ jobs:
     with:
       workingDirectory: packages/json_rpc_codegen_builder
       buildRunner: true
-      buildRunnerArgs: --delete-conflicting-outputs
-      removePubspecOverrides: false
-      unitTestPaths: test/unit
-      minCoverage: 0
+      buildRunnerArgs: --workspace
+      unitTestPaths: ""
       integrationTestPaths: test/integration
   cd:
     name: CD
     uses: Skycoder42/dart_test_tools/.github/workflows/release.yml@main
     needs:
       - ci
+    permissions:
+      contents: write
+      actions: write
     with:
       workingDirectory: packages/json_rpc_codegen_builder
       tagPrefix: json_rpc_codegen_builder-v
-    secrets:
-      githubToken: ${{ secrets.GH_PAT }}
+      publishWorkflow: json_rpc_codegen_builder_cd.yaml

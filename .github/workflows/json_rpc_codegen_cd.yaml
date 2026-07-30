@@ -1,9 +1,12 @@
 name: CD - Publish json_rpc_codegen to pub.dev
 
 on:
-  push:
-    tags:
-      - "json_rpc_codegen-v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: The version to be deployed
+        required: true
 
 jobs:
   publish:
@@ -12,7 +15,7 @@ jobs:
     permissions:
       id-token: write
     with:
-      environment: pub-deploy
       tagPrefix: json_rpc_codegen-v
+      version: ${{ inputs.version }}
       workingDirectory: packages/json_rpc_codegen
-      buildRunner: false
+      buildRunner: true
