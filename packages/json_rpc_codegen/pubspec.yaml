@@ -1,6 +1,6 @@
 name: json_rpc_codegen
 description: Annotations for the dart code generator that generates typed client and server code for the json_rpc_2 package.
-version: 1.1.0
+version: 2.0.0
 homepage: https://github.com/Skycoder42/json_rpc_codegen
 repository: https://github.com/Skycoder42/json_rpc_codegen.git
 
