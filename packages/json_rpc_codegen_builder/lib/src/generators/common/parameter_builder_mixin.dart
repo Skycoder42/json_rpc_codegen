@@ -9,6 +9,7 @@ import 'package:source_helper/source_helper.dart';
 
 import '../../extensions/code_builder_extensions.dart';
 import '../../extensions/parameter_extensions.dart';
+import '../../readers/rpc_param_reader.dart';
 import 'annotations.dart';
 import 'closure_builder_mixin.dart';
 import 'method_mapper_mixin.dart';
@@ -90,6 +91,11 @@ base mixin ParameterBuilderMixin
     Expression paramRef,
     FormalParameterElement param,
   ) {
+    // a custom converter defines the json type and thus the accessor to use
+    if (RpcParamReader.read(param)?.fromJsonConverter != null) {
+      return _accessFromJson(paramRef, param);
+    }
+
     final paramType = param.type;
     if (_primitiveAccessor(paramType) case (:final getter, :final transform)?) {
       return _accessPrimitive(paramRef, param, getter, transform);
@@ -165,8 +171,8 @@ base mixin ParameterBuilderMixin
   ]) {
     final closure = closure1(
       r'$v',
-      (p1) => fromJson(
-        param.type,
+      (p1) => paramFromJson(
+        param,
         p1.property(getter).apply(transform),
         noCast: true,
         isNull: false,
@@ -186,8 +192,8 @@ base mixin ParameterBuilderMixin
               [param.type.toReference()],
             );
       } else {
-        return fromJson(
-          param.type,
+        return paramFromJson(
+          param,
           paramRef.property(getter).apply(transform),
           noCast: true,
         );
@@ -220,7 +226,7 @@ base mixin ParameterBuilderMixin
     Expression paramRef,
     FormalParameterElement param,
   ) {
-    final jsonType = fromJsonType(param.type);
+    final jsonType = paramJsonType(param);
     if (_primitiveAccessor(jsonType) case (:final getter, :final transform)?) {
       return _accessJsonConverted(paramRef, param, getter, transform);
     }

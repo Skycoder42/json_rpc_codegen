@@ -93,10 +93,38 @@ abstract interface class ParameterTests {
     named,
   );
 
-  @MethodName('renamed-method')
+  @RpcMethod(name: 'renamed-method')
   Future<void> renamed({
-    @ParamName('renamed-a') required bool a,
-    @ParamName(r'renamed:$b') int b = 42,
+    @RpcParam(name: 'renamed-a') required bool a,
+    @RpcParam(name: r'renamed:$b') int b = 42,
     String? c,
   });
+
+  Future<void> customNamed({
+    @RpcParam(fromJson: colorFromRgb, toJson: colorToRgb) required Color color,
+    @RpcParam(
+      name: 'perm',
+      fromJson: PermissionCodec.fromCode,
+      toJson: PermissionCodec.toCode,
+    )
+    Permission permission = .readOnly,
+    @RpcParam(fromJson: colorFromRgb, toJson: colorToRgb) Color? optional,
+  });
+
+  // no names - custom conversion is allowed on positional parameters
+  Future<void> customPositional(
+    @RpcParam(fromJson: colorFromRgb, toJson: colorToRgb) Color color, [
+    @RpcParam(
+      fromJson: PermissionCodec.fromCode,
+      toJson: PermissionCodec.toCode,
+    )
+    Permission permission = .readWrite,
+  ]);
+
+  // overrides the built in handling of a primitive type
+  Future<void> customPrimitive(
+    @RpcParam(fromJson: doubleFromFixed, toJson: doubleToFixed) double value, [
+    @RpcParam(fromJson: doubleFromFixed, toJson: doubleToFixed)
+    double? optional,
+  ]);
 }

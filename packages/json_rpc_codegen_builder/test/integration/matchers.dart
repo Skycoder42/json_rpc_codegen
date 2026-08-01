@@ -36,3 +36,7 @@ Matcher deepEquals(Object? expected) => predicate(
 
 /// [deepEquals] as positional mockito argument matcher.
 T? deepArg<T>(Object? expected) => argThat(deepEquals(expected));
+
+/// [deepEquals] as named mockito argument matcher for the parameter [name].
+T? deepNamedArg<T>(String name, Object? expected) =>
+    argThat(deepEquals(expected), named: name);

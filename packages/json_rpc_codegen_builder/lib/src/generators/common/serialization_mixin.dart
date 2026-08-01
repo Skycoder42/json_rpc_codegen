@@ -7,6 +7,9 @@ import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
 
 import '../../extensions/code_builder_extensions.dart';
+import '../../readers/rpc_converter.dart';
+import '../../readers/rpc_method_reader.dart';
+import '../../readers/rpc_param_reader.dart';
 import 'annotations.dart';
 import 'closure_builder_mixin.dart';
 
@@ -26,8 +29,20 @@ base mixin SerializationMixin on ClosureBuilderMixin {
     Expression value, {
     bool noCast = false,
     bool? isNull,
+    RpcConverter? converter,
   }) {
     final nullable = isNull ?? type.isNullableType;
+
+    if (converter != null) {
+      return _applyConverter(
+        type,
+        converter,
+        value,
+        nullable: nullable,
+        cast: noCast ? null : converter.jsonType.toReference(nullable: false),
+      );
+    }
+
     switch (type) {
       case InterfaceType(isDartCoreIterable: true) ||
           InterfaceType(isDartCoreList: true) ||
@@ -76,8 +91,18 @@ base mixin SerializationMixin on ClosureBuilderMixin {
   }
 
   @protected
-  Expression toJson(DartType type, Expression value, {bool? isNull}) {
+  Expression toJson(
+    DartType type,
+    Expression value, {
+    bool? isNull,
+    RpcConverter? converter,
+  }) {
     final nullable = isNull ?? type.isNullableType;
+
+    if (converter != null) {
+      return _applyConverter(type, converter, value, nullable: nullable);
+    }
+
     switch (type) {
       case InterfaceType(isDartCoreIterable: true) ||
           InterfaceType(isDartCoreList: true) ||
@@ -97,6 +122,60 @@ base mixin SerializationMixin on ClosureBuilderMixin {
         return value;
     }
   }
+
+  /// [fromJson] for [param], honoring a custom `@RpcParam(fromJson: ...)`.
+  @protected
+  Expression paramFromJson(
+    FormalParameterElement param,
+    Expression value, {
+    bool noCast = false,
+    bool? isNull,
+  }) => fromJson(
+    param.type,
+    value,
+    noCast: noCast,
+    isNull: isNull,
+    converter: RpcParamReader.read(param)?.fromJsonConverter,
+  );
+
+  /// [toJson] for [param], honoring a custom `@RpcParam(toJson: ...)`.
+  @protected
+  Expression paramToJson(FormalParameterElement param, Expression value) =>
+      toJson(
+        param.type,
+        value,
+        converter: RpcParamReader.read(param)?.toJsonConverter,
+      );
+
+  /// [fromJson] for [method], honoring a custom `@RpcMethod(fromJson: ...)`.
+  @protected
+  Expression methodFromJson(
+    MethodElement method,
+    DartType type,
+    Expression value,
+  ) => fromJson(
+    type,
+    value,
+    converter: RpcMethodReader.read(method)?.fromJsonConverter,
+  );
+
+  /// [toJson] for [method], honoring a custom `@RpcMethod(toJson: ...)`.
+  @protected
+  Expression methodToJson(
+    MethodElement method,
+    DartType type,
+    Expression value,
+  ) => toJson(
+    type,
+    value,
+    converter: RpcMethodReader.read(method)?.toJsonConverter,
+  );
+
+  /// The JSON type [param] is transmitted as.
+  @protected
+  DartType paramJsonType(FormalParameterElement param) =>
+      RpcParamReader.read(param)?.fromJsonConverter?.jsonType ??
+      fromJsonType(param.type);
 
   /// Awaits [invocation] and returns its [convert]ed result.
   ///
@@ -351,6 +430,31 @@ base mixin SerializationMixin on ClosureBuilderMixin {
     }
 
     return jsonType;
+  }
+
+  /// Applies [converter] to [value], casting the JSON value to [cast] first.
+  ///
+  /// Without a [cast], the converter can be passed as tear off instead of being
+  /// wrapped in a closure.
+  Expression _applyConverter(
+    DartType type,
+    RpcConverter converter,
+    Expression value, {
+    required bool nullable,
+    Reference? cast,
+  }) {
+    if (cast == null) {
+      return nullable
+          ? _maybeMapRef.call([value, converter.function])
+          : converter.function.call([value]);
+    }
+
+    return _ifNotNull(
+      type,
+      nullable,
+      value,
+      (ref) => converter.function.call([ref.asA(cast)]),
+    );
   }
 
   Expression _maybeCast(Expression ref, Reference type, bool noCast) =>

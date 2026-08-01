@@ -183,7 +183,7 @@ base mixin ServerStreamBuilderMixin
           literalString(rpcMethodName(method, StreamSubMethod.data.suffix)),
           literalList([
             StreamRpc.streamIdRef,
-            toJson(streamType, dataRef),
+            methodToJson(method, streamType, dataRef),
           ], CoreTypes.$dynamic),
         ]).code,
       );

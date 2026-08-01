@@ -67,3 +67,25 @@ class Color {
 }
 
 enum Permission { readOnly, writeOnly, readWrite }
+
+// custom converters - all of them deliberately use a different wire format
+// than the built in conversion would, so that the tests can detect whether the
+// annotations are actually honored
+
+List<int> colorToRgb(Color color) => [color.r, color.g, color.b];
+
+Color colorFromRgb(List<dynamic> json) =>
+    Color(json[0] as int, json[1] as int, json[2] as int);
+
+abstract final class PermissionCodec {
+  static int toCode(Permission permission) => permission.index + 1;
+
+  static Permission fromCode(int code) => Permission.values[code - 1];
+}
+
+// primitives must be overridable as well - a double is transmitted as a fixed
+// length string instead of via the built in asNum/toDouble handling
+
+String doubleToFixed(double value) => value.toStringAsFixed(3);
+
+double doubleFromFixed(String json) => double.parse(json);

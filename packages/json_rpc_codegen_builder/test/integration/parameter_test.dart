@@ -138,6 +138,27 @@ class _TestParameterTestsServer extends ParameterTestsServer {
   @override
   Future<void> renamed({required bool a, int b = 42, String? c}) =>
       mock.renamed(a: a, b: b, c: c);
+
+  @override
+  Future<void> customNamed({
+    required Color color,
+    Permission permission = .readOnly,
+    Color? optional,
+  }) => mock.customNamed(
+    color: color,
+    permission: permission,
+    optional: optional,
+  );
+
+  @override
+  Future<void> customPositional(
+    Color color, [
+    Permission permission = .readWrite,
+  ]) => mock.customPositional(color, permission);
+
+  @override
+  Future<void> customPrimitive(double value, [double? optional]) =>
+      mock.customPrimitive(value, optional);
 }
 
 void main() {
@@ -571,6 +592,143 @@ void main() {
         'params': {'renamed-a': true, 'c': 'last'},
       });
       verify(sutServer.mock.renamed(a: true, c: 'last'));
+    });
+  });
+
+  // the custom converters use a different wire format than the built in
+  // conversion would - assert on it, as the mock verifications alone would pass
+  // even if both sides silently kept using the default conversion
+
+  group('customNamed', () {
+    const testColor = Color(17, 34, 51);
+    const testOptional = Color(1, 2, 3);
+
+    test('sends minimal parameters', () async {
+      await sutClient.customNamed(color: testColor);
+
+      expect(jsonDecode(sentFrames.single), {
+        'jsonrpc': '2.0',
+        'id': anything,
+        'method': 'customNamed',
+        'params': {
+          'color': [17, 34, 51],
+        },
+      });
+      verify(
+        sutServer.mock.customNamed(color: deepNamedArg('color', testColor)),
+      );
+    });
+
+    test('sends all parameters', () async {
+      await sutClient.customNamed(
+        color: testColor,
+        permission: .writeOnly,
+        optional: testOptional,
+      );
+
+      expect(jsonDecode(sentFrames.single), {
+        'jsonrpc': '2.0',
+        'id': anything,
+        'method': 'customNamed',
+        'params': {
+          'color': [17, 34, 51],
+          'perm': 2,
+          'optional': [1, 2, 3],
+        },
+      });
+      verify(
+        sutServer.mock.customNamed(
+          color: deepNamedArg('color', testColor),
+          permission: .writeOnly,
+          optional: deepNamedArg('optional', testOptional),
+        ),
+      );
+    });
+
+    test('sends last optional parameter', () async {
+      await sutClient.customNamed(color: testColor, optional: testOptional);
+
+      expect(jsonDecode(sentFrames.single), {
+        'jsonrpc': '2.0',
+        'id': anything,
+        'method': 'customNamed',
+        'params': {
+          'color': [17, 34, 51],
+          'optional': [1, 2, 3],
+        },
+      });
+      verify(
+        sutServer.mock.customNamed(
+          color: deepNamedArg('color', testColor),
+          optional: deepNamedArg('optional', testOptional),
+        ),
+      );
+    });
+  });
+
+  group('customPositional', () {
+    const testColor = Color(17, 34, 51);
+
+    test('sends minimal parameters', () async {
+      await sutClient.customPositional(testColor);
+
+      expect(jsonDecode(sentFrames.single), {
+        'jsonrpc': '2.0',
+        'id': anything,
+        'method': 'customPositional',
+        'params': [
+          [17, 34, 51],
+        ],
+      });
+      verify(sutServer.mock.customPositional(deepArg(testColor)));
+    });
+
+    test('sends all parameters', () async {
+      await sutClient.customPositional(testColor, .writeOnly);
+
+      expect(jsonDecode(sentFrames.single), {
+        'jsonrpc': '2.0',
+        'id': anything,
+        'method': 'customPositional',
+        'params': [
+          [17, 34, 51],
+          2,
+        ],
+      });
+      verify(sutServer.mock.customPositional(deepArg(testColor), .writeOnly));
+    });
+  });
+
+  group('customPrimitive', () {
+    test('sends minimal parameters', () async {
+      await sutClient.customPrimitive(12.5);
+
+      expect(jsonDecode(sentFrames.single), {
+        'jsonrpc': '2.0',
+        'id': anything,
+        'method': 'customPrimitive',
+        // a string, not the number 12.5 - the built in double handling would
+        // have transmitted it as is
+        'params': ['12.500'],
+      });
+      verify(sutServer.mock.customPrimitive(12.5));
+    });
+
+    test('sends all parameters', () async {
+      await sutClient.customPrimitive(12.5, 0.25);
+
+      expect(jsonDecode(sentFrames.single), {
+        'jsonrpc': '2.0',
+        'id': anything,
+        'method': 'customPrimitive',
+        'params': ['12.500', '0.250'],
+      });
+
+      final captured = verify(
+        sutServer.mock.customPrimitive(captureAny, captureAny),
+      ).captured;
+      expect(captured[0], isA<double>().having(($v) => $v, 'value', 12.5));
+      expect(captured[1], isA<double>().having(($v) => $v, 'value', 0.25));
     });
   });
 }

@@ -89,7 +89,10 @@ final class ClientMixinBuilder extends ProxySpec
       buildMethodInvocation(
         JsonRpcInstance.sendRequest,
         method,
-        buildReturn: (invocation) =>
-            buildConvertedReturn(returnType, invocation, fromJson),
+        buildReturn: (invocation) => buildConvertedReturn(
+          returnType,
+          invocation,
+          (type, value) => methodFromJson(method, type, value),
+        ),
       );
 }

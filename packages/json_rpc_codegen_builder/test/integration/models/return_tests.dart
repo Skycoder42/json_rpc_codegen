@@ -46,4 +46,20 @@ abstract interface class ReturnTests {
 
   Future<({double r, Color c, Map<String, String?>? d, (int, int) p})>
   namedRecordRet();
+
+  @RpcMethod(fromJson: colorFromRgb, toJson: colorToRgb)
+  Future<Color> customRet();
+
+  @RpcMethod(
+    name: 'custom-nullable-ret',
+    fromJson: colorFromRgb,
+    toJson: colorToRgb,
+  )
+  Future<Color?> customNullableRet();
+
+  @RpcMethod(fromJson: PermissionCodec.fromCode, toJson: PermissionCodec.toCode)
+  Future<Permission> customPermissionRet();
+
+  @RpcMethod(fromJson: doubleFromFixed, toJson: doubleToFixed)
+  Future<double> customPrimitiveRet();
 }

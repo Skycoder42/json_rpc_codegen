@@ -184,6 +184,30 @@ mixin ReturnTestsClientMixin on ClientBase implements ReturnTests {
       ),
     );
   }
+
+  @override
+  Future<Color> customRet() async {
+    final $result = await jsonRpcInstance.sendRequest('customRet');
+    return colorFromRgb(($result as List<dynamic>));
+  }
+
+  @override
+  Future<Color?> customNullableRet() async {
+    final $result = await jsonRpcInstance.sendRequest('custom-nullable-ret');
+    return _$maybeMap($result, ($v) => colorFromRgb(($v as List<dynamic>)));
+  }
+
+  @override
+  Future<Permission> customPermissionRet() async {
+    final $result = await jsonRpcInstance.sendRequest('customPermissionRet');
+    return PermissionCodec.fromCode(($result as int));
+  }
+
+  @override
+  Future<double> customPrimitiveRet() async {
+    final $result = await jsonRpcInstance.sendRequest('customPrimitiveRet');
+    return doubleFromFixed(($result as String));
+  }
 }
 mixin ReturnTestsServerMixin on ServerBase implements ReturnTests {
   @override
@@ -273,6 +297,22 @@ mixin ReturnTestsServerMixin on ServerBase implements ReturnTests {
         'p': <dynamic>[$result.p.$1, $result.p.$2],
         'r': $result.r,
       };
+    });
+    jsonRpcInstance.registerMethod('customRet', () async {
+      final $result = await customRet();
+      return colorToRgb($result);
+    });
+    jsonRpcInstance.registerMethod('custom-nullable-ret', () async {
+      final $result = await customNullableRet();
+      return _$maybeMap($result, colorToRgb);
+    });
+    jsonRpcInstance.registerMethod('customPermissionRet', () async {
+      final $result = await customPermissionRet();
+      return PermissionCodec.toCode($result);
+    });
+    jsonRpcInstance.registerMethod('customPrimitiveRet', () async {
+      final $result = await customPrimitiveRet();
+      return doubleToFixed($result);
     });
   }
 }

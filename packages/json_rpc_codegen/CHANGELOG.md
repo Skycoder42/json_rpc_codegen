@@ -6,8 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- Add `@MethodName` and `@ParamName` annotations to override the JSON-RPC names
-of generated methods and named parameters
+- Add `@RpcMethod` and `@RpcParam` annotations to customize the JSON-RPC mapping
+of generated methods and parameters
+  - `name` overrides the transmitted name of a method or named parameter
+  - `fromJson` and `toJson` override how a parameter, method result or stream
+  element is converted
 
 ## 2.0.0 - 2026-07-30
 ### Changed

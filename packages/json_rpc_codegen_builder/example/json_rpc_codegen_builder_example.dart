@@ -75,11 +75,41 @@ abstract interface class SampleApi {
     int offset = 0,
   ]);
 
-  @MethodName('user.rename')
+  @RpcMethod(name: 'user.rename')
   Future<void> renameUser({
-    @ParamName('user-id') required int id,
-    @ParamName('new-name') required String name,
+    @RpcParam(name: 'user-id') required int id,
+    @RpcParam(name: 'new-name') required String name,
+  });
+
+  // custom conversion via a constructor tear off and top level functions
+  @RpcMethod(name: 'user.load', fromJson: User.fromJson, toJson: userToJson)
+  Future<User> loadUser(
+    @RpcParam(fromJson: stageFromCode, toJson: stageToCode) Stage stage, [
+    @RpcParam(fromJson: permissionsFromMask, toJson: permissionsToMask)
+    Set<Permission> permissions = const <Permission>{},
+  ]);
+
+  @RpcMethod(fromJson: User.fromJson, toJson: userToJson)
+  Stream<User> streamAdmins({
+    @RpcParam(name: 'min-level', fromJson: stageFromCode, toJson: stageToCode)
+    Stage stage = .all,
   });
 }
+
+Map<String, dynamic> userToJson(User user) => {
+  'firstName': user.firstName,
+  'lastName': user.lastName,
+};
+
+int stageToCode(Stage stage) => stage.index;
+
+Stage stageFromCode(int code) => Stage.values[code];
+
+int permissionsToMask(Set<Permission> permissions) =>
+    permissions.fold(0, (mask, permission) => mask | (1 << permission.index));
+
+Set<Permission> permissionsFromMask(int mask) => Permission.values
+    .where((permission) => mask & (1 << permission.index) != 0)
+    .toSet();
 
 void main() {}

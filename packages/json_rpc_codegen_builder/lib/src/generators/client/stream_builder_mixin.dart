@@ -206,7 +206,8 @@ base mixin ClientStreamBuilderMixin
         .asA(Types.$StreamController(streamType.toReference()).asNullable(true))
         .nullSafeProperty('add')
         .call([
-          fromJson(
+          methodFromJson(
+            method,
             streamType,
             streamType.isNullableType
                 ? params

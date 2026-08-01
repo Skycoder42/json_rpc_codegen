@@ -120,24 +120,60 @@ To use the client, simply create a new instance, just as you would with the stan
 server, create your own server class that extends the generated server to implement the server methods. Then you can
 use this class just like the `json_rpc_2`, but without you having to take care of any registrations.
 
-### Renaming methods and parameters
-By default, the dart names of methods and parameters are used as is for the JSON-RPC method and parameter names. If the
-remote uses a naming scheme that cannot be expressed in dart, you can override the transmitted names with the
-`@MethodName` and `@ParamName` annotations:
+### Customizing methods and parameters
+By default, the dart names of methods and parameters are used as is for the JSON-RPC method and parameter names, and
+values are converted based on their type. Both can be overridden with the `@RpcMethod` and `@RpcParam` annotations. All
+of their properties are optional - without them, nothing changes.
+
+#### Renaming
+If the remote uses a naming scheme that cannot be expressed in dart, set the `name`:
 
 ```dart
 @jsonRpc
 abstract interface class MyClass {
-  @MethodName('dart-foo')
-  void dartFoo({@ParamName('dart:bar') required int dartBar});
+  @RpcMethod(name: 'dart-foo')
+  void dartFoo({@RpcParam(name: 'dart:bar') required int dartBar});
 }
 ```
 
 Calling `dartFoo(dartBar: 42)` will send `{"method": "dart-foo", "params": {"dart:bar": 42}}`, and the generated server
-registers and reads the same names. Both annotations are optional - without them, nothing changes.
+registers and reads the same names.
 
-`@ParamName` can only be applied to named parameters, as positional parameters are transmitted as a list and therefore
-have no names on the wire.
+The `name` of `@RpcParam` can only be set on named parameters, as positional parameters are transmitted as a list and
+therefore have no names on the wire.
+
+#### Custom conversion
+If a type cannot be converted automatically, or the remote expects a different representation than the default
+conversion produces, set `fromJson` and `toJson`. On `@RpcParam` they convert the parameter, on `@RpcMethod` the result
+of the method - or, for streams, a single stream element:
+
+```dart
+List<int> colorToRgb(Color color) => [color.r, color.g, color.b];
+
+Color colorFromRgb(List<dynamic> json) =>
+    Color(json[0] as int, json[1] as int, json[2] as int);
+
+@jsonRpc
+abstract interface class MyClass {
+  @RpcMethod(fromJson: colorFromRgb, toJson: colorToRgb)
+  Future<Color> blend(
+    @RpcParam(fromJson: colorFromRgb, toJson: colorToRgb) Color color,
+  );
+}
+```
+
+Both are independent - if only one is set, the other direction keeps using the default conversion. They can be set on
+positional parameters as well and also work for types that are handled natively, like `double` or `DateTime`.
+
+A few rules apply to the referenced functions:
+
+- They must be a reference to a top level function, a static method or a constructor - not a closure. Each must take
+  at least one required, positional parameter and only optional parameters after that.
+- They must be visible from the annotated library, as the generated code is a `part` of it.
+- They are never invoked with `null`. A nullable value is mapped to `null` directly, so a converter for a `Color?` is
+  still written as `Color Function(List<dynamic>)`.
+- They replace the conversion of the whole value. For a `List<Color>`, the converter receives the entire list, not the
+  individual colors.
 
 ## Documentation
 The documentation is available at https://pub.dev/documentation/json_rpc_codegen/latest/. A full example can be found

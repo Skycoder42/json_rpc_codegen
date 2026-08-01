@@ -55,7 +55,7 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
     if (!isServerDefault) {
       return literalList([
         ...extraArgs,
-        for (final p in params) toJson(p.type, refer(p.name!)),
+        for (final p in params) paramToJson(p, refer(p.name!)),
       ], CoreTypes.$dynamic);
     }
 
@@ -66,7 +66,7 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
     for (final (index, param) in params.indexed.toList().reversed) {
       final paramRef = refer(param.name!);
       if (index <= lastRequiredIndex) {
-        paramExpressions.add(toJson(param.type, paramRef));
+        paramExpressions.add(paramToJson(param, paramRef));
         continue;
       }
 
@@ -74,10 +74,10 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
         if (param.hasDefaultValue) {
           validateRest = paramRef.notEqualTo(param.defaultValueExpression);
           paramExpressions.add(
-            IterableIf(validateRest, toJson(param.type, paramRef)),
+            IterableIf(validateRest, paramToJson(param, paramRef)),
           );
         } else {
-          paramExpressions.add(toJson(param.type, paramRef).collectionNonNull);
+          paramExpressions.add(paramToJson(param, paramRef).collectionNonNull);
           validateRest = paramRef.notEqualTo(literalNull);
         }
       } else {
@@ -85,7 +85,7 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
             .notEqualTo(param.defaultValueExpression)
             .or(validateRest);
         paramExpressions.add(
-          IterableIf(validateRest, toJson(param.type, paramRef)),
+          IterableIf(validateRest, paramToJson(param, paramRef)),
         );
       }
     }
@@ -110,18 +110,18 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
             IterableIf(
               refer(p.name!).notEqualTo(p.defaultValueExpression),
               literalString(rpcParamName(p), raw: true),
-            ): toJson(
-              p.type,
+            ): paramToJson(
+              p,
               refer(p.name!),
             )
           else
-            literalString(rpcParamName(p), raw: true): toJson(
-              p.type,
+            literalString(rpcParamName(p), raw: true): paramToJson(
+              p,
               refer(p.name!),
             ).collectionNonNull
         else
-          literalString(rpcParamName(p), raw: true): toJson(
-            p.type,
+          literalString(rpcParamName(p), raw: true): paramToJson(
+            p,
             refer(p.name!),
           ),
     },

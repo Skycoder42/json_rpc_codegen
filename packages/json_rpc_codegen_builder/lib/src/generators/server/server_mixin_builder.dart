@@ -77,5 +77,9 @@ final class ServerMixinBuilder extends ProxySpec
   }
 
   Iterable<Code> _buildInvocation(MethodElement method, DartType returnType) =>
-      buildConvertedReturn(returnType, buildTargetInvocation(method), toJson);
+      buildConvertedReturn(
+        returnType,
+        buildTargetInvocation(method),
+        (type, value) => methodToJson(method, type, value),
+      );
 }

@@ -211,6 +211,38 @@ mixin ParameterTestsClientMixin on ClientBase implements ParameterTests {
       r'c': ?c,
     });
   }
+
+  @override
+  Future<void> customNamed({
+    required Color color,
+    Permission permission = .readOnly,
+    Color? optional,
+  }) async {
+    await jsonRpcInstance.sendRequest('customNamed', <String, dynamic>{
+      r'color': colorToRgb(color),
+      if (permission != .readOnly) r'perm': PermissionCodec.toCode(permission),
+      r'optional': ?_$maybeMap(optional, colorToRgb),
+    });
+  }
+
+  @override
+  Future<void> customPositional(
+    Color color, [
+    Permission permission = .readWrite,
+  ]) async {
+    await jsonRpcInstance.sendRequest('customPositional', <dynamic>[
+      colorToRgb(color),
+      if (permission != .readWrite) PermissionCodec.toCode(permission),
+    ]);
+  }
+
+  @override
+  Future<void> customPrimitive(double value, [double? optional]) async {
+    await jsonRpcInstance.sendRequest('customPrimitive', <dynamic>[
+      doubleToFixed(value),
+      ?_$maybeMap(optional, doubleToFixed),
+    ]);
+  }
 }
 mixin ParameterTestsServerMixin on ServerBase implements ParameterTests {
   @override
@@ -447,6 +479,42 @@ mixin ParameterTestsServerMixin on ServerBase implements ParameterTests {
         null,
       );
       await renamed(a: $$a, b: $$b, c: $$c);
+    });
+    jsonRpcInstance.registerMethod('customNamed', (Parameters $params) async {
+      final $$color = colorFromRgb($params[r'color'].asList.cast());
+      final $$permission = $params[r'perm'].$existsOr<Permission>(
+        ($v) => PermissionCodec.fromCode($v.asInt),
+        .readOnly,
+      );
+      final $$optional = $params[r'optional'].$nullCheckedOr<Color>(
+        ($v) => colorFromRgb($v.asList.cast()),
+        null,
+      );
+      await customNamed(
+        color: $$color,
+        permission: $$permission,
+        optional: $$optional,
+      );
+    });
+    jsonRpcInstance.registerMethod('customPositional', (
+      Parameters $params,
+    ) async {
+      final $$color = colorFromRgb($params[0].asList.cast());
+      final $$permission = $params[1].$existsOr<Permission>(
+        ($v) => PermissionCodec.fromCode($v.asInt),
+        .readWrite,
+      );
+      await customPositional($$color, $$permission);
+    });
+    jsonRpcInstance.registerMethod('customPrimitive', (
+      Parameters $params,
+    ) async {
+      final $$value = doubleFromFixed($params[0].asString);
+      final $$optional = $params[1].$nullCheckedOr<double>(
+        ($v) => doubleFromFixed($v.asString),
+        null,
+      );
+      await customPrimitive($$value, $$optional);
     });
   }
 }

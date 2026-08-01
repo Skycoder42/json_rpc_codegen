@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
@@ -95,20 +97,38 @@ class _TestReturnTestsServer extends ReturnTestsServer {
 
   @override
   Future<NamedRecord> namedRecordRet() => mock.namedRecordRet();
+
+  @override
+  Future<Color> customRet() => mock.customRet();
+
+  @override
+  Future<Color?> customNullableRet() => mock.customNullableRet();
+
+  @override
+  Future<Permission> customPermissionRet() => mock.customPermissionRet();
+
+  @override
+  Future<double> customPrimitiveRet() => mock.customPrimitiveRet();
 }
 
 void main() {
   late _TestReturnTestsServer sutServer;
   late ReturnTestsClient sutClient;
+  late List<String> receivedFrames;
 
   setUp(() {
+    receivedFrames = [];
+
     final upstreamController = StreamController<String>.broadcast();
     addTearDown(upstreamController.close);
     upstreamController.stream.listen(printOnFailure);
 
     final downstreamController = StreamController<String>.broadcast();
     addTearDown(downstreamController.close);
-    downstreamController.stream.listen(printOnFailure);
+    downstreamController.stream.listen((frame) {
+      printOnFailure(frame);
+      receivedFrames.add(frame);
+    });
 
     final clientChannel = StreamChannel(
       downstreamController.stream,
@@ -446,6 +466,99 @@ void main() {
       expect(result.d, isNull);
 
       verify(sutServer.mock.namedRecordRet());
+    });
+  });
+
+  // a symmetric converter round trips even if both sides silently kept using
+  // the default conversion - assert on the actual wire format as well
+
+  group('customRet', () {
+    const testColor = Color(17, 34, 51);
+
+    test('returns the value returned by the server', () async {
+      when(sutServer.mock.customRet()).thenReturnAsync(testColor);
+
+      await expectLater(
+        sutClient.customRet(),
+        completion(deepEquals(testColor)),
+      );
+
+      // a list, not the '#112233' the Color.toJson would have produced
+      expect(jsonDecode(receivedFrames.single), {
+        'jsonrpc': '2.0',
+        'id': anything,
+        'result': [17, 34, 51],
+      });
+      verify(sutServer.mock.customRet());
+    });
+  });
+
+  group('customNullableRet', () {
+    const testColor = Color(17, 34, 51);
+
+    test('returns the value returned by the server', () async {
+      when(sutServer.mock.customNullableRet()).thenReturnAsync(testColor);
+
+      await expectLater(
+        sutClient.customNullableRet(),
+        completion(deepEquals(testColor)),
+      );
+
+      expect(jsonDecode(receivedFrames.single), {
+        'jsonrpc': '2.0',
+        'id': anything,
+        'result': [17, 34, 51],
+      });
+      verify(sutServer.mock.customNullableRet());
+    });
+
+    test('returns null if the server returns null', () async {
+      when(sutServer.mock.customNullableRet()).thenReturnAsync(null);
+
+      await expectLater(sutClient.customNullableRet(), completion(isNull));
+
+      // the converters are never invoked with null
+      expect(jsonDecode(receivedFrames.single), {
+        'jsonrpc': '2.0',
+        'id': anything,
+        'result': null,
+      });
+      verify(sutServer.mock.customNullableRet());
+    });
+  });
+
+  group('customPermissionRet', () {
+    test('returns the value returned by the server', () async {
+      when(sutServer.mock.customPermissionRet()).thenReturnAsync(.writeOnly);
+
+      await expectLater(
+        sutClient.customPermissionRet(),
+        completion(Permission.writeOnly),
+      );
+
+      // the code, not the 'writeOnly' name the default conversion would use
+      expect(jsonDecode(receivedFrames.single), {
+        'jsonrpc': '2.0',
+        'id': anything,
+        'result': 2,
+      });
+      verify(sutServer.mock.customPermissionRet());
+    });
+  });
+
+  group('customPrimitiveRet', () {
+    test('returns the value returned by the server', () async {
+      when(sutServer.mock.customPrimitiveRet()).thenReturnAsync(12.5);
+
+      await expectLater(sutClient.customPrimitiveRet(), completion(12.5));
+
+      // a string, not the number the built in double handling would send
+      expect(jsonDecode(receivedFrames.single), {
+        'jsonrpc': '2.0',
+        'id': anything,
+        'result': '12.500',
+      });
+      verify(sutServer.mock.customPrimitiveRet());
     });
   });
 }
