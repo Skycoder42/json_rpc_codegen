@@ -86,6 +86,7 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc>
           ..ignoreForFile.add('no_literal_bool_comparisons')
           ..ignoreForFile.add('prefer_expression_function_bodies')
           ..ignoreForFile.add('unnecessary_parenthesis')
+          ..ignoreForFile.add('unnecessary_raw_strings')
           ..ignoreForFile.add('unreachable_from_main')
           ..ignoreForFile.add('unused_element'),
       ),

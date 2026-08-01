@@ -120,6 +120,25 @@ To use the client, simply create a new instance, just as you would with the stan
 server, create your own server class that extends the generated server to implement the server methods. Then you can
 use this class just like the `json_rpc_2`, but without you having to take care of any registrations.
 
+### Renaming methods and parameters
+By default, the dart names of methods and parameters are used as is for the JSON-RPC method and parameter names. If the
+remote uses a naming scheme that cannot be expressed in dart, you can override the transmitted names with the
+`@MethodName` and `@ParamName` annotations:
+
+```dart
+@jsonRpc
+abstract interface class MyClass {
+  @MethodName('dart-foo')
+  void dartFoo({@ParamName('dart:bar') required int dartBar});
+}
+```
+
+Calling `dartFoo(dartBar: 42)` will send `{"method": "dart-foo", "params": {"dart:bar": 42}}`, and the generated server
+registers and reads the same names. Both annotations are optional - without them, nothing changes.
+
+`@ParamName` can only be applied to named parameters, as positional parameters are transmitted as a list and therefore
+have no names on the wire.
+
 ## Documentation
 The documentation is available at https://pub.dev/documentation/json_rpc_codegen/latest/. A full example can be found
 at https://pub.dev/packages/json_rpc_codegen_builder/example.

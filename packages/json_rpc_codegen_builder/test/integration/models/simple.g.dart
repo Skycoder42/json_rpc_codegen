@@ -11,7 +11,8 @@ part of 'simple.dart';
 // ignore_for_file: document_ignores, lines_longer_than_80_chars
 // ignore_for_file: no_literal_bool_comparisons
 // ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
-// ignore_for_file: unreachable_from_main, unused_element
+// ignore_for_file: unnecessary_raw_strings, unreachable_from_main
+// ignore_for_file: unused_element
 
 mixin SimpleClientMixin on ClientBase implements Simple {
   @override
@@ -27,9 +28,9 @@ mixin SimpleClientMixin on ClientBase implements Simple {
     final $result = await jsonRpcInstance.sendRequest(
       'request',
       <String, dynamic>{
-        'id': id,
-        'category': ?category?.name,
-        if (user != 'self') 'user': user,
+        r'id': id,
+        r'category': ?category?.name,
+        if (user != 'self') r'user': user,
       },
     );
     return ($result as double);
@@ -49,12 +50,12 @@ mixin SimpleServerMixin on ServerBase implements Simple {
       await notify($$message, $$level);
     });
     jsonRpcInstance.registerMethod('request', (Parameters $params) async {
-      final $$id = $params['id'].asInt;
-      final $$category = $params['category'].$nullCheckedOr<Category>(
+      final $$id = $params[r'id'].asInt;
+      final $$category = $params[r'category'].$nullCheckedOr<Category>(
         ($v) => Category.values.byName($v.asString),
         null,
       );
-      final $$user = $params['user'].asStringOr('self');
+      final $$user = $params[r'user'].asStringOr('self');
       return await request(id: $$id, category: $$category, user: $$user);
     });
   }

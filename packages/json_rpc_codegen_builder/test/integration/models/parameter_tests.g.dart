@@ -11,7 +11,8 @@ part of 'parameter_tests.dart';
 // ignore_for_file: document_ignores, lines_longer_than_80_chars
 // ignore_for_file: no_literal_bool_comparisons
 // ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
-// ignore_for_file: unreachable_from_main, unused_element
+// ignore_for_file: unnecessary_raw_strings, unreachable_from_main
+// ignore_for_file: unused_element
 
 mixin ParameterTestsClientMixin on ClientBase implements ParameterTests {
   @override
@@ -40,11 +41,11 @@ mixin ParameterTestsClientMixin on ClientBase implements ParameterTests {
     String? e = 'default',
   }) async {
     await jsonRpcInstance.sendRequest('simpleNamedServer', <String, dynamic>{
-      'a': a,
-      'b': b,
-      if (c != 42) 'c': c,
-      'd': ?d,
-      if (e != 'default') 'e': e,
+      r'a': a,
+      r'b': b,
+      if (c != 42) r'c': c,
+      r'd': ?d,
+      if (e != 'default') r'e': e,
     });
   }
 
@@ -74,11 +75,11 @@ mixin ParameterTestsClientMixin on ClientBase implements ParameterTests {
     String? e = 'default',
   }) async {
     await jsonRpcInstance.sendRequest('simpleNamedClient', <String, dynamic>{
-      'a': a,
-      'b': b,
-      'c': c,
-      'd': d,
-      'e': e,
+      r'a': a,
+      r'b': b,
+      r'c': c,
+      r'd': d,
+      r'e': e,
     });
   }
 
@@ -89,9 +90,9 @@ mixin ParameterTestsClientMixin on ClientBase implements ParameterTests {
     DateTime? dateTime,
   }) async {
     await jsonRpcInstance.sendRequest('simpleSpecials', <String, dynamic>{
-      'url': ?url?.toString(),
-      if (permission != .readOnly) 'permission': permission.name,
-      'dateTime': ?dateTime?.toIso8601String(),
+      r'url': ?url?.toString(),
+      if (permission != .readOnly) r'permission': permission.name,
+      r'dateTime': ?dateTime?.toIso8601String(),
     });
   }
 
@@ -151,20 +152,20 @@ mixin ParameterTestsClientMixin on ClientBase implements ParameterTests {
     },
   }) async {
     await jsonRpcInstance.sendRequest('customContainers', <String, dynamic>{
-      'users': users.toList(growable: false),
+      r'users': users.toList(growable: false),
       if (colorPermissions !=
           const {
             'black': [Permission.readWrite],
           })
-        'colorPermissions': colorPermissions.map(
+        r'colorPermissions': colorPermissions.map(
           ($k, $v) =>
               MapEntry($k, $v.map(($e) => $e.name).toList(growable: false)),
         ),
-      'nullables': ?nullables
+      r'nullables': ?nullables
           ?.map(($e) => $e?.toList(growable: false))
           .toList(growable: false),
       if (optionalsNullable != const {'readOnly': true, 'readWrite': null})
-        'optionalsNullable': optionalsNullable,
+        r'optionalsNullable': optionalsNullable,
     });
   }
 
@@ -201,6 +202,15 @@ mixin ParameterTestsClientMixin on ClientBase implements ParameterTests {
       },
     ]);
   }
+
+  @override
+  Future<void> renamed({required bool a, int b = 42, String? c}) async {
+    await jsonRpcInstance.sendRequest('renamed-method', <String, dynamic>{
+      r'renamed-a': a,
+      if (b != 42) r'renamed:$b': b,
+      r'c': ?c,
+    });
+  }
 }
 mixin ParameterTestsServerMixin on ServerBase implements ParameterTests {
   @override
@@ -227,14 +237,14 @@ mixin ParameterTestsServerMixin on ServerBase implements ParameterTests {
     jsonRpcInstance.registerMethod('simpleNamedServer', (
       Parameters $params,
     ) async {
-      final $$a = $params['a'].asBool;
-      final $$b = $params['b'].$nullChecked<num>(($v) => $v.asNum);
-      final $$c = $params['c'].asIntOr(42);
-      final $$d = $params['d'].$nullCheckedOr<double>(
+      final $$a = $params[r'a'].asBool;
+      final $$b = $params[r'b'].$nullChecked<num>(($v) => $v.asNum);
+      final $$c = $params[r'c'].asIntOr(42);
+      final $$d = $params[r'd'].$nullCheckedOr<double>(
         ($v) => $v.asNum.toDouble(),
         null,
       );
-      final $$e = $params['e'].$nullCheckedOr<String>(
+      final $$e = $params[r'e'].$nullCheckedOr<String>(
         ($v) => $v.asString,
         'default',
       );
@@ -259,14 +269,14 @@ mixin ParameterTestsServerMixin on ServerBase implements ParameterTests {
     jsonRpcInstance.registerMethod('simpleNamedClient', (
       Parameters $params,
     ) async {
-      final $$a = $params['a'].asBool;
-      final $$b = $params['b'].$nullChecked<num>(($v) => $v.asNum);
-      final $$c = $params['c'].asIntOr(42);
-      final $$d = $params['d'].$nullCheckedOr<double>(
+      final $$a = $params[r'a'].asBool;
+      final $$b = $params[r'b'].$nullChecked<num>(($v) => $v.asNum);
+      final $$c = $params[r'c'].asIntOr(42);
+      final $$d = $params[r'd'].$nullCheckedOr<double>(
         ($v) => $v.asNum.toDouble(),
         null,
       );
-      final $$e = $params['e'].$nullCheckedOr<String>(
+      final $$e = $params[r'e'].$nullCheckedOr<String>(
         ($v) => $v.asString,
         'default',
       );
@@ -275,12 +285,12 @@ mixin ParameterTestsServerMixin on ServerBase implements ParameterTests {
     jsonRpcInstance.registerMethod('simpleSpecials', (
       Parameters $params,
     ) async {
-      final $$url = $params['url'].$nullCheckedOr<Uri>(($v) => $v.asUri, null);
-      final $$permission = $params['permission'].$existsOr<Permission>(
+      final $$url = $params[r'url'].$nullCheckedOr<Uri>(($v) => $v.asUri, null);
+      final $$permission = $params[r'permission'].$existsOr<Permission>(
         ($v) => Permission.values.byName($v.asString),
         .readOnly,
       );
-      final $$dateTime = $params['dateTime'].$nullCheckedOr<DateTime>(
+      final $$dateTime = $params[r'dateTime'].$nullCheckedOr<DateTime>(
         ($v) => $v.asDateTime,
         null,
       );
@@ -340,10 +350,10 @@ mixin ParameterTestsServerMixin on ServerBase implements ParameterTests {
     jsonRpcInstance.registerMethod('customContainers', (
       Parameters $params,
     ) async {
-      final $$users = $params['users'].asList.map(
+      final $$users = $params[r'users'].asList.map(
         (dynamic $e) => User.fromJson(($e as Map<String, dynamic>)),
       );
-      final $$colorPermissions = $params['colorPermissions']
+      final $$colorPermissions = $params[r'colorPermissions']
           .$existsOr<Map<String, List<Permission>>>(
             ($v) => $v.asMap.map(
               (dynamic $k, dynamic $v) => MapEntry(
@@ -359,7 +369,7 @@ mixin ParameterTestsServerMixin on ServerBase implements ParameterTests {
               'black': [Permission.readWrite],
             },
           );
-      final $$nullables = $params['nullables']
+      final $$nullables = $params[r'nullables']
           .$nullCheckedOr<List<Set<User?>?>>(
             ($v) => $v.asList
                 .map(
@@ -375,7 +385,7 @@ mixin ParameterTestsServerMixin on ServerBase implements ParameterTests {
                 .toList(),
             null,
           );
-      final $$optionalsNullable = $params['optionalsNullable']
+      final $$optionalsNullable = $params[r'optionalsNullable']
           .$nullCheckedOr<Map<Object, bool?>>(
             ($v) => $v.asMap.map(
               (dynamic $k, dynamic $v) =>
@@ -426,6 +436,17 @@ mixin ParameterTestsServerMixin on ServerBase implements ParameterTests {
         ),
       );
       await records($$empty, $$positional, $$named);
+    });
+    jsonRpcInstance.registerMethod('renamed-method', (
+      Parameters $params,
+    ) async {
+      final $$a = $params[r'renamed-a'].asBool;
+      final $$b = $params[r'renamed:$b'].asIntOr(42);
+      final $$c = $params[r'c'].$nullCheckedOr<String>(
+        ($v) => $v.asString,
+        null,
+      );
+      await renamed(a: $$a, b: $$b, c: $$c);
     });
   }
 }

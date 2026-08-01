@@ -74,6 +74,12 @@ abstract interface class SampleApi {
     int limit = 10,
     int offset = 0,
   ]);
+
+  @MethodName('user.rename')
+  Future<void> renameUser({
+    @ParamName('user-id') required int id,
+    @ParamName('new-name') required String name,
+  });
 }
 
 void main() {}

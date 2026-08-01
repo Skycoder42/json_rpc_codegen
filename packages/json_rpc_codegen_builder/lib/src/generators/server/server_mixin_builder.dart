@@ -64,11 +64,11 @@ final class ServerMixinBuilder extends ProxySpec
     final parameterMode = validateParameters(method);
     return parameterMode == ParameterMode.none
         ? buildRegisterMethodWithoutParams(
-            method.name!,
+            rpcMethodName(method),
             () => Block.of(_buildInvocation(method, type)),
           )
         : buildRegisterMethodWithParams(
-            method.name!,
+            rpcMethodName(method),
             (params) => Block.of([
               ...buildParameterExtraction(method, parameterMode, params),
               ..._buildInvocation(method, type),

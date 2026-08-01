@@ -182,7 +182,7 @@ base mixin ClientStreamBuilderMixin
               ? JsonRpcInstance.sendRequest
               : JsonRpcInstance.sendNotification)
           .call([
-            literalString(StreamRpc.methodName(method, subMethod)),
+            literalString(rpcMethodName(method, subMethod.suffix)),
             literalList([StreamRpc.streamIdRef]),
           ]);
 
@@ -199,7 +199,7 @@ base mixin ClientStreamBuilderMixin
     MethodElement method,
     DartType streamType,
   ) => buildRegisterMethodWithParams(
-    StreamRpc.methodName(method, StreamSubMethod.data),
+    rpcMethodName(method, StreamSubMethod.data.suffix),
     async: false,
     (params) => _controllerMapRef
         .index(streamIdFrom(params))
@@ -222,7 +222,7 @@ base mixin ClientStreamBuilderMixin
   );
 
   Code _buildErrorMethod(MethodElement method) => buildRegisterMethodWithParams(
-    StreamRpc.methodName(method, StreamSubMethod.error),
+    rpcMethodName(method, StreamSubMethod.error.suffix),
     async: false,
     (params) => Block.of([
       declareFinal(StreamRpc.errorRef.symbol!)
@@ -263,7 +263,7 @@ base mixin ClientStreamBuilderMixin
   );
 
   Code _buildDoneMethod(MethodElement method) => buildRegisterMethodWithParams(
-    StreamRpc.methodName(method, StreamSubMethod.done),
+    rpcMethodName(method, StreamSubMethod.done.suffix),
     async: false,
     (params) => _controllerMapRef
         .property('remove')

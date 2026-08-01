@@ -11,7 +11,8 @@ part of 'empty.dart';
 // ignore_for_file: document_ignores, lines_longer_than_80_chars
 // ignore_for_file: no_literal_bool_comparisons
 // ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
-// ignore_for_file: unreachable_from_main, unused_element
+// ignore_for_file: unnecessary_raw_strings, unreachable_from_main
+// ignore_for_file: unused_element
 
 mixin TestEmpty1ClientMixin on ClientBase implements TestEmpty1 {}
 mixin TestEmpty1ServerMixin on ServerBase implements TestEmpty1 {

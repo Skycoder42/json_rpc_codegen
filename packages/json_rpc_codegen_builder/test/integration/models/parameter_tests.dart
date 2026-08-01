@@ -92,4 +92,11 @@ abstract interface class ParameterTests {
     })
     named,
   );
+
+  @MethodName('renamed-method')
+  Future<void> renamed({
+    @ParamName('renamed-a') required bool a,
+    @ParamName(r'renamed:$b') int b = 42,
+    String? c,
+  });
 }

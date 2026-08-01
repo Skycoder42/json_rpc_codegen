@@ -23,7 +23,7 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
     final parameterMode = validateParameters(method);
 
     final invocation = target.call([
-      literalString('${method.name}$invocationSuffix'),
+      literalString(rpcMethodName(method, invocationSuffix)),
       if (parameterMode.hasPositional)
         _buildPositionalParameters(
           method.formalParameters,
@@ -109,18 +109,21 @@ base mixin InvocationBuilderMixin on MethodMapperMixin, SerializationMixin {
           if (p.hasDefaultValue)
             IterableIf(
               refer(p.name!).notEqualTo(p.defaultValueExpression),
-              literalString(p.name!),
+              literalString(rpcParamName(p), raw: true),
             ): toJson(
               p.type,
               refer(p.name!),
             )
           else
-            literalString(p.name!): toJson(
+            literalString(rpcParamName(p), raw: true): toJson(
               p.type,
               refer(p.name!),
             ).collectionNonNull
         else
-          literalString(p.name!): toJson(p.type, refer(p.name!)),
+          literalString(rpcParamName(p), raw: true): toJson(
+            p.type,
+            refer(p.name!),
+          ),
     },
     CoreTypes.$String,
     CoreTypes.$dynamic,

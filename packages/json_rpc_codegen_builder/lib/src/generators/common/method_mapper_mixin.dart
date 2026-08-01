@@ -3,10 +3,12 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:collection/collection.dart';
 import 'package:dart_test_tools/code_gen.dart';
+import 'package:json_rpc_codegen/json_rpc_codegen.dart' show ParamName;
 import 'package:meta/meta.dart';
 import 'package:source_gen/source_gen.dart';
 
 import '../../extensions/parameter_extensions.dart';
+import '../../readers/name_reader.dart';
 import 'annotations.dart';
 
 @internal
@@ -27,6 +29,14 @@ enum ReturnKind { notification, request, stream }
 
 @internal
 base mixin MethodMapperMixin {
+  @protected
+  String rpcMethodName(MethodElement method, [String invocationSuffix = '']) =>
+      '${NameReader.methodName(method)?.name ?? method.name!}$invocationSuffix';
+
+  @protected
+  String rpcParamName(FormalParameterElement param) =>
+      NameReader.paramName(param)?.name ?? param.name!;
+
   @protected
   ({DartType type, ReturnKind kind}) getReturnType(MethodElement method) {
     final returnType = method.returnType;
@@ -84,7 +94,20 @@ base mixin MethodMapperMixin {
         element: method,
         todo: 'Make all parameters positional or named',
       );
-    } else if (hasPositional) {
+    }
+
+    for (final param in method.formalParameters.where((e) => e.isPositional)) {
+      if (NameReader.paramName(param) != null) {
+        throw InvalidGenerationSourceError(
+          'The $ParamName annotation can only be used on named parameters, as '
+          'positional parameters are transmitted as a list.',
+          element: param,
+          todo: 'Remove the annotation or make the parameter named.',
+        );
+      }
+    }
+
+    if (hasPositional) {
       return .positional;
     } else if (hasNamed) {
       return .named;

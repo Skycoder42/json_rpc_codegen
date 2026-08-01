@@ -16,7 +16,8 @@ import 'serialization_mixin.dart';
 import 'types.dart';
 
 @internal
-base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
+base mixin ParameterBuilderMixin
+    on MethodMapperMixin, SerializationMixin, ClosureBuilderMixin {
   static const nullCheckedOrName = r'$nullCheckedOr';
   static const existsOrName = r'$existsOr';
   static const nullCheckedName = r'$nullChecked';
@@ -42,7 +43,7 @@ base mixin ParameterBuilderMixin on SerializationMixin, ClosureBuilderMixin {
   @protected
   Code buildNamed(Reference paramsRef, FormalParameterElement param) =>
       _declareExtractedParameter(
-        paramsRef.index(literalString(param.name!)),
+        paramsRef.index(literalString(rpcParamName(param), raw: true)),
         param,
       );
 

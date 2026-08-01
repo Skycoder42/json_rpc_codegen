@@ -11,7 +11,8 @@ part of 'stream.dart';
 // ignore_for_file: document_ignores, lines_longer_than_80_chars
 // ignore_for_file: no_literal_bool_comparisons
 // ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
-// ignore_for_file: unreachable_from_main, unused_element
+// ignore_for_file: unnecessary_raw_strings, unreachable_from_main
+// ignore_for_file: unused_element
 
 mixin StreamTestsClientMixin on PeerBase implements StreamTests {
   var _$streamIdCounter = 0;
@@ -131,13 +132,13 @@ mixin StreamTestsClientMixin on PeerBase implements StreamTests {
                     'named#listen',
                     <String, dynamic>{
                       r'$streamId': $streamId,
-                      'variant': variant,
-                      'user': user,
-                      if (levels != const [5, 75]) 'levels': levels,
+                      r'variant': variant,
+                      r'user': user,
+                      if (levels != const [5, 75]) r'levels': levels,
                       if (permission != Permission.readOnly)
-                        'permission': permission.name,
-                      'reference': ?reference?.toString(),
-                      if (color != const Color(255, 255, 255)) 'color': color,
+                        r'permission': permission.name,
+                      r'reference': ?reference?.toString(),
+                      if (color != const Color(255, 255, 255)) r'color': color,
                     },
                   );
                 } catch ($error, $stackTrace) {
@@ -401,21 +402,21 @@ mixin StreamTestsServerMixin on PeerBase implements StreamTests {
           'streamId ${$streamId} is already in use',
         ),
         ifAbsent: () {
-          final $$variant = $params['variant'].asString;
-          final $$user = User.fromJson($params['user'].asMap.cast());
-          final $$levels = $params['levels'].$existsOr<List<int>>(
+          final $$variant = $params[r'variant'].asString;
+          final $$user = User.fromJson($params[r'user'].asMap.cast());
+          final $$levels = $params[r'levels'].$existsOr<List<int>>(
             ($v) => $v.asList.map((dynamic $e) => ($e as int)).toList(),
             const [5, 75],
           );
-          final $$permission = $params['permission'].$existsOr<Permission>(
+          final $$permission = $params[r'permission'].$existsOr<Permission>(
             ($v) => Permission.values.byName($v.asString),
             Permission.readOnly,
           );
-          final $$reference = $params['reference'].$nullCheckedOr<Uri>(
+          final $$reference = $params[r'reference'].$nullCheckedOr<Uri>(
             ($v) => $v.asUri,
             null,
           );
-          final $$color = $params['color'].$existsOr<Color>(
+          final $$color = $params[r'color'].$existsOr<Color>(
             ($v) => Color.fromJson($v.asString),
             const Color(255, 255, 255),
           );

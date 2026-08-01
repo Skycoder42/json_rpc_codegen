@@ -27,9 +27,6 @@ sealed class StreamRpc {
 
   static bool hasStreams(ClassElement clazz) =>
       clazz.methods.any((m) => m.returnType.isDartAsyncStream);
-
-  static String methodName(MethodElement method, StreamSubMethod sub) =>
-      '${method.name}${sub.suffix}';
 }
 
 @internal

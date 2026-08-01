@@ -1,5 +1,7 @@
 // the default values are passed and verified explicitly on purpose
 
+import 'dart:convert';
+
 import 'package:json_rpc_codegen/json_rpc_codegen.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
@@ -132,16 +134,26 @@ class _TestParameterTestsServer extends ParameterTestsServer {
     PositionalRecord positional,
     NamedRecord named,
   ) => mock.records(empty, positional, named);
+
+  @override
+  Future<void> renamed({required bool a, int b = 42, String? c}) =>
+      mock.renamed(a: a, b: b, c: c);
 }
 
 void main() {
   late _TestParameterTestsServer sutServer;
   late ParameterTestsClient sutClient;
+  late List<String> sentFrames;
 
   setUp(() {
+    sentFrames = [];
+
     final upstreamController = StreamController<String>.broadcast();
     addTearDown(upstreamController.close);
-    upstreamController.stream.listen(printOnFailure);
+    upstreamController.stream.listen((frame) {
+      printOnFailure(frame);
+      sentFrames.add(frame);
+    });
 
     final downstreamController = StreamController<String>.broadcast();
     addTearDown(downstreamController.close);
@@ -519,6 +531,46 @@ void main() {
       expect(named.permissions, testNamed.permissions);
       expect(named.point, testNamed.point);
       expect(named.user, testNamed.user);
+    });
+  });
+
+  group('renamed', () {
+    // the mock verifications alone would pass even if both sides silently kept
+    // using the dart names - assert on the actual wire format as well
+    test('sends minimal parameters', () async {
+      await sutClient.renamed(a: true);
+
+      expect(jsonDecode(sentFrames.single), {
+        'jsonrpc': '2.0',
+        'id': anything,
+        'method': 'renamed-method',
+        'params': {'renamed-a': true},
+      });
+      verify(sutServer.mock.renamed(a: true));
+    });
+
+    test('sends all parameters', () async {
+      await sutClient.renamed(a: false, b: 13, c: 'custom');
+
+      expect(jsonDecode(sentFrames.single), {
+        'jsonrpc': '2.0',
+        'id': anything,
+        'method': 'renamed-method',
+        'params': {'renamed-a': false, r'renamed:$b': 13, 'c': 'custom'},
+      });
+      verify(sutServer.mock.renamed(a: false, b: 13, c: 'custom'));
+    });
+
+    test('sends last optional parameter', () async {
+      await sutClient.renamed(a: true, c: 'last');
+
+      expect(jsonDecode(sentFrames.single), {
+        'jsonrpc': '2.0',
+        'id': anything,
+        'method': 'renamed-method',
+        'params': {'renamed-a': true, 'c': 'last'},
+      });
+      verify(sutServer.mock.renamed(a: true, c: 'last'));
     });
   });
 }

@@ -45,7 +45,7 @@ base mixin ServerStreamBuilderMixin
   Code buildStreamRegistrations(MethodElement method, DartType streamType) =>
       Block.of([
         buildRegisterMethodWithParams(
-          StreamRpc.methodName(method, StreamSubMethod.listen),
+          rpcMethodName(method, StreamSubMethod.listen.suffix),
           async: false,
           (params) =>
               Block.of(_buildListenInvocation(method, streamType, params)),
@@ -151,7 +151,7 @@ base mixin ServerStreamBuilderMixin
     StreamSubMethod subMethod, {
     bool remove = false,
   }) => buildRegisterMethodWithParams(
-    StreamRpc.methodName(method, subMethod),
+    rpcMethodName(method, subMethod.suffix),
     async: false,
     (params) => _buildSubscriptionInvocation(subMethod, params, remove).code,
   );
@@ -180,7 +180,7 @@ base mixin ServerStreamBuilderMixin
       closure1(
         r'$data',
         (dataRef) => JsonRpcInstance.sendNotification.call([
-          literalString(StreamRpc.methodName(method, StreamSubMethod.data)),
+          literalString(rpcMethodName(method, StreamSubMethod.data.suffix)),
           literalList([
             StreamRpc.streamIdRef,
             toJson(streamType, dataRef),
@@ -194,7 +194,7 @@ base mixin ServerStreamBuilderMixin
     type2: CoreTypes.$StackTrace,
     StreamRpc.stackTraceRef.symbol!,
     (errorRef, stackTraceRef) => JsonRpcInstance.sendNotification.call([
-      literalString(StreamRpc.methodName(method, StreamSubMethod.error)),
+      literalString(rpcMethodName(method, StreamSubMethod.error.suffix)),
       literalList([
         StreamRpc.streamIdRef,
         errorRef
@@ -222,7 +222,7 @@ base mixin ServerStreamBuilderMixin
             // this is the request id of the failed request, not a sub method
             .call([
               literalString(
-                '${method.name}#\${${StreamRpc.streamIdRef.symbol}}',
+                rpcMethodName(method, '#\${${StreamRpc.streamIdRef.symbol}}'),
               ),
             ])
             .index(literalString('error')),
@@ -233,7 +233,7 @@ base mixin ServerStreamBuilderMixin
   Expression _buildOnDone(MethodElement method) => closure0(
     () => Block.of([
       JsonRpcInstance.sendNotification.call([
-        literalString(StreamRpc.methodName(method, StreamSubMethod.done)),
+        literalString(rpcMethodName(method, StreamSubMethod.done.suffix)),
         literalList([StreamRpc.streamIdRef]),
       ]).statement,
       Globals.unawaitedRef.call([
