@@ -1,1 +1,0 @@
-../../json_rpc_codegen_builder/example/json_rpc_codegen_builder_example.dart
