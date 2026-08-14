@@ -36,5 +36,5 @@ class RpcMethod {
   final Function? toJson;
 
   /// Default constructor.
-  const RpcMethod({this.name, this.fromJson, this.toJson});
+  const new({this.name, this.fromJson, this.toJson});
 }

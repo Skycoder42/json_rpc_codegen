@@ -31,18 +31,18 @@ typedef NamedRecord = ({
 });
 
 class ParameterTestsClient extends ClientBase with ParameterTestsClientMixin {
-  ParameterTestsClient(super.channel) : super();
+  new(super.channel) : super();
 }
 
 abstract class ParameterTestsServer extends ServerBase
     with ParameterTestsServerMixin {
-  ParameterTestsServer(super.channel) : super();
+  new(super.channel) : super();
 }
 
 class _TestParameterTestsServer extends ParameterTestsServer {
   final mock = MockParameterTests();
 
-  _TestParameterTestsServer(super.channel) : super();
+  new(super.channel) : super();
 
   @override
   Future<void> simplePositionalServer(

@@ -81,9 +81,9 @@ base mixin ServerStreamBuilderMixin
       _ => literalNum(0),
     };
 
-    yield declareFinal(
-      StreamRpc.streamIdRef.symbol!,
-    ).assign(streamIdFrom(params, index)).statement;
+    yield declareFinal(StreamRpc.streamIdRef.symbol!)
+        .assign(streamIdFrom(params, index))
+        .statement;
 
     yield _subscriptionsMapRef
         .property('update')

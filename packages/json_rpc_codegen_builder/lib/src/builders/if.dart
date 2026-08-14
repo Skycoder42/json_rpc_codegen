@@ -7,7 +7,7 @@ class _IfThenInfo {
   final Spec _if;
   final Iterable<Code> _then;
 
-  const _IfThenInfo(Expression this._if, this._then);
+  const new(Expression this._if, this._then);
 }
 
 @internal
@@ -15,7 +15,7 @@ class IfThen implements Code {
   final List<_IfThenInfo> _ifThenStatements;
   final Iterable<Code>? _else;
 
-  IfThen._(this._ifThenStatements, this._else);
+  new _(this._ifThenStatements, this._else);
 
   IfThen $elseIf(Expression condition, Iterable<Code> body) {
     if (_else != null) {

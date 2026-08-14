@@ -14,7 +14,7 @@ abstract base class DefaultsReader {
     inPackage: 'json_rpc_codegen',
   );
 
-  DefaultsReader._();
+  new _();
 
   static bool isServerDefault(MethodElement method) {
     final methodIsClient = _isClient(method);

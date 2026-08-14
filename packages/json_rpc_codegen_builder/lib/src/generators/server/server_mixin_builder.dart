@@ -26,7 +26,7 @@ final class ServerMixinBuilder extends ProxySpec
         ServerStreamBuilderMixin {
   final ClassElement _class;
 
-  const ServerMixinBuilder(this._class);
+  const new(this._class);
 
   @override
   Mixin build() => Mixin(

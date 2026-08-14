@@ -10,18 +10,18 @@ abstract class ClientBase {
 
   // coverage:ignore-start
   /// See [Client]
-  ClientBase(StreamChannel<String> channel, {Object Function()? idGenerator})
+  new(StreamChannel<String> channel, {Object Function()? idGenerator})
     : jsonRpcInstance = Client(channel, idGenerator: idGenerator);
 
   /// See [Client.withoutJson]
-  ClientBase.withoutJson(
+  new withoutJson(
     StreamChannel<dynamic> channel, {
     Object Function()? idGenerator,
   }) : jsonRpcInstance = Client.withoutJson(channel, idGenerator: idGenerator);
   // coverage:ignore-end
 
   /// Creates a new instance from an existing client
-  ClientBase.fromClient(this.jsonRpcInstance);
+  new fromClient(this.jsonRpcInstance);
 
   /// See [Client.done]
   Future<void> get done => jsonRpcInstance.done;

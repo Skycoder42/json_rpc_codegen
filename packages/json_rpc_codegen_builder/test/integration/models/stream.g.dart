@@ -6,12 +6,14 @@ part of 'stream.dart';
 // JsonRpcGenerator
 // **************************************************************************
 
-// ignore_for_file: avoid_futureor_void, avoid_positional_boolean_parameters
-// ignore_for_file: cascade_invocations, cast_nullable_to_non_nullable
-// ignore_for_file: document_ignores, lines_longer_than_80_chars
+// ignore_for_file: async_return_with_no_await, avoid_futureor_void
+// ignore_for_file: avoid_positional_boolean_parameters, cascade_invocations
+// ignore_for_file: cast_nullable_to_non_nullable, document_ignores
+// ignore_for_file: empty_container_bodies, lines_longer_than_80_chars
 // ignore_for_file: no_literal_bool_comparisons
 // ignore_for_file: prefer_expression_function_bodies, unnecessary_parenthesis
-// ignore_for_file: unnecessary_raw_strings, unreachable_from_main
+// ignore_for_file: unnecessary_raw_strings
+// ignore_for_file: unnecessary_type_name_in_constructor, unreachable_from_main
 // ignore_for_file: unused_element
 
 mixin StreamTestsClientMixin on PeerBase implements StreamTests {
@@ -258,6 +260,7 @@ mixin StreamTestsClientMixin on PeerBase implements StreamTests {
     );
   }
 }
+
 mixin StreamTestsServerMixin on PeerBase implements StreamTests {
   final _$streamSubscriptions = <int, StreamSubscription<dynamic>>{};
 

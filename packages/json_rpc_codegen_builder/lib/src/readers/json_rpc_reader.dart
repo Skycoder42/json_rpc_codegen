@@ -12,9 +12,9 @@ class JsonRpcReader {
 
   final ConstantReader _reader;
 
-  const JsonRpcReader(this._reader);
+  const new(this._reader);
 
-  factory JsonRpcReader.from(Element element) =>
+  factory from(Element element) =>
       JsonRpcReader(ConstantReader(typeChecker.firstAnnotationOf(element)));
 
   bool get client => _reader.read('client').boolValue;

@@ -12,7 +12,7 @@ import 'simple_test.mocks.dart';
 class _TestSimpleServer extends SimpleServer {
   final mock = MockSimple();
 
-  _TestSimpleServer(super.channel) : super();
+  new(super.channel) : super();
 
   @override
   void notify(String message, [int level = 10]) => mock.notify(message, level);

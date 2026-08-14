@@ -3,7 +3,7 @@ import 'package:meta/meta.dart';
 
 @internal
 abstract base class Annotations {
-  Annotations._();
+  new _();
 
   static const override = Reference('override');
 

@@ -14,9 +14,9 @@ import 'models/common.dart';
 import 'models/stream.dart';
 
 @GenerateNiceMocks([
-  // ignore: strict_raw_type for mocking
+  // ignore: no_raw_types, strict_raw_type for mocking
   MockSpec<Callable0>(),
-  // ignore: strict_raw_type for mocking
+  // ignore: no_raw_types, strict_raw_type for mocking
   MockSpec<Callable1>(),
   MockSpec<StreamTests>(),
 ])
@@ -33,7 +33,7 @@ abstract interface class Callable1<TReturn, TArg1> {
 class TestStreamServer extends StreamTestsServer {
   final mock = MockStreamTests();
 
-  TestStreamServer(super.channel) : super();
+  new(super.channel) : super();
 
   @override
   Stream<int> simple() => mock.simple();

@@ -15,7 +15,7 @@ abstract class PeerBase implements ClientBase, ServerBase {
 
   // coverage:ignore-start
   /// See [Peer].
-  PeerBase(
+  new(
     StreamChannel<String> channel, {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
@@ -30,7 +30,7 @@ abstract class PeerBase implements ClientBase, ServerBase {
   }
 
   /// See [Peer.withoutJson].
-  PeerBase.withoutJson(
+  new withoutJson(
     StreamChannel<dynamic> channel, {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
@@ -46,7 +46,7 @@ abstract class PeerBase implements ClientBase, ServerBase {
   // coverage:ignore-end
 
   /// Creates a new instance from an existing peer.
-  PeerBase.fromPeer(this.jsonRpcInstance) {
+  new fromPeer(this.jsonRpcInstance) {
     registerMethods();
   }
 

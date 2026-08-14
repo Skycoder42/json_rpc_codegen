@@ -12,9 +12,9 @@ class User {
   final String firstName;
   final String lastName;
 
-  const User(this.firstName, this.lastName);
+  const new(this.firstName, this.lastName);
 
-  factory User.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       throw UnimplementedError(json.toString());
 }
 
@@ -51,7 +51,7 @@ abstract interface class SampleApi {
     List<Uri>? resources = const <Uri>[],
   });
 
-  // ignore: strict_raw_type to test type defaults
+  // ignore: no_raw_types, strict_raw_type to test type defaults
   Future<Map> merge(Set keys, Iterable values);
 
   Future<(int, List<User>?, Permission, ({int x, int y}))> flip(

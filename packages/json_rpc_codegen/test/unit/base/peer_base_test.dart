@@ -11,7 +11,7 @@ import '../helpers.dart';
 import 'peer_base_test.mocks.dart';
 
 class _TestPeerBase extends PeerBase {
-  _TestPeerBase(super.jsonRpcInstance) : super.fromPeer();
+  new(super.jsonRpcInstance) : super.fromPeer();
 }
 
 void main() {

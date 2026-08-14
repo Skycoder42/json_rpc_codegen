@@ -23,18 +23,18 @@ typedef NamedRecord = ({
 });
 
 class ReturnTestsClient extends ClientBase with ReturnTestsClientMixin {
-  ReturnTestsClient(super.channel) : super();
+  new(super.channel) : super();
 }
 
 abstract class ReturnTestsServer extends ServerBase
     with ReturnTestsServerMixin {
-  ReturnTestsServer(super.channel) : super();
+  new(super.channel) : super();
 }
 
 class _TestReturnTestsServer extends ReturnTestsServer {
   final mock = MockReturnTests();
 
-  _TestReturnTestsServer(super.channel) : super();
+  new(super.channel) : super();
 
   @override
   Future<bool> boolRet() => mock.boolRet();
@@ -356,9 +356,8 @@ void main() {
 
   group('permissionRet', () {
     test('returns the value returned by the server', () async {
-      when(
-        sutServer.mock.permissionRet(),
-      ).thenReturnAsync(Permission.writeOnly);
+      when(sutServer.mock.permissionRet())
+          .thenReturnAsync(Permission.writeOnly);
 
       await expectLater(
         sutClient.permissionRet(),
@@ -391,9 +390,8 @@ void main() {
     };
 
     test('returns the value returned by the server', () async {
-      when(
-        sutServer.mock.colorPermissionsRet(),
-      ).thenReturnAsync(testColorPermissions);
+      when(sutServer.mock.colorPermissionsRet())
+          .thenReturnAsync(testColorPermissions);
 
       await expectLater(
         sutClient.colorPermissionsRet(),

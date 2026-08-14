@@ -19,7 +19,7 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc>
     with DartGeneratorMixin {
   final BuilderOptions builderOptions;
 
-  const JsonRpcGenerator(this.builderOptions);
+  const new(this.builderOptions);
 
   @override
   Future<String> generate(LibraryReader library, BuildStep buildStep) async {
@@ -77,16 +77,19 @@ class JsonRpcGenerator extends GeneratorForAnnotation<JsonRpc>
       scoped: false,
       Library(
         (b) => b
+          ..ignoreForFile.add('async_return_with_no_await')
           ..ignoreForFile.add('avoid_futureor_void')
           ..ignoreForFile.add('avoid_positional_boolean_parameters')
           ..ignoreForFile.add('cascade_invocations')
           ..ignoreForFile.add('cast_nullable_to_non_nullable')
           ..ignoreForFile.add('document_ignores')
+          ..ignoreForFile.add('empty_container_bodies')
           ..ignoreForFile.add('lines_longer_than_80_chars')
           ..ignoreForFile.add('no_literal_bool_comparisons')
           ..ignoreForFile.add('prefer_expression_function_bodies')
           ..ignoreForFile.add('unnecessary_parenthesis')
           ..ignoreForFile.add('unnecessary_raw_strings')
+          ..ignoreForFile.add('unnecessary_type_name_in_constructor')
           ..ignoreForFile.add('unreachable_from_main')
           ..ignoreForFile.add('unused_element'),
       ),

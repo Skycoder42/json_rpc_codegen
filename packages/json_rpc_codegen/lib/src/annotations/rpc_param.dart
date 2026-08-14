@@ -35,5 +35,5 @@ class RpcParam {
   final Function? toJson;
 
   /// Default constructor.
-  const RpcParam({this.name, this.fromJson, this.toJson});
+  const new({this.name, this.fromJson, this.toJson});
 }

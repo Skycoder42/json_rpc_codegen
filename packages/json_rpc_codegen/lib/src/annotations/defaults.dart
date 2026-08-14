@@ -8,7 +8,7 @@ import 'package:meta/meta_meta.dart';
 @Target({.classType, .method})
 class ServerDefaults {
   /// Default constructor.
-  const ServerDefaults();
+  const new();
 }
 
 /// Configures the class or method to apply default values on the server side.
@@ -20,7 +20,7 @@ const serverDefaults = ServerDefaults();
 @Target({.classType, .method})
 class ClientDefaults {
   /// Default constructor.
-  const ClientDefaults();
+  const new();
 }
 
 /// Configures the class or method to apply default values on the client side.

@@ -10,7 +10,7 @@ import '../helpers.dart';
 import 'client_base_test.mocks.dart';
 
 class _TestClientBase extends ClientBase {
-  _TestClientBase(super.jsonRpcInstance) : super.fromClient();
+  new(super.jsonRpcInstance) : super.fromClient();
 }
 
 void main() {

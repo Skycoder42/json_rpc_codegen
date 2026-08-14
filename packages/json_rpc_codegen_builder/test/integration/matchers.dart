@@ -8,7 +8,7 @@ import 'models/common.dart';
 /// without value equality covered - it is compared by it's JSON representation
 /// instead.
 class _ColorEquality implements Equality<Object?> {
-  const _ColorEquality();
+  const new();
 
   @override
   bool equals(Object? e1, Object? e2) => switch ((e1, e2)) {

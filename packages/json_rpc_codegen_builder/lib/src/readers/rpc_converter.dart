@@ -15,7 +15,7 @@ final class RpcConverter {
   final DartType jsonType;
 
   /// Default constructor.
-  const RpcConverter({required this.function, required this.jsonType});
+  const new({required this.function, required this.jsonType});
 }
 
 /// The custom conversion functions declared by an annotation.

@@ -7,7 +7,7 @@ class IterableIf extends Expression {
   final Spec _then;
   final Spec? _else;
 
-  const IterableIf(
+  const new(
     Expression this._condition,
     Expression this._then, [
     Expression? this._else,

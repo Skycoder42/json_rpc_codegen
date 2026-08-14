@@ -5,9 +5,9 @@ class User {
   final String firstName;
   final String lastName;
 
-  const User(this.firstName, this.lastName);
+  const new(this.firstName, this.lastName);
 
-  factory User.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       User(json['firstName'] as String, json['lastName'] as String);
 
   Map<String, dynamic> toJson() => {
@@ -39,9 +39,9 @@ class Color {
   final int g;
   final int b;
 
-  const Color(this.r, this.g, this.b);
+  const new(this.r, this.g, this.b);
 
-  factory Color.fromJson(String json) {
+  factory fromJson(String json) {
     final regExp = RegExp(
       r'^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$',
     );

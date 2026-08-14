@@ -12,7 +12,7 @@ abstract base class RpcMethodReader {
     inPackage: 'json_rpc_codegen',
   );
 
-  RpcMethodReader._();
+  new _();
 
   /// The [RpcMethod] annotation of [method], or `null` if not annotated.
   ///

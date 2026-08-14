@@ -9,7 +9,7 @@ class _CatchInfo {
   final Spec? stackTrace;
   final Iterable<Spec> body;
 
-  _CatchInfo(this.on, this.error, this.stackTrace, this.body);
+  new(this.on, this.error, this.stackTrace, this.body);
 }
 
 @internal
@@ -18,7 +18,7 @@ class TryCatch implements Code, Spec {
   final List<_CatchInfo> _catch;
   final Iterable<Spec>? _finally;
 
-  TryCatch._(this._try, this._catch, this._finally);
+  new _(this._try, this._catch, this._finally);
 
   TryCatch catch$({
     TypeReference? on,

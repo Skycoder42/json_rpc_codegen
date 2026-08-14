@@ -11,7 +11,7 @@ abstract class ServerBase {
 
   // coverage:ignore-start
   /// See [Server].
-  ServerBase(
+  new(
     StreamChannel<String> channel, {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
@@ -24,7 +24,7 @@ abstract class ServerBase {
   }
 
   /// See [Server.withoutJson].
-  ServerBase.withoutJson(
+  new withoutJson(
     StreamChannel<dynamic> channel, {
     ErrorCallback? onUnhandledError,
     bool strictProtocolChecks = true,
@@ -38,7 +38,7 @@ abstract class ServerBase {
   // coverage:ignore-end
 
   /// Creates a new instance from an existing server.
-  ServerBase.fromServer(this.jsonRpcInstance) {
+  new fromServer(this.jsonRpcInstance) {
     registerMethods();
   }
 

@@ -90,9 +90,9 @@ base mixin ClientStreamBuilderMixin
       },
     );
 
-    yield declareFinal(
-      StreamRpc.streamIdRef.symbol!,
-    ).assign(_streamIdCounterRef.postfixIncrement).statement;
+    yield declareFinal(StreamRpc.streamIdRef.symbol!)
+        .assign(_streamIdCounterRef.postfixIncrement)
+        .statement;
 
     yield _controllerMapRef
         .index(StreamRpc.streamIdRef)
@@ -195,32 +195,33 @@ base mixin ClientStreamBuilderMixin
     ]);
   }
 
-  Code _buildAddMethod(
-    MethodElement method,
-    DartType streamType,
-  ) => buildRegisterMethodWithParams(
-    rpcMethodName(method, StreamSubMethod.data.suffix),
-    async: false,
-    (params) => _controllerMapRef
-        .index(streamIdFrom(params))
-        .asA(Types.$StreamController(streamType.toReference()).asNullable(true))
-        .nullSafeProperty('add')
-        .call([
-          methodFromJson(
-            method,
-            streamType,
-            streamType.isNullableType
-                ? params
-                      .index(literalNum(1))
-                      .property(ParameterBuilderMixin.nullCheckedName)
-                      .call([
-                        closure1(r'$v', (p1) => p1.property('value').code),
-                      ])
-                : params.index(literalNum(1)).property('value'),
-          ),
-        ])
-        .code,
-  );
+  Code _buildAddMethod(MethodElement method, DartType streamType) =>
+      buildRegisterMethodWithParams(
+        rpcMethodName(method, StreamSubMethod.data.suffix),
+        async: false,
+        (params) => _controllerMapRef
+            .index(streamIdFrom(params))
+            .asA(
+              Types.$StreamController(streamType.toReference())
+                  .asNullable(true),
+            )
+            .nullSafeProperty('add')
+            .call([
+              methodFromJson(
+                method,
+                streamType,
+                streamType.isNullableType
+                    ? params
+                          .index(literalNum(1))
+                          .property(ParameterBuilderMixin.nullCheckedName)
+                          .call([
+                            closure1(r'$v', (p1) => p1.property('value').code),
+                          ])
+                    : params.index(literalNum(1)).property('value'),
+              ),
+            ])
+            .code,
+      );
 
   Code _buildErrorMethod(MethodElement method) => buildRegisterMethodWithParams(
     rpcMethodName(method, StreamSubMethod.error.suffix),

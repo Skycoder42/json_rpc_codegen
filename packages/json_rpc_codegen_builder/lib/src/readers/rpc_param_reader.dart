@@ -12,7 +12,7 @@ abstract base class RpcParamReader {
     inPackage: 'json_rpc_codegen',
   );
 
-  RpcParamReader._();
+  new _();
 
   /// The [RpcParam] annotation of [param], or `null` if not annotated.
   ///

@@ -11,7 +11,7 @@ import '../proxy_spec.dart';
 final class ServerClassBuilder extends ProxySpec with ProxyClassBuilderMixin {
   final ClassElement _class;
 
-  const ServerClassBuilder(this._class);
+  const new(this._class);
 
   @override
   Class build() {

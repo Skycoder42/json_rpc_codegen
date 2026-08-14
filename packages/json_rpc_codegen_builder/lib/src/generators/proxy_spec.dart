@@ -3,7 +3,7 @@ import 'package:meta/meta.dart';
 
 @internal
 abstract base class ProxySpec implements Spec {
-  const ProxySpec();
+  const new();
 
   Spec build();
 

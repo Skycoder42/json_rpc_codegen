@@ -29,7 +29,7 @@ final class ClientMixinBuilder extends ProxySpec
         ClientStreamBuilderMixin {
   final ClassElement _class;
 
-  const ClientMixinBuilder(this._class);
+  const new(this._class);
 
   @override
   Mixin build() => Mixin(

@@ -11,7 +11,7 @@ import '../helpers.dart';
 import 'server_base_test.mocks.dart';
 
 class _TestServerBase extends ServerBase {
-  _TestServerBase(super.jsonRpcInstance) : super.fromServer();
+  new(super.jsonRpcInstance) : super.fromServer();
 }
 
 void main() {

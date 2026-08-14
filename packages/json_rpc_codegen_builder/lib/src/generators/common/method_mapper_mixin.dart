@@ -23,7 +23,7 @@ enum ParameterMode {
   final bool hasNamed;
 
   // ignore: avoid_positional_boolean_parameters for enum
-  const ParameterMode(this.hasPositional, this.hasNamed);
+  new(this.hasPositional, this.hasNamed);
 }
 
 @internal

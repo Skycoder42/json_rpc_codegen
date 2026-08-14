@@ -15,11 +15,7 @@ class JsonRpc {
   final bool mixinsOnly;
 
   /// Default constructor.
-  const JsonRpc({
-    this.client = true,
-    this.server = true,
-    this.mixinsOnly = false,
-  });
+  const new({this.client = true, this.server = true, this.mixinsOnly = false});
 }
 
 /// Build annotation for JSON-RPC enabled interfaces

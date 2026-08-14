@@ -9,7 +9,7 @@ class ForIn implements Code {
   final Spec _iterable;
   final Code _body;
 
-  ForIn(this._variable, Expression this._iterable, this._body);
+  new(this._variable, Expression this._iterable, this._body);
 
   @override
   R accept<R>(covariant CodeVisitor<R> visitor, [R? context]) {

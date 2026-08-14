@@ -83,9 +83,10 @@ base mixin ParameterBuilderMixin
   Code _declareExtractedParameter(
     Expression paramRef,
     FormalParameterElement param,
-  ) => declareFinal(
-    paramRefFor(param).symbol!,
-  ).assign(_buildConversion(paramRef, param)).statement;
+  ) =>
+      declareFinal(paramRefFor(param).symbol!)
+          .assign(_buildConversion(paramRef, param))
+          .statement;
 
   Expression _buildConversion(
     Expression paramRef,
